@@ -43,7 +43,7 @@ class Cache {
         if( $cache ){
             $this->cache = $cache;
         }
-        $config = \Config::get('dux.cache');
+        $config = \dux\Config::get('dux.cache');
         $this->config = $config[$this->cache];
         $this->group = $group;
         if( empty($this->config) || empty($this->config['type'])) {

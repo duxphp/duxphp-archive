@@ -53,7 +53,7 @@ class Controller {
      */
     protected function _getView() {
         if (!isset($this->view)) {
-            $this->view = \Dux::view();
+            $this->view = \dux\Dux::view();
         }
         return $this->view;
     }
@@ -78,14 +78,14 @@ class Controller {
     public function json($data = [], $callback = '', $code = 200) {
         if ($callback) {
             $info = ['data' => $data, 'callback' => $callback];
-            \Dux::header($code, function() use ($info) {
+            \dux\Dux::header($code, function() use ($info) {
                 if(!headers_sent()) {
                     header('Content-Type: application/javascript;charset=utf-8;');
                 }
                 echo $info['callback'] . '(' . json_encode($info['data']) . ');';
             });
         } else {
-            \Dux::header($code, function() use ($data) {
+            \dux\Dux::header($code, function() use ($data) {
                 if(!headers_sent()) {
                     header('Content-Type: application/json;charset=utf-8;');
                 }
@@ -135,7 +135,7 @@ class Controller {
      * 404页面输出
      */
     public function error404() {
-        \Dux::notFound();
+        \dux\Dux::notFound();
     }
 
 
@@ -146,7 +146,7 @@ class Controller {
      * @param $code
      */
     protected function errorPage($title, $content, $code = 503) {
-        \Dux::errorPage($title, $content, $code);
+        \dux\Dux::errorPage($title, $content, $code);
     }
 
     /**
@@ -158,7 +158,7 @@ class Controller {
      */
     public function alert($msg, $url = NULL, $charset = 'utf-8') {
 
-        \Dux::header(200, function () use ($msg, $url, $charset) {
+        \dux\Dux::header(200, function () use ($msg, $url, $charset) {
             header("Content-type: text/html; charset={$charset}");
             $alert_msg = "alert('$msg');";
             if (empty($url)) {

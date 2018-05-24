@@ -56,7 +56,7 @@ class View {
      */
     public function __construct($config = []) {
         $this->config = array_merge($this->config, $config);
-        $this->cache = \Dux::cache($this->config['cache']);
+        $this->cache = \dux\Dux::cache($this->config['cache']);
         $this->set('__Template', $this);
 
     }

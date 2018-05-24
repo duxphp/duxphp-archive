@@ -43,7 +43,7 @@ class Storage {
         if( $storage ){
             $this->storage = $storage;
         }
-        $config = \Config::get('dux.storage');
+        $config = \dux\Config::get('dux.storage');
         $this->config = $config[$this->storage];
         $this->group = $group;
         if( empty($this->config) || empty($this->config['type'])) {

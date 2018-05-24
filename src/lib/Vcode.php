@@ -77,7 +77,7 @@ class Vcode {
         //生成code
         $this->createCode();
         //写入SESSION
-        \Dux::session()->set($this->vcodeName, $this->code);
+        \dux\Dux::session()->set($this->vcodeName, $this->code);
 
         //往图片上添加文本
         $this->outputText($this->fontFace);
@@ -97,7 +97,7 @@ class Vcode {
         if (empty($this->chinese)) {
             $vCode = strtolower($vCode);
         }
-        $code = strtolower(\Dux::session()->get($this->vcodeName));
+        $code = strtolower(\dux\Dux::session()->get($this->vcodeName));
         if ($vCode <> $code) {
             return false;
         }

@@ -15,7 +15,7 @@ class Dux {
      * @return \dux\kernel\View
      */
     public static function view($config = []) {
-        $sysConfig = \Config::get('dux.tpl');
+        $sysConfig = \dux\Config::get('dux.tpl');
         $config = array_merge((array)$sysConfig, (array)$config);
 
         return new \dux\kernel\View($config);
@@ -157,7 +157,7 @@ class Dux {
         $param = explode('/', $str, 4);
         $param = array_filter($param);
         $paramCount = count($param);
-        $module = \Config::get('dux.module');
+        $module = \dux\Config::get('dux.module');
         switch ($paramCount) {
             case 1:
                 $layer = LAYER_NAME;
@@ -179,7 +179,7 @@ class Dux {
                 break;
             case 4:
                 if ($param[0] == 'default') {
-                    $layer = \Config::get('dux.module_default');
+                    $layer = \dux\Config::get('dux.module_default');
                 } else {
                     $layer = $param[0];
                 }
@@ -198,14 +198,14 @@ class Dux {
 
 
         $longUrl = $module[$layer] . '/' . $app . '/' . $controller . '/' . $action;
-        if ($layer <> \Config::get('dux.module_default')) {
+        if ($layer <> \dux\Config::get('dux.module_default')) {
             $url = $longUrl;
         } else {
             $url = $app . '/' . $controller . '/' . $action;
         }
 
         $routeStr = '';
-        $routes = \Config::get('dux.routes');
+        $routes = \dux\Config::get('dux.routes');
         foreach ($routes as $key => $vo) {
             if($longUrl == $vo) {
                 $routeStr = $key;
@@ -213,7 +213,7 @@ class Dux {
             }
         }
 
-        $route = \Config::get('dux.route');
+        $route = \dux\Config::get('dux.route');
         $routeParams = explode(',', $route['params']);
 
         if (!empty($routeParams) && $get) {
@@ -292,7 +292,7 @@ class Dux {
         if (!class_exists($class)) {
             throw new \Exception("Class '{$class}' not found", 500);
         }
-        $obj = new ReflectionClass($class);
+        $obj = new \ReflectionClass($class);
         $fuc = $obj->newInstance();
         self::$objArr[$class] = $fuc;
         return $fuc;
@@ -526,12 +526,12 @@ class Dux {
      * @return bool
      */
     public static function browserLog($msg, $type = 'log') {
-        if (!\Config::get('dux.debug_browser')) {
+        if (!\dux\Config::get('dux.debug_browser')) {
             return false;
         }
-        self::import('dux/vendor/SocketLog');
+        require_once __DIR__ . '/vendor/SocketLog.php';
         slog([
-            'allow_client_ids' => [\Config::get('dux.debug_key')]
+            'allow_client_ids' => [\dux\Config::get('dux.debug_key')]
         ], 'set_config');
         slog($msg, $type);
 

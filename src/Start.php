@@ -5,16 +5,9 @@ error_reporting(E_ALL ^ E_NOTICE);
 ini_set('display_errors', '1');
 
 /**
- * 定义内核版本
- */
-const  VERSION = '1.0.0';
-const  VERSION_DATE = '20170209';
-
-/**
  * 最低PHP版本要求
  */
 const PHP_REQUIRED = '7.0.0';
-
 
 class Start {
 
@@ -49,10 +42,15 @@ class Start {
      * 定义常量
      */
     protected static function definitions() {
+        if(!defined('VERSION')) {
+            echo 'Please define ROOT_PATH constants';
+            exit;
+        }
+        if (!defined('VERSION')) define('VERSION', '1.0.0');
+        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20180525');
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-        if (!defined('ROOT_PATH')) define('ROOT_PATH', str_replace('\\', '/', dirname(__DIR__)) . '/');
         if (!defined('CORE_PATH')) define('CORE_PATH', ROOT_PATH . 'dux/');
         if (!defined('DATA_PATH')) define('DATA_PATH', ROOT_PATH . 'data/');
         if (!defined('APP_PATH')) define('APP_PATH', ROOT_PATH . 'app/');
@@ -76,6 +74,7 @@ class Start {
         //判断PHP版本
         if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
             header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
+            echo 'Can only run in PHP is greater than 7.0';
             exit;
         }
         //兼容环境信息
@@ -118,13 +117,6 @@ class Start {
      * 加载核心文件
      */
     protected static function loadFile() {
-        $loadFile = ROOT_PATH . 'vendor/autoload.php';
-        if(file_exists($loadFile)) {
-            require $loadFile;
-        }
-        require ROOT_PATH . 'dux/Dux.php';
-        require ROOT_PATH . 'dux/Engine.php';
-        require ROOT_PATH . 'dux/Config.php';
     }
 
     /**
@@ -132,7 +124,7 @@ class Start {
      */
     protected static function loadConfig() {
         $config = require(DATA_PATH . 'config/global.php');
-        Config::set($config);
+        \dux\Config::set($config);
     }
 
     /**
@@ -152,7 +144,7 @@ class Start {
      * 加载公共函数库
      */
     protected static function loadFunCom() {
-        require CORE_PATH . 'kernel/Function.php';
+        require __DIR__ . '/kernel/Function.php';
     }
 
     /**

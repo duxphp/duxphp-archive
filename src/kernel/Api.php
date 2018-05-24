@@ -28,14 +28,14 @@ class Api {
      */
     public function success($msg = '', $data = []) {
         if (empty($msg)) {
-            $msg = \Dux::$codes[200];
+            $msg = \dux\Dux::$codes[200];
         }
         $data = [
             'code' => 200,
             'message' => $msg,
             'result' => $data
         ];
-        \Dux::header(200, function () use ($data) {
+        \dux\Dux::header(200, function () use ($data) {
             $this->returnData($data);
         });
     }
@@ -47,13 +47,13 @@ class Api {
      */
     public function error($msg = '', $code = 500) {
         if (empty($msg)) {
-            $msg = \Dux::$codes[$code];
+            $msg = \dux\Dux::$codes[$code];
         }
         $data = [
             'code' => $code,
             'message' => $msg,
         ];
-        \Dux::header($code, function () use ($data) {
+        \dux\Dux::header($code, function () use ($data) {
             $this->returnData($data);
         });
     }

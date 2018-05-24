@@ -36,7 +36,7 @@ class Cookie {
         if( $cookie ){
             $this->cookie = $cookie;
         }
-        $config = \Config::get('dux.cookie');
+        $config = \dux\Config::get('dux.cookie');
         $this->config = array_merge($this->config, $config[$this->cookie]);
     }
 

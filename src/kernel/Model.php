@@ -32,7 +32,7 @@ class Model {
         if ($database) {
             $this->database = $database;
         }
-        $config = \Config::get('dux.database');
+        $config = \dux\Config::get('dux.database');
         $this->config = $config[$this->database];
         if (empty($this->config) || empty($this->config['type'])) {
             throw new \Exception($this->config['type'] . ' database config error', 500);

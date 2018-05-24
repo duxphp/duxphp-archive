@@ -72,12 +72,12 @@ class Engine {
      */
     public function handleException($e) {
         $msg = "{$e->getMessage()} line {$e->getLine()} in file {$e->getFile()}";
-        if (\Config::get('dux.log')) {
-            \Dux::log($msg);
+        if (\dux\Config::get('dux.log')) {
+            \dux\Dux::log($msg);
         }
         if (isAjax()) {
-            if (!\Config::get('dux.debug')) {
-                $msg = \Dux::$codes[500];
+            if (!\dux\Config::get('dux.debug')) {
+                $msg = \dux\Dux::$codes[500];
             }
             $data = [
                 'code' => 500,
@@ -85,7 +85,7 @@ class Engine {
                 'line' => "line {$e->getLine()} in file {$e->getFile()}",
                 'trace' => $e->getTrace(),
             ];
-            \Dux::header(500, function () use ($data) {
+            \dux\Dux::header(500, function () use ($data) {
                 if (!headers_sent()) {
                     header("application/json; charset=UTF-8");
                 }
@@ -93,8 +93,8 @@ class Engine {
             });
         } else {
             $html = "<title>Dux System Engine</title>";
-            if (!\Config::get('dux.debug')) {
-                \Dux::notFound();
+            if (!\dux\Config::get('dux.debug')) {
+                \dux\Dux::notFound();
             } else {
                 $html .= "<h1>{$e->getMessage()}</h1>";
                 $html .= "<code>line {$e->getLine()} in file {$e->getFile()}</code>";
@@ -104,9 +104,9 @@ class Engine {
                 }
                 $html .= "</p>";
             }
-            $html .= "<p> run time " . \Dux::runTime() . "s</p>";
+            $html .= "<p> run time " . \dux\Dux::runTime() . "s</p>";
 
-            \Dux::header(500, function () use ($html) {
+            \dux\Dux::header(500, function () use ($html) {
                 if (!headers_sent()) {
                     header("Content-Type: text/html; charset=UTF-8");
                 }
@@ -121,7 +121,7 @@ class Engine {
     public function route() {
         $url = str_replace(ROOT_SCRIPT, '', $_SERVER['REQUEST_URI']);
 
-        $routes = \Config::get('dux.routes');
+        $routes = \dux\Config::get('dux.routes');
         foreach ($routes as $rule => $mapper) {
             $rule = '/' . str_ireplace(array('\\\\', 'http://', '-', '/', '<', '>', '.'), array('', '', '\-', '\/', '(?<', ">[a-z0-9_%]+)", '\.'), $rule) . '/i';
             if (preg_match($rule, $url, $matches, PREG_OFFSET_CAPTURE)) {
@@ -152,7 +152,7 @@ class Engine {
         $urlParse = parse_url($url);
         $urlPath = explode('.', $urlParse['path'], 2);
         $urlArray = explode("/", $urlPath[0], 5);
-        $moduleConfig = \Config::get('dux.module');
+        $moduleConfig = \dux\Config::get('dux.module');
         $moduleRule = array_flip($moduleConfig);
         $roleName = null;
         unset($_GET['/' . $urlParse['path']]);
@@ -175,13 +175,13 @@ class Engine {
             $actionName = $urlArray[2];
             $params = $urlArray[3] . '/' . $urlArray[4];
         }
-        $layer = empty($layer) ? \Config::get('dux.module_default') : $layer;
+        $layer = empty($layer) ? \dux\Config::get('dux.module_default') : $layer;
         $appName = empty($appName) ? 'index' : $appName;
         $modelName = empty($modelName) ? 'Index' : $modelName;
         $actionName = empty($actionName) ? 'index' : $actionName;
         if (!defined('VIEW_LAYER_NAME')) {
             if ($layer <> 'mobile' && $layer <> 'controller') {
-                define('VIEW_LAYER_NAME', \Config::get('dux.module_default'));
+                define('VIEW_LAYER_NAME', \dux\Config::get('dux.module_default'));
             } else {
                 define('VIEW_LAYER_NAME', $layer);
             }
@@ -229,11 +229,11 @@ class Engine {
         $class = '\app\\' . APP_NAME . '\\' . LAYER_NAME . '\\' . MODULE_NAME . ucfirst(LAYER_NAME);
         $action = ACTION_NAME;
         if (!class_exists($class)) {
-            \Dux::notFound();
+            \dux\Dux::notFound();
         }
         $obj = new $class();
         if (!method_exists($class, $action) && !method_exists($class, '__call')) {
-            \Dux::notFound();
+            \dux\Dux::notFound();
         }
         $obj->$action();
     }

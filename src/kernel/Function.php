@@ -177,7 +177,7 @@ function inRequest($data = []) {
  * @return array|mixed|string
  */
 function request($method = '', $key = '', $default = '', $function = '') {
-    return \Dux::request($method, $key, $default, $function);
+    return \dux\Dux::request($method, $key, $default, $function);
 }
 
 /**
@@ -189,7 +189,7 @@ function request($method = '', $key = '', $default = '', $function = '') {
  * @return string
  */
 function url($str = '', $params = [], $domain = false, $ssl = true) {
-    return \Dux::url($str, $params, $domain, $ssl);
+    return \dux\Dux::url($str, $params, $domain, $ssl);
 }
 
 /**
@@ -199,14 +199,14 @@ function url($str = '', $params = [], $domain = false, $ssl = true) {
  * @return mixed
  */
 function target($class, $layer = 'model') {
-    return \Dux::target($class, $layer);
+    return \dux\Dux::target($class, $layer);
 }
 
 /**
  * 简化类配置加载
  */
 function load_config($file, $enforce = true) {
-    return \Dux::loadConfig($file, $enforce);
+    return \dux\Dux::loadConfig($file, $enforce);
 }
 
 /**
@@ -216,7 +216,7 @@ function load_config($file, $enforce = true) {
  * @return array|bool
  */
 function save_config($file, $config) {
-    return \Dux::saveConfig($file, $config);
+    return \dux\Dux::saveConfig($file, $config);
 }
 
 /**
@@ -250,7 +250,7 @@ function array_sort($data, $key, $type = 'asc') {
  * @return mixed
  */
 function data_sign($data) {
-    $config = \Config::get('dux.use');
+    $config = \dux\Config::get('dux.use');
     if (!is_array($data)) {
         $data = [
             'data' => $data
@@ -277,7 +277,7 @@ function data_sign_has($data, $sign = '') {
     }
     $sign = urldecode(base64_decode($sign));
     ksort($data);
-    $config = \Config::get('dux.use');
+    $config = \dux\Config::get('dux.use');
     $valToken = hash_hmac('sha1', http_build_query($data), $config['safe_key'], true);
     return ($sign == $valToken);
 }
@@ -425,7 +425,7 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
  * @return bool
  */
 function dux_log($msg, $type = 'log') {
-    return \Dux::log($msg, $type);
+    return \dux\Dux::log($msg, $type);
 }
 
 
@@ -436,7 +436,7 @@ function dux_log($msg, $type = 'log') {
  * @return bool
  */
 function browser_log($msg, $type = 'log') {
-    return \Dux::browserLog($msg, $type);
+    return \dux\Dux::browserLog($msg, $type);
 }
 
 /**

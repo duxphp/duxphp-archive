@@ -37,7 +37,7 @@ class Session {
         if (!empty($session)) {
             $this->session = $session;
         }
-        $config = \Config::get('dux.session');
+        $config = \dux\Config::get('dux.session');
         $this->config = $config[$this->session];
 
         if (empty($this->config)) {
@@ -122,7 +122,7 @@ class Session {
         if ($this->cache) {
             return true;
         }
-        $this->cache = \Dux::cache($this->config['cache']);
+        $this->cache = \dux\Dux::cache($this->config['cache']);
         return true;
     }
 
