@@ -19,6 +19,6 @@
         "duxphp"
     ],
     "homepage": "http://duxphp.com/",
-    "license": "Apache",
+    "license": "apache",
     "minimum-stability": "dev"
 }
