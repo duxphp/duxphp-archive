@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{$title}</title>
+    <style type="text/css">
+        body, code, dd, div, dl, dt, fieldset, form, h1, h2, h3, h4, h5, h6, input, legend, li, ol, p, pre, td, textarea, th, ul {
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            font-size: 10px;
+        }
+
+        body {
+            font: 14px/1.5 'Microsoft YaHei', '微软雅黑', Helvetica, Sans-serif;
+            background: #f0f1f3;
+            font-size: 1.4rem;
+        }
+
+        :focus {
+            outline: 0
+        }
+
+        h1, h2, h3, h4, h5, h6, strong {
+            font-weight: 700
+        }
+
+        a {
+            color: #428bca;
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .error-page {
+            background: #f0f1f3;
+            padding: 80px 0 180px;
+        }
+
+        .error-page-main {
+            background: #f9f9f9;
+            margin: 0 auto;
+            max-width: 620px;
+            padding: 20px 50px 70px;
+            box-shadow: 0 10px 30px 0 #ccc;
+        }
+
+        .error-page-main h3 {
+            font-size: 2.4rem;
+            font-weight: 400;
+            border-bottom: 1px solid #d0d0d0
+        }
+
+        .error-page-main h3 strong {
+            font-size: 5.4rem;
+            font-weight: 400;
+            margin-right: 20px
+        }
+
+        .error-page-main h4 {
+            font-size: 2rem;
+            font-weight: 400;
+            color: #333
+        }
+
+        .error-page-actions {
+            z-index: 100;
+            padding: 20px 0;
+            font-size:1.6rem;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="error-page">
+    <div class="error-page-container">
+        <div class="error-page-main">
+            <h3>
+                <strong>{$code}</strong>{$title}
+            </h3>
+            <div class="error-page-actions">
+                {$msg}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>

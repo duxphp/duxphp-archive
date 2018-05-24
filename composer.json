@@ -1,0 +1,24 @@
+{
+    "name": "duxphp",
+    "description": "DuxPHP Framework",
+    "authors": [
+        {
+            "name": "DuxPHP",
+            "email": "349865361@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dux\\": "src/"
+        }
+    },
+    "keywords": [
+        "duxphp"
+    ],
+    "homepage": "http://duxphp.com/",
+    "license": "Apache",
+    "minimum-stability": "dev"
+}
