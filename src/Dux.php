@@ -1,5 +1,5 @@
 <?php
-
+namespace dux;
 /**
  * 注册框架方法
  */

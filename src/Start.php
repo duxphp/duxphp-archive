@@ -1,4 +1,5 @@
 <?php
+namespace dux;
 
 error_reporting(E_ALL ^ E_NOTICE);
 ini_set('display_errors', '1');
@@ -12,7 +13,7 @@ const  VERSION_DATE = '20170209';
 /**
  * 最低PHP版本要求
  */
-const PHP_REQUIRED = '5.6.0';
+const PHP_REQUIRED = '7.0.0';
 
 
 class Start {

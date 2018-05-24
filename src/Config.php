@@ -1,5 +1,9 @@
 <?php
-
+namespace dux;
+/**
+ * 配置参数
+ * @package dux
+ */
 class Config {
 
     protected static $config = [];
