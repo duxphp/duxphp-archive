@@ -42,7 +42,7 @@ class Start {
      * 定义常量
      */
     protected static function definitions() {
-        if(!defined('VERSION')) {
+        if(!defined('ROOT_PATH')) {
             echo 'Please define ROOT_PATH constants';
             exit;
         }

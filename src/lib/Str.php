@@ -104,10 +104,9 @@ class Str {
             return $data;
         }
         if ($cut > 0) {
-            $data = mb_strimwidth($data, 0, $cut, $str);
+            $data = mb_substr($data, 0, $cut, 'utf-8');
         }
-
-        return $data;
+        return $data . $str;
     }
 
     /**
