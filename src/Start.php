@@ -51,7 +51,7 @@ class Start {
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-        if (!defined('CORE_PATH')) define('CORE_PATH', ROOT_PATH . 'dux/');
+        if (!defined('CORE_PATH')) define('CORE_PATH', __DIR__ . '/');
         if (!defined('DATA_PATH')) define('DATA_PATH', ROOT_PATH . 'data/');
         if (!defined('APP_PATH')) define('APP_PATH', ROOT_PATH . 'app/');
         if (!defined('PACK_PATH')) define('PACK_PATH', CORE_PATH . 'package/');
