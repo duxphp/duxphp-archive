@@ -597,9 +597,9 @@ function load_ui($path = '') {
     $css = 'http://cdn.duxphp.com/duxjs/css/dux.css?v=1.0.1';
     $js = 'http://cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.1';
     $data = [];
-    $data[] = '<link rel="stylesheet" href="' . $css . '">';
-    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>';
-    return join("\n", $data);
+    $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
+    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>'."\r\n";
+    return join("", $data);
 }
 
 /**
@@ -615,7 +615,7 @@ function load_js($name = 'jquery') {
     $nameArray = explode(',', $name);
     $returnData = [];
     foreach ($nameArray as $vo) {
-        $returnData = '<script type="text/javascript" src="' . $data[$vo] . '"></script>';
+        $returnData[] = '<script type="text/javascript" src="' . $data[$vo] . '"></script>'."\r\n";
     }
-    return $returnData;
+    return join("", $returnData);
 }
