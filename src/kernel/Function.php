@@ -267,7 +267,7 @@ function data_sign($data) {
  * @return bool
  */
 function data_sign_has($data, $sign = '') {
-    if(empty($sign)) {
+    if (empty($sign)) {
         return false;
     }
     if (!is_array($data)) {
@@ -411,8 +411,8 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
         }
         $string = implode("", $tem);
     }
-    if($split) {
-        $array  = str_split($string,4);
+    if ($split) {
+        $array = str_split($string, 4);
         $string = implode($glue, $array);
     }
     return $string;
@@ -565,14 +565,13 @@ function price_calculate($n1, $symbol, $n2, $scale = '2') {
  * @param $substr
  * @return string
  */
-function str_insert($str, $i, $substr)
-{
+function str_insert($str, $i, $substr) {
     $startstr = '';
-    for($j=0; $j<$i; $j++){
+    for ($j = 0; $j < $i; $j++) {
         $startstr .= $str[$j];
     }
     $laststr = '';
-    for ($j=$i; $j<strlen($str); $j++){
+    for ($j = $i; $j < strlen($str); $j++) {
         $laststr .= $str[$j];
     }
     $str = ($startstr . $substr . $laststr);
@@ -585,7 +584,7 @@ function str_insert($str, $i, $substr)
  * @return string
  */
 function log_no($pre = '') {
-    mt_srand((double) microtime() * 1000000);
+    mt_srand((double)microtime() * 1000000);
     return $pre . date('Ymd') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
 }
 
@@ -598,8 +597,8 @@ function load_ui($path = '') {
     $css = 'http://cdn.duxphp.com/duxjs/css/dux.css?v=1.0.1';
     $js = 'http://cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.1';
     $data = [];
-    $data[] = '<link rel="stylesheet" href="'.$css.'">';
-    $data[] = '<script type="text/javascript" src="'.$js.'" data-cfg-autoload="false" data-path="'.$path.'/" data-role="'.ROLE_NAME.'" data-root="'.ROOT_URL.'"></script>';
+    $data[] = '<link rel="stylesheet" href="' . $css . '">';
+    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>';
     return join("\n", $data);
 }
 
@@ -613,5 +612,10 @@ function load_js($name = 'jquery') {
         'jquery' => 'https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js',
         'vue' => 'https://cdn.bootcss.com/vue/2.5.16/vue.min.js'
     ];
-    return $data[$name];
+    $nameArray = explode(',', $name);
+    $returnData = [];
+    foreach ($nameArray as $vo) {
+        $returnData = '<script type="text/javascript" src="' . $data[$vo] . '"></script>';
+    }
+    return $returnData;
 }
