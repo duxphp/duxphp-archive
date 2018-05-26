@@ -567,9 +567,11 @@ function price_calculate($n1, $symbol, $n2, $scale = '2') {
  */
 function str_insert($str, $i, $substr)
 {
+    $startstr = '';
     for($j=0; $j<$i; $j++){
         $startstr .= $str[$j];
     }
+    $laststr = '';
     for ($j=$i; $j<strlen($str); $j++){
         $laststr .= $str[$j];
     }
@@ -577,7 +579,39 @@ function str_insert($str, $i, $substr)
     return $str;
 }
 
+/**
+ * 生成单号
+ * @param string $pre
+ * @return string
+ */
 function log_no($pre = '') {
     mt_srand((double) microtime() * 1000000);
     return $pre . date('Ymd') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+}
+
+
+/**
+ * 基础UI库
+ * @return string
+ */
+function load_ui($path = '') {
+    $css = 'http://cdn.duxphp.com/duxjs/css/dux.css?v=1.0.1';
+    $js = 'http://cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.1';
+    $data = [];
+    $data[] = '<link rel="stylesheet" href="'.$css.'">';
+    $data[] = '<script type="text/javascript" src="'.$js.'" data-cfg-autoload="false" data-path="'.$path.'/" data-role="'.ROLE_NAME.'" data-root="'.ROOT_URL.'"></script>';
+    return join("\n", $data);
+}
+
+/**
+ * 常用js库
+ * @param string $name
+ * @return mixed
+ */
+function load_js($name = 'jquery') {
+    $data = [
+        'jquery' => 'https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js',
+        'vue' => 'https://cdn.bootcss.com/vue/2.5.16/vue.min.js'
+    ];
+    return $data[$name];
 }
