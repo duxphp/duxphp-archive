@@ -595,9 +595,12 @@ function log_no($pre = '') {
  */
 function load_ui($path = '') {
     $config = \dux\Config::get('dux.use');
-    if($config['ui_local']) {
+    if(!$config['ui_local']) {
         $css = 'https://cdn.duxphp.com/duxjs/css/dux.css?v=1.0.2';
         $js = 'https://cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.2';
+    }else {
+        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.2';
+        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.2';
     }
     $data = [];
     $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
