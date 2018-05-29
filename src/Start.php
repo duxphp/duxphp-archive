@@ -139,7 +139,7 @@ class Start {
      */
     protected static function registerCom() {
         register_shutdown_function(function() {
-            if(!isAjax()){
+            if(!isAjax() && !isApi()){
                 echo \dux\Dux::browserDebug();
             }
         });

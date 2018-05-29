@@ -59,6 +59,14 @@ function isApp() {
 }
 
 /**
+ * 判断API请求
+ * @return bool
+ */
+function isApi() {
+    return isset($_SERVER['HTTP_TOKEN']) ? true : false;
+}
+
+/**
  * 获取钩子类
  * @param $layer
  * @param $name
