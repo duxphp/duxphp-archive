@@ -275,7 +275,7 @@ function data_sign_has($data, $sign = '') {
             'data' => $data
         ];
     }
-    $sign = urldecode(base64_decode($sign));
+    $sign = base64_decode(urldecode($sign));
     ksort($data);
     $config = \dux\Config::get('dux.use');
     $valToken = hash_hmac('sha1', http_build_query($data), $config['safe_key'], true);
