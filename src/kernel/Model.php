@@ -135,7 +135,7 @@ class Model {
     }
 
     public function getFields() {
-        return $this->getObj()->getFields($this->table);
+        return $this->getObj()->getFields($this->_getTable());
     }
 
     public function query($sql, $params = array()) {
@@ -299,7 +299,7 @@ class Model {
     }
 
     private function _dataFilter($data = []) {
-        $fields = $this->getFields();
+        $fields = $this->getObj()->getFields($this->table);
         $array = [];
         if (empty($data)) {
             return $array;
