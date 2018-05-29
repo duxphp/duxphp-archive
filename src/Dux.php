@@ -1,4 +1,5 @@
 <?php
+
 namespace dux;
 /**
  * 注册框架方法
@@ -89,10 +90,10 @@ class Dux {
                 break;
             case 'input':
                 $data = file_get_contents('php://input');
-                if($data) {
+                if ($data) {
                     $data = json_decode($data, true);
                     $data = $data ? $data : [];
-                }else {
+                } else {
                     $data = [];
                 }
                 break;
@@ -110,29 +111,29 @@ class Dux {
             if (!empty($default) && empty($data)) {
                 $data = $default;
             }
-            if(is_string($data)) {
+            if (is_string($data)) {
                 $data = trim($data);
-                if($data == 'null' || $data == 'undefined') {
+                if ($data == 'null' || $data == 'undefined') {
                     $data = null;
                 }
-                if($data == 'true') {
+                if ($data == 'true') {
                     $data = true;
                 }
-                if($data == 'false') {
+                if ($data == 'false') {
                     $data = false;
                 }
             }
-        }else {
+        } else {
             foreach ($data as $key => $vo) {
-                if(is_string($vo)) {
+                if (is_string($vo)) {
                     $vo = trim($vo);
-                    if($vo == 'null' || $vo == 'undefined') {
+                    if ($vo == 'null' || $vo == 'undefined') {
                         $data[$key] = null;
                     }
-                    if($vo == 'true') {
+                    if ($vo == 'true') {
                         $data[$key] = true;
                     }
-                    if($vo == 'false') {
+                    if ($vo == 'false') {
                         $data[$key] = false;
                     }
                 }
@@ -207,7 +208,7 @@ class Dux {
         $routeStr = '';
         $routes = \dux\Config::get('dux.routes');
         foreach ($routes as $key => $vo) {
-            if($longUrl == $vo) {
+            if ($longUrl == $vo) {
                 $routeStr = $key;
                 break;
             }
@@ -233,8 +234,8 @@ class Dux {
                 return true;
             });
             foreach ($params as $key => $value) {
-                if($routeStr && strstr($routeStr, '<'.$key.'>') !== false) {
-                    $routeUrl = str_replace('<'.$key.'>', $value, $routeStr);
+                if ($routeStr && strstr($routeStr, '<' . $key . '>') !== false) {
+                    $routeUrl = str_replace('<' . $key . '>', $value, $routeStr);
                     continue;
                 }
                 if (preg_match('/^([{\x{4e00}-\x{9fa5}]|[0-9a-zA-Z])+$/u', $value) && empty($routeStr)) {
@@ -244,7 +245,7 @@ class Dux {
                 }
             }
         }
-        if($routeUrl) {
+        if ($routeUrl) {
             $url = $routeUrl;
         }
 
@@ -499,7 +500,6 @@ class Dux {
      * @return bool
      */
     public static function log($msg, $type = 'log') {
-        self::browserLog($msg, $type);
         $types = ['log', 'info', 'error', 'warn'];
         if (!in_array($type, $types)) {
             $type = 'log';
@@ -520,20 +520,102 @@ class Dux {
     }
 
     /**
-     * 浏览器调试
+     * 浏览器log数据
+     * @var array
+     */
+    public static $consoleData = [];
+
+    /**
+     * 浏览器log
      * @param $msg
      * @param string $type
+     * @param string $color
      * @return bool
      */
-    public static function browserLog($msg, $type = 'log') {
+    public static function browserLog($msg, $type = 'log', $color = '#000000') {
         if (!\dux\Config::get('dux.debug_browser')) {
             return false;
         }
-        require_once __DIR__ . '/vendor/SocketLog.php';
-        slog([
-            'allow_client_ids' => [\dux\Config::get('dux.debug_key')]
-        ], 'set_config');
-        slog($msg, $type);
-
+        if (is_array($msg) || is_object($msg)) {
+            $msg = json_encode($msg);
+        } else {
+            $msg = '"' . str_replace('"', '\"', $msg) . '"';
+        }
+        self::$consoleData[$type]['items'][] = [
+            'msg' => $msg,
+            'color' => $color
+        ];
+        return true;
     }
+
+    /**
+     * 浏览器跟踪
+     * @param string $msg
+     * @param string $type
+     * @return bool
+     */
+    public static function browserTrace($msg = 'trace end', $type = 'track') {
+        $traces = debug_backtrace(false);
+        $traces = array_reverse($traces);
+        foreach ($traces as $trace) {
+            $fun = isset($trace['class']) ? $trace['class'] . '::' . $trace['function'] : $trace['function'];
+            $file = isset($trace['file']) ? $trace['file'] : 'unknown file';
+            $file = str_replace(ROOT_PATH, '/', $file);
+            $line = isset($trace['line']) ? $trace['line'] : 'unknown line';
+            $traceMsg = $fun . ' called at [' . $file . ':' . $line . ']';
+            self::$consoleData[$type]['items'][] = [
+                'msg' => '"' . $traceMsg . '"'
+            ];
+        }
+        self::$consoleData[$type]['items'][] = [
+            'msg' => '"' . $msg . '"',
+            'color' => 'red'
+        ];
+        return true;
+    }
+
+    /**
+     * 获取浏览器记录
+     * @param string $type
+     * @return array
+     */
+    public static function getBrowserLog($type = 'log') {
+        if (empty(self::$consoleData[$type])) {
+            return [];
+        }
+        $data = [];
+        foreach (self::$consoleData[$type]['items'] as $vo) {
+            $msg = trim($vo['msg'], '"');
+            $json = json_decode($msg);
+            $data[] = $json ? $json : $msg;
+        }
+        return $data;
+    }
+
+    /**
+     * 获取输出代码
+     * @return bool|string
+     */
+    public static function browserDebug() {
+        if (!\dux\Config::get('dux.debug_browser')) {
+            return false;
+        }
+        $script = [];
+        $script[] = "console.group('welcome');";
+        $script[] = 'console.log("%c", "padding:24px;line-height:48px;background:url(\'https://cdn.duxphp.com/duxjs/images/logo-small.png\') no-repeat;");';
+        $script[] = 'console.log("%c%s", "color: red", "Welcome to use Dux browser debugging tools");';
+        $script[] = 'console.log("%c%s", "color: red", "http://www.duxphp.com");';
+        $script[] = "console.groupEnd();";
+
+        foreach (self::$consoleData as $type => $items) {
+            $script[] = "console.group('" . $type . "');";
+            foreach ($items['items'] as $vo) {
+                $script[] = 'console.log("%c%s", "color: ' . $vo['color'] . '", ' . $vo['msg'] . ');';
+            }
+            $script[] = "console.groupEnd();";
+        }
+        return '<script>' . implode("", $script) . '</script>';
+    }
+
+
 }

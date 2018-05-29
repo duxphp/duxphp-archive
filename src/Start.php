@@ -31,9 +31,9 @@ class Start {
         self::definitions();
         self::loadFile();
         self::loadConfig();
+        self::loadFunCom();
         self::loadClass();
         self::registerCom();
-        self::loadFunCom();
         self::route();
         self::start();
     }
@@ -138,6 +138,11 @@ class Start {
      * 注册核心方法
      */
     protected static function registerCom() {
+        register_shutdown_function(function() {
+            if(!isAjax()){
+                echo \dux\Dux::browserDebug();
+            }
+        });
     }
 
     /**

@@ -33,7 +33,8 @@ class Api {
         $data = [
             'code' => 200,
             'message' => $msg,
-            'result' => $data
+            'result' => $data,
+            'log' => \dux\Dux::browserDebug()
         ];
         \dux\Dux::header(200, function () use ($data) {
             $this->returnData($data);
@@ -52,6 +53,7 @@ class Api {
         $data = [
             'code' => $code,
             'message' => $msg,
+            'log' => \dux\Dux::browserDebug()
         ];
         \dux\Dux::header($code, function () use ($data) {
             $this->returnData($data);

@@ -71,7 +71,7 @@ class Engine {
      * @param $e
      */
     public function handleException($e) {
-        $msg = "{$e->getMessage()} line {$e->getLine()} in file {$e->getFile()}";
+        $msg = "{$e->getMessage()} line {$e->getLine()} in file {$this->parserFile($e->getFile())}";
         if (\dux\Config::get('dux.log')) {
             \dux\Dux::log($msg);
         }
@@ -82,7 +82,7 @@ class Engine {
             $data = [
                 'code' => 500,
                 'message' => $msg,
-                'line' => "line {$e->getLine()} in file {$e->getFile()}",
+                'line' => "line {$e->getLine()} in file {$this->parserFile($e->getFile())}",
                 'trace' => $e->getTrace(),
             ];
             \dux\Dux::header(500, function () use ($data) {
@@ -97,13 +97,14 @@ class Engine {
                 \dux\Dux::notFound();
             } else {
                 $html .= "<h1>{$e->getMessage()}</h1>";
-                $html .= "<code>line {$e->getLine()} in file {$e->getFile()}</code>";
+                $html .= "<code>line {$e->getLine()} in file {$this->parserFile($e->getFile())}</code>";
                 $html .= "<p>";
                 foreach ($e->getTrace() as $value) {
                     $html .= "{$value['file']} line {$value['line']} <br>";
                 }
                 $html .= "</p>";
             }
+
             $html .= "<p> run time " . \dux\Dux::runTime() . "s</p>";
 
             \dux\Dux::header(500, function () use ($html) {
@@ -113,6 +114,10 @@ class Engine {
                 echo $html;
             });
         }
+    }
+
+    private function parserFile($file) {
+        return str_replace(ROOT_PATH, '/', $file);
     }
 
     /**
@@ -125,7 +130,7 @@ class Engine {
         foreach ($routes as $rule => $mapper) {
             $rule = '/' . str_ireplace(array('\\\\', 'http://', '-', '/', '<', '>', '.'), array('', '', '\-', '\/', '(?<', ">[a-z0-9_%]+)", '\.'), $rule) . '/i';
             if (preg_match($rule, $url, $matches, PREG_OFFSET_CAPTURE)) {
-                if($matches[0][1] !== 0) {
+                if ($matches[0][1] !== 0) {
                     continue;
                 }
                 foreach ($matches as $matchkey => $matchval) {

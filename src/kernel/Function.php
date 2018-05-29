@@ -430,13 +430,14 @@ function dux_log($msg, $type = 'log') {
 
 
 /**
- * 浏览器日志输出
+ * 浏览器日志
  * @param $msg
  * @param string $type
+ * @param string $color
  * @return bool
  */
-function browser_log($msg, $type = 'log') {
-    return \dux\Dux::browserLog($msg, $type);
+function browser_log($msg, $type = 'log', $color = '#000000') {
+    return \dux\Dux::browserLog($msg, $type, $color);
 }
 
 /**

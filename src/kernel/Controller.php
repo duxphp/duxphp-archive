@@ -104,7 +104,8 @@ class Controller {
             $data = [
                 'code' => 200,
                 'message' => $msg,
-                'url' => $url
+                'url' => $url,
+                'log' => \dux\Dux::getBrowserLog('log')
             ];
             $this->json($data);
         } else {
@@ -123,7 +124,8 @@ class Controller {
             $data = [
                 'code' => $code,
                 'message' => $msg,
-                'url' => $url
+                'url' => $url,
+                'log' => \dux\Dux::getBrowserLog('log')
             ];
             $this->json($data, '', $code);
         } else {
