@@ -20,13 +20,14 @@ class MysqlPdoDriver implements DbInterface {
         $this->config = $config;
     }
 
-    public function select($table, array $condition = [], $field = '*', $order = NULL, $limit = NULL) {
+    public function select($table, array $condition = [], $field = '*', $lock = false, $order = NULL, $limit = NULL) {
         $field = !empty($field) ? $field : '*';
         $order = !empty($order) ? ' ORDER BY ' . $order : '';
         $limit = !empty($limit) ? ' LIMIT ' . $limit : '';
+        $lock = $lock ? 'for update' : '';
         $table = $this->_table($table);
         $condition = $this->_where($condition);
-        return $this->query("SELECT {$field} FROM {$table} {$condition['_where']} {$order} {$limit}", $condition['_bindParams']);
+        return $this->query("SELECT {$field} FROM {$table} {$condition['_where']}{$order} {$limit} {$lock}", $condition['_bindParams']);
     }
 
     public function query($sql, array $params = []) {

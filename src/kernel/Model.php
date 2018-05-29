@@ -15,6 +15,7 @@ class Model {
     protected $options = array(
         'table' => '',
         'field' => null,
+        'lock' => false,
         'join' => [],
         'where' => [],
         'where_params' => [],
@@ -61,6 +62,11 @@ class Model {
         return $this;
     }
 
+    public function lock($lock = true) {
+        $this->options['lock'] = $lock;
+        return $this;
+    }
+
     public function order($order) {
         $this->options['order'] = $order;
         return $this;
@@ -78,12 +84,12 @@ class Model {
     }
 
     public function select() {
-        $data = $this->getObj()->select($this->_getTable().$this->_getJoin(), $this->_getWhere(), $this->_getField(), $this->_getOrder(), $this->_getLimit());
+        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getField(), $this->_getLock(), $this->_getOrder(), $this->_getLimit());
         return empty($data) ? [] : $data;
     }
 
     public function count() {
-        return $this->getObj()->count($this->_getTable().$this->_getJoin(), $this->_getWhere());
+        return $this->getObj()->count($this->_getTable() . $this->_getJoin(), $this->_getWhere());
     }
 
     public function find() {
@@ -105,26 +111,26 @@ class Model {
 
     public function delete() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
-        $status = $this->getObj()->delete($this->_getTable(),  $this->_getWhere());
+        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere());
         return ($status === false) ? false : true;
     }
 
     public function setInc($field, $num = 1) {
-        if( empty($this->options['where']) || !is_array($this->options['where'])  ) return false;
-        if(empty($field)) return false;
+        if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
+        if (empty($field)) return false;
         $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $field, $num);
         return ($status === false) ? false : true;
     }
 
     public function setDec($field, $num = 1) {
-        if( empty($this->options['where']) || !is_array($this->options['where'])  ) return false;
-        if(empty($field)) return false;
+        if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
+        if (empty($field)) return false;
         $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $field, $num);
         return ($status === false) ? false : true;
     }
 
     public function sum($field) {
-        return $this->getObj()->sum($this->_getTable().$this->_getJoin(), $this->_getWhere(), $field);
+        return $this->getObj()->sum($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $field);
 
     }
 
@@ -134,14 +140,14 @@ class Model {
 
     public function query($sql, $params = array()) {
         $sql = trim($sql);
-        if ( empty($sql) ) return array();
+        if (empty($sql)) return array();
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
         return $this->getObj()->query($sql, $params);
     }
 
     public function execute($sql, $params = array()) {
         $sql = trim($sql);
-        if ( empty($sql) ) return false;
+        if (empty($sql)) return false;
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
         return $this->getObj()->execute($sql, $params);
     }
@@ -243,6 +249,12 @@ class Model {
         return $table;
     }
 
+    protected function _getLock() {
+        $lock = $this->options['lock'];
+        $this->options['lock'] = [];
+        return $lock;
+    }
+
     protected function _getWhere() {
         $where = $this->options['where'];
         $this->options['where'] = [];
@@ -277,10 +289,10 @@ class Model {
     protected function _getLimit() {
         $limit = $this->options['limit'];
         $this->options['limit'] = [];
-        if(empty($limit)) {
+        if (empty($limit)) {
             return 0;
         }
-        if(is_array($limit)) {
+        if (is_array($limit)) {
             $limit = $limit[0] . ',' . $limit[1];
         }
         return $limit;
