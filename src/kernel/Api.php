@@ -96,7 +96,7 @@ class Api {
      * @param string $charset
      */
     public function returnJson($data = [], $charset = "utf-8") {
-        $data['profiler'] = Profiler::fetch();
+        $data['profiler'] = \dux\Vendor\Profiler::fetch();
         header("Content-Type: application/json; charset={$charset};");
         echo json_encode($data);
     }
@@ -107,7 +107,7 @@ class Api {
      * @param string $callback
      */
     public function returnJsonp($data = [], $callback = 'q', $charset = "utf-8") {
-        $data['profiler'] = Profiler::fetch();
+        $data['profiler'] = \dux\Vendor\Profiler::fetch();
         header("Content-Type: application/javascript; charset={$charset};");
         echo $callback . '(' . json_encode($data) . ');';
     }

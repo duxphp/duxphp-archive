@@ -76,7 +76,7 @@ class Controller {
      * @param int $code
      */
     public function json($data = [], $callback = '', $code = 200) {
-        $data['profiler'] = Profiler::fetch();
+        $data['profiler'] = \dux\Vendor\Profiler::fetch();
         if ($callback) {
             $info = ['data' => $data, 'callback' => $callback];
             \dux\Dux::header($code, function() use ($info) {
