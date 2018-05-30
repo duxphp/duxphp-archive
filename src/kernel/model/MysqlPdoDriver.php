@@ -247,4 +247,11 @@ class MysqlPdoDriver implements DbInterface {
             $this->link = NULL;
         }
     }
+
+    public function checkTransSql($sql){
+        if ((strtoupper(substr($sql, 0, 6)) !== 'SELECT' && strtoupper(substr($sql, 0, 3)) !== 'SET' && strtoupper(substr($sql, 0, 5)) !== 'FLUSH')
+            || strtoupper(substr($sql, -10)) === 'FOR UPDATE') {
+            $this->beginTransaction();
+        }
+    }
 }
