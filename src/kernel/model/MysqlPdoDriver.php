@@ -149,7 +149,7 @@ class MysqlPdoDriver implements DbInterface {
         }
         $this->transaction = true;
         $sTime = -Profiler::elasped();
-        $result = $this->_getWriteLink()->beginTransaction();
+        $result = $this->getLink()->beginTransaction();
         Profiler::saveQuery("begin", $sTime, 'db');
         return $result;
     }
@@ -160,7 +160,7 @@ class MysqlPdoDriver implements DbInterface {
         }
         $this->transaction = false;
         $sTime = -Profiler::elasped();
-        $result = $this->_getWriteLink()->commit();
+        $result = $this->getLink()->commit();
         Profiler::saveQuery("commit", $sTime, 'db');
         return $result;
     }
@@ -171,7 +171,7 @@ class MysqlPdoDriver implements DbInterface {
         }
         $this->transaction = false;
         $sTime = -Profiler::elasped();
-        $result = $this->_getWriteLink()->rollBack();
+        $result = $this->getLink()->rollBack();
         Profiler::saveQuery("rollback", $sTime, 'db');
         return $result;
     }
