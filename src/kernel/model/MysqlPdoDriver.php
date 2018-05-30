@@ -8,6 +8,8 @@
 
 namespace dux\kernel\model;
 
+use dux\vendor\Profiler;
+
 class MysqlPdoDriver implements DbInterface {
 
     protected $config = [];
@@ -31,7 +33,10 @@ class MysqlPdoDriver implements DbInterface {
 
     public function query($sql, array $params = []) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
-        if ($sth->execute()) {
+        $sTime = -Profiler::elasped();
+        $result = $sth->execute();
+        Profiler::saveQuery($this->getSql(), $sTime, 'db');
+        if ($result) {
             $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
             return $data;
         }
@@ -41,11 +46,13 @@ class MysqlPdoDriver implements DbInterface {
 
     public function execute($sql, array $params = []) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
-        if ($sth->execute()) {
+        $sTime = -Profiler::elasped();
+        Profiler::saveQuery($this->getSql(), $sTime, 'db');
+        $result = $sth->execute();
+        if ($result) {
             $affectedRows = $sth->rowCount();
             return $affectedRows;
         }
-
         $err = $sth->errorInfo();
         throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
     }
@@ -141,7 +148,10 @@ class MysqlPdoDriver implements DbInterface {
             return true;
         }
         $this->transaction = true;
-        return $this->getLink()->beginTransaction();
+        $sTime = -Profiler::elasped();
+        $result = $this->_getWriteLink()->beginTransaction();
+        Profiler::saveQuery("begin", $sTime, 'db');
+        return $result;
     }
 
     public function commit() {
@@ -149,7 +159,10 @@ class MysqlPdoDriver implements DbInterface {
             return false;
         }
         $this->transaction = false;
-        return $this->getLink()->commit();
+        $sTime = -Profiler::elasped();
+        $result = $this->_getWriteLink()->commit();
+        Profiler::saveQuery("commit", $sTime, 'db');
+        return $result;
     }
 
     public function rollBack() {
@@ -157,7 +170,10 @@ class MysqlPdoDriver implements DbInterface {
             return false;
         }
         $this->transaction = false;
-        return $this->getLink()->rollBack();
+        $sTime = -Profiler::elasped();
+        $result = $this->_getWriteLink()->rollBack();
+        Profiler::saveQuery("rollback", $sTime, 'db');
+        return $result;
     }
 
     protected function _bindParams($sql, array $params, $link = null) {
@@ -252,6 +268,14 @@ class MysqlPdoDriver implements DbInterface {
         if ((strtoupper(substr($sql, 0, 6)) !== 'SELECT' && strtoupper(substr($sql, 0, 3)) !== 'SET' && strtoupper(substr($sql, 0, 5)) !== 'FLUSH')
             || strtoupper(substr($sql, -10)) === 'FOR UPDATE') {
             $this->beginTransaction();
+        }
+    }
+
+    public function checkTransCommit(){
+        if($this->transaction){
+            return $this->commit();
+        }else{
+            return true;
         }
     }
 }

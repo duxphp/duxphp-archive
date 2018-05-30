@@ -131,7 +131,6 @@ class Start {
      * 加载核心类
      */
     protected static function loadClass() {
-
     }
 
     /**

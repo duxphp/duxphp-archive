@@ -76,6 +76,7 @@ class Controller {
      * @param int $code
      */
     public function json($data = [], $callback = '', $code = 200) {
+        $data['profiler'] = Profiler::fetch();
         if ($callback) {
             $info = ['data' => $data, 'callback' => $callback];
             \dux\Dux::header($code, function() use ($info) {
@@ -104,8 +105,7 @@ class Controller {
             $data = [
                 'code' => 200,
                 'message' => $msg,
-                'url' => $url,
-                'log' => \dux\Dux::getBrowserLog('log')
+                'url' => $url
             ];
             $this->json($data);
         } else {
@@ -124,8 +124,7 @@ class Controller {
             $data = [
                 'code' => $code,
                 'message' => $msg,
-                'url' => $url,
-                'log' => \dux\Dux::getBrowserLog('log')
+                'url' => $url
             ];
             $this->json($data, '', $code);
         } else {

@@ -519,11 +519,6 @@ class Dux {
         return true;
     }
 
-    /**
-     * 浏览器log数据
-     * @var array
-     */
-    public static $consoleData = [];
 
     /**
      * 浏览器log
@@ -532,19 +527,11 @@ class Dux {
      * @param string $color
      * @return bool
      */
-    public static function browserLog($msg, $type = 'log', $color = '#000000') {
+    public static function browserLog($msg) {
         if (!\dux\Config::get('dux.debug_browser')) {
             return false;
         }
-        if (is_array($msg) || is_object($msg)) {
-            $msg = json_encode($msg);
-        } else {
-            $msg = '"' . str_replace('"', '\"', $msg) . '"';
-        }
-        self::$consoleData[$type]['items'][] = [
-            'msg' => $msg,
-            'color' => $color
-        ];
+        \dux\vendor\Profiler::debug($msg);
         return true;
     }
 
@@ -554,7 +541,7 @@ class Dux {
      * @param string $type
      * @return bool
      */
-    public static function browserTrace($msg = 'trace end', $type = 'track') {
+    public static function browserTrace($msg = 'trace end') {
         $traces = debug_backtrace(false);
         $traces = array_reverse($traces);
         foreach ($traces as $trace) {
@@ -563,37 +550,13 @@ class Dux {
             $file = str_replace(ROOT_PATH, '/', $file);
             $line = isset($trace['line']) ? $trace['line'] : 'unknown line';
             $traceMsg = $fun . ' called at [' . $file . ':' . $line . ']';
-            self::$consoleData[$type]['items'][] = [
-                'msg' => '"' . $traceMsg . '"'
-            ];
+            \dux\vendor\Profiler::trace($traceMsg);
         }
-        self::$consoleData[$type]['items'][] = [
-            'msg' => '"' . $msg . '"',
-            'color' => 'red'
-        ];
         return true;
     }
 
     /**
-     * 获取浏览器记录
-     * @param string $type
-     * @return array
-     */
-    public static function getBrowserLog($type = 'log') {
-        if (empty(self::$consoleData[$type])) {
-            return [];
-        }
-        $data = [];
-        foreach (self::$consoleData[$type]['items'] as $vo) {
-            $msg = trim($vo['msg'], '"');
-            $json = json_decode($msg);
-            $data[] = $json ? $json : $msg;
-        }
-        return $data;
-    }
-
-    /**
-     * 获取输出代码
+     * 获取输出
      * @return bool|string
      */
     public static function browserDebug() {
@@ -601,19 +564,24 @@ class Dux {
             return false;
         }
         $script = [];
-        $script[] = "console.group('welcome');";
+        $script[] = "console.group('system');";
         $script[] = 'console.log("%c", "padding:24px;line-height:48px;background:url(\'https://cdn.duxphp.com/duxjs/images/logo-small.png\') no-repeat;");';
         $script[] = 'console.log("%c%s", "color: red", "Welcome to use Dux browser debugging tools");';
         $script[] = 'console.log("%c%s", "color: red", "http://www.duxphp.com");';
+        $profiler = \dux\vendor\Profiler::fetch();
+        $script[] = 'console.log('.json_encode($profiler).');';
         $script[] = "console.groupEnd();";
-
-        foreach (self::$consoleData as $type => $items) {
-            $script[] = "console.group('" . $type . "');";
-            foreach ($items['items'] as $vo) {
-                $script[] = 'console.log("%c%s", "color: ' . $vo['color'] . '", ' . $vo['msg'] . ');';
+        if($profiler['debug']) {
+        $script[] = "console.group('debug');";
+            foreach ($profiler['debug'] as $vo) {
+                if(is_array($vo)) {
+                    $script[] = 'console.log(' . json_encode($vo) . ');';
+                } else {
+                    $script[] = 'console.log("' . $vo . '");';
+                }
             }
-            $script[] = "console.groupEnd();";
         }
+        $script[] = "console.groupEnd();";
         return '<script>' . implode("", $script) . '</script>';
     }
 

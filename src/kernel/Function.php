@@ -444,8 +444,8 @@ function dux_log($msg, $type = 'log') {
  * @param string $color
  * @return bool
  */
-function browser_log($msg, $type = 'log', $color = '#000000') {
-    return \dux\Dux::browserLog($msg, $type, $color);
+function browser_log($msg) {
+    return \dux\Dux::browserLog($msg);
 }
 
 /**
