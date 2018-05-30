@@ -11,8 +11,7 @@ namespace dux\kernel\model;
 class MysqlPdoDriver implements DbInterface {
 
     protected $config = [];
-    protected $writeLink = NULL;
-    protected $readLink = NULL;
+    protected $link = NULL;
     protected $sqlMeta = array('sql' => '', 'params' => [], 'link' => NULL);
     protected $transaction = false;
 
@@ -31,7 +30,7 @@ class MysqlPdoDriver implements DbInterface {
     }
 
     public function query($sql, array $params = []) {
-        $sth = $this->_bindParams($sql, $params, $this->_getReadLink());
+        $sth = $this->_bindParams($sql, $params, $this->getLink());
         if ($sth->execute()) {
             $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
             return $data;
@@ -41,7 +40,7 @@ class MysqlPdoDriver implements DbInterface {
     }
 
     public function execute($sql, array $params = []) {
-        $sth = $this->_bindParams($sql, $params, $this->_getWriteLink());
+        $sth = $this->_bindParams($sql, $params, $this->getLink());
         if ($sth->execute()) {
             $affectedRows = $sth->rowCount();
             return $affectedRows;
@@ -62,7 +61,7 @@ class MysqlPdoDriver implements DbInterface {
             $marks[] = ":{$k}";
         }
         $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $marks) . ")", $values);
-        $id = $this->_getWriteLink()->lastInsertId();
+        $id = $this->getLink()->lastInsertId();
         if ($id) {
             return $id;
         } else {
@@ -120,7 +119,7 @@ class MysqlPdoDriver implements DbInterface {
 
     public function getFields($table) {
         $table = $this->_table($table);
-        $obj = $this->_getReadLink()->prepare("DESCRIBE {$table}");
+        $obj = $this->getLink()->prepare("DESCRIBE {$table}");
         $obj->execute();
         return $obj->fetchAll(\PDO::FETCH_COLUMN);
     }
@@ -142,7 +141,7 @@ class MysqlPdoDriver implements DbInterface {
             return true;
         }
         $this->transaction = true;
-        return $this->_getWriteLink()->beginTransaction();
+        return $this->getLink()->beginTransaction();
     }
 
     public function commit() {
@@ -150,7 +149,7 @@ class MysqlPdoDriver implements DbInterface {
             return false;
         }
         $this->transaction = false;
-        return $this->_getWriteLink()->commit();
+        return $this->getLink()->commit();
     }
 
     public function rollBack() {
@@ -158,7 +157,7 @@ class MysqlPdoDriver implements DbInterface {
             return false;
         }
         $this->transaction = false;
-        return $this->_getWriteLink()->rollBack();
+        return $this->getLink()->rollBack();
     }
 
     protected function _bindParams($sql, array $params, $link = null) {
@@ -236,30 +235,16 @@ class MysqlPdoDriver implements DbInterface {
         return $pdo;
     }
 
-    protected function _getReadLink() {
-        if (!isset($this->readLink)) {
-            try {
-                $this->readLink = $this->_connect(false);
-            } catch (\Exception $e) {
-                $this->readLink = $this->_getWriteLink();
-            }
+    protected function getLink() {
+        if (!isset($this->link)) {
+            $this->link = $this->_connect(true);
         }
-        return $this->readLink;
-    }
-
-    protected function _getWriteLink() {
-        if (!isset($this->writeLink)) {
-            $this->writeLink = $this->_connect(true);
-        }
-        return $this->writeLink;
+        return $this->link;
     }
 
     public function __destruct() {
-        if ($this->writeLink) {
-            $this->writeLink = NULL;
-        }
-        if ($this->readLink) {
-            $this->readLink = NULL;
+        if ($this->link) {
+            $this->link = NULL;
         }
     }
 }
