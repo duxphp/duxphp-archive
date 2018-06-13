@@ -76,7 +76,9 @@ class Controller {
      * @param int $code
      */
     public function json($data = [], $callback = '', $code = 200) {
-        $data['profiler'] = \dux\vendor\Profiler::fetch();
+        if (\dux\Config::get('dux.debug_browser')) {
+            $data['profiler'] = \dux\vendor\Profiler::fetch();
+        }
         if ($callback) {
             $info = ['data' => $data, 'callback' => $callback];
             \dux\Dux::header($code, function() use ($info) {
