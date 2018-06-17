@@ -290,7 +290,6 @@ class View {
     }
 
     private function parseScss($var) {
-        print_r($var);
         $scss = new \Leafo\ScssPhp\Compiler();
         return $scss->compile($var[1]);
     }
