@@ -265,7 +265,7 @@ function data_sign($data) {
         ];
     }
     ksort($data);
-    return base64_encode(hash_hmac('sha1', http_build_query($data), $config['safe_key'], true));
+    return url_base64_encode(hash_hmac('sha1', http_build_query($data), $config['safe_key'], true));
 }
 
 /**
@@ -283,11 +283,36 @@ function data_sign_has($data, $sign = '') {
             'data' => $data
         ];
     }
-    $sign = base64_decode(urldecode($sign));
+    $sign = url_base64_decode($sign);
     ksort($data);
     $config = \dux\Config::get('dux.use');
     $valToken = hash_hmac('sha1', http_build_query($data), $config['safe_key'], true);
     return ($sign == $valToken);
+}
+
+/**
+ * base64 URL编码
+ * @param $string
+ * @return mixed|string
+ */
+function url_base64_encode($string) {
+    $data = base64_encode($string);
+    $data = str_replace(array('+','/','='),array('-','_',''),$data);
+    return $data;
+}
+
+/**
+ * base64 URL解码
+ * @param $string
+ * @return bool|string
+ */
+function url_base64_decode($string) {
+    $data = str_replace(array('-','_'),array('+','/'),$string);
+    $mod4 = strlen($data) % 4;
+    if ($mod4) {
+        $data .= substr('====', $mod4);
+    }
+    return base64_decode($data);
 }
 
 
