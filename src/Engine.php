@@ -124,8 +124,13 @@ class Engine {
      * 解析路由
      */
     public function route() {
-        $url = str_replace(ROOT_SCRIPT, '', $_SERVER['REQUEST_URI']);
-
+        $url = $_SERVER['REQUEST_URI'];
+        if(ROOT_URL) {
+            $strPos = strpos($_SERVER['REQUEST_URI'], ROOT_URL);
+            if($strPos === 0) {
+                $url = substr($_SERVER['REQUEST_URI'], strlen(ROOT_URL));
+            }
+        }
         $routes = \dux\Config::get('dux.routes');
         foreach ($routes as $rule => $mapper) {
             $rule = '/' . str_ireplace(array('\\\\', 'http://', '-', '/', '<', '>', '.'), array('', '', '\-', '\/', '(?<', ">[a-z0-9_%]+)", '\.'), $rule) . '/i';
