@@ -194,10 +194,11 @@ function request($method = '', $key = '', $default = '', $function = '') {
  * @param array $params
  * @param bool $domain
  * @param bool $ssl
+ * @param bool $global
  * @return string
  */
-function url($str = '', $params = [], $domain = false, $ssl = true) {
-    return \dux\Dux::url($str, $params, $domain, $ssl);
+function url($str = '', $params = [], $domain = false, $ssl = true, $global = true) {
+    return \dux\Dux::url($str, $params, $domain, $ssl, $global);
 }
 
 /**
@@ -630,11 +631,11 @@ function log_no($pre = '') {
 function load_ui($path = '') {
     $config = \dux\Config::get('dux.use');
     if(!$config['ui_local']) {
-        $css = 'https://cdn.duxphp.com/duxjs/css/dux.css?v=1.0.2';
-        $js = 'https://cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.2';
+        $css = 'https://cdn.duxphp.com/duxjs/css/dux.css?v=1.0.4';
+        $js = 'https://cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.4';
     }else {
-        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.2';
-        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.2';
+        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.4';
+        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.4';
     }
     $data = [];
     $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
