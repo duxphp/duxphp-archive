@@ -497,9 +497,10 @@ class Dux {
      * 日志写入
      * @param $msg
      * @param string $type
+     * @param string $fileName
      * @return bool
      */
-    public static function log($msg, $type = 'log') {
+    public static function log($msg, $type = 'log', $fileName = '') {
         $types = ['log', 'info', 'error', 'warn'];
         if (!in_array($type, $types)) {
             $type = 'log';
@@ -511,7 +512,11 @@ class Dux {
                 return false;
             }
         }
-        $file = $dir . date('Y-m-d') . '.log';
+        if(empty($fileName)) {
+            $file = $dir . date('Y-m-d') . '.log';
+        }else {
+            $file = $dir . $fileName . '.log';
+        }
         if (!error_log(date('Y-m-d H:i:s') . '|' . $type . '|' . $msg . "\r\n", 3, $file)) {
             error_log("File '{$file}' Write failure");
         }
