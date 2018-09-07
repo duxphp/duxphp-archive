@@ -631,15 +631,15 @@ function log_no($pre = '') {
 function load_ui($path = '') {
     $config = \dux\Config::get('dux.use');
     if(!$config['ui_local']) {
-        $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.0.7';
-        $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.7';
+        $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.0.8';
+        $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.8';
     }else {
-        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.7';
-        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.7';
+        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.8';
+        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.8';
     }
     $data = [];
     $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
-    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>'."\r\n";
+    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-debug="'.($config['debug_browser'] ? true : false).'" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>'."\r\n";
     return join("", $data);
 }
 
