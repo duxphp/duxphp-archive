@@ -75,7 +75,8 @@ class UpyunDriver implements UploadInterface {
     protected $endpoint;
 
     protected $config = [
-        'bucket' => '',
+        'bucket' => '', 
+        'fieldname' => '', // 自定义目录
         'username' => '',
         'password' => '',
         'domain' => '',
@@ -111,7 +112,11 @@ class UpyunDriver implements UploadInterface {
         // $uploadToken = $this->uploadToken();
         $name = $fileData['savename'];
 
-        $path = "/upload/". $name;
+        $path = "/upload/". date('Y-m-d', time()). $name;
+        if ($this->config['fieldname']) {
+            $path = "/upload/".$this->config['fieldname']. "/" . date('Y-m-d', time())."/". $name;
+        }
+        
 
         $file = @fopen($fileData['tmp_name'], 'rb');
 
