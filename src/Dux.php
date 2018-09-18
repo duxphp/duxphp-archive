@@ -517,10 +517,9 @@ class Dux {
         }else {
             $file = $dir . $fileName . '.log';
         }
-        if (!error_log(date('Y-m-d H:i:s') . '|' . $type . '|' . $msg . "\r\n", 3, $file)) {
+        if (!error_log($type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . "\r\n", 3, $file)) {
             error_log("File '{$file}' Write failure");
         }
-
         return true;
     }
 
