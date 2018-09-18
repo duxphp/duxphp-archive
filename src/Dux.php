@@ -501,9 +501,10 @@ class Dux {
      * @return bool
      */
     public static function log($msg, $type = 'log', $fileName = '') {
-        $types = ['log', 'info', 'error', 'warn'];
+        $types = ['INFO', 'WARN', 'DEBUG', 'ERROR'];
+        $type = strtoupper($type);
         if (!in_array($type, $types)) {
-            $type = 'log';
+            $type = 'INFO';
         }
         $dir = DATA_PATH . 'log/';
         if (!is_dir($dir)) {
