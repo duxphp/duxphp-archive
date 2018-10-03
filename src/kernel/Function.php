@@ -631,11 +631,11 @@ function log_no($pre = '') {
 function load_ui($path = '') {
     $config = \dux\Config::get('dux.use');
     if(!$config['ui_local']) {
-        $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.0.8';
-        $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.8';
+        $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.0.9';
+        $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.9';
     }else {
-        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.8';
-        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.8';
+        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.9';
+        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.9';
     }
     $data = [];
     $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
@@ -650,8 +650,8 @@ function load_ui($path = '') {
  */
 function load_js($name = 'jquery') {
     $data = [
-        'jquery' => '//cdn.bootcss.com/jquery/3.3.1/jquery.min.js',
-        'vue' => '//cdn.bootcss.com/vue/2.5.16/vue.min.js'
+        'jquery' => '//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js',
+        'vue' => '//cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js'
     ];
     $nameArray = explode(',', $name);
     $returnData = [];
