@@ -631,11 +631,11 @@ function log_no($pre = '') {
 function load_ui($path = '') {
     $config = \dux\Config::get('dux.use');
     if(!$config['ui_local']) {
-        $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.0.9';
-        $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.9';
+        $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.1.0';
+        $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.1.0';
     }else {
-        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.9';
-        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.9';
+        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.1.0';
+        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.1.0';
     }
     $data = [];
     $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";

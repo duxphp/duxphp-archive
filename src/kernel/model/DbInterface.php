@@ -16,92 +16,100 @@ interface DbInterface {
 	 */
 	public function __construct($config);
 
-	/**
-	 * 执行SQL查询
-	 * @param  string $sql    SQL语句
-	 * @param  array  $params 过滤参数
-	 * @return mixed
-	 */
+    /**
+     * 执行SQL查询
+     * @param $sql
+     * @param array $params
+     * @return mixed
+     */
 	public function query($sql, array $params);
-	
-	/**
-	 * 执行SQL读写
-	 * @param  string $sql    SQL语句
-	 * @param  array  $params 过滤参数
-	 * @return mixed
-	 */
+
+    /**
+     * 执行SQL读写
+     * @param $sql
+     * @param array $params
+     * @return mixed
+     */
 	public function execute($sql, array $params);
-	
-	/**
-	 * 数据查询
-	 * @param  string $table     表名
-	 * @param  array  $condition 查询条件
-	 * @param  string $field     查询字段
-	 * @param  string $order     排序条件
-	 * @param  string $limit     查询数量
-	 * @return array
-	 */
-	public function select($table, array $condition, $field, $order, $limit);
-	
-	/**
-	 * 插入数据
-	 * @param  string $table 表名
-	 * @param  string  $data  插入数据
-	 * @return number
-	 */
-	public function insert($table, array $data);
-	
-	/**
-	 * 更新数据
-	 * @param  string $table     表名
-	 * @param  array  $condition 条件
-	 * @param  array  $data      更新数据
-	 * @return boolean
-	 */
-	public function update($table, array $condition, array $data);
-	
-	/**
-	 * 删除数据
-	 * @param  string $table     表名
-	 * @param  array  $condition 条件
-	 * @return boolean
-	 */
-	public function delete($table, array $condition);
 
-	/**
-	 * 查询统计
-	 * @param  string $table     表名
-	 * @param  array  $condition 条件
-	 * @return number            
-	 */
-	public function count($table, array $condition);
+    /**
+     * 数据查询
+     * @param $table
+     * @param $condition
+     * @param array $params
+     * @param $field
+     * @param $order
+     * @param $limit
+     * @return mixed
+     */
+	public function select($table, $condition, $params = [], $field, $order, $limit);
+
+    /**
+     * 插入数据
+     * @param $table
+     * @param array $data
+     * @param array $params
+     * @return mixed
+     */
+	public function insert($table, array $data, array $params = []);
+
+    /**
+     * 更新数据
+     * @param $table
+     * @param $condition
+     * @param array $whereParams
+     * @param array $data
+     * @param array $dataParams
+     * @return mixed
+     */
+	public function update($table, $condition, $whereParams = [], array $data, array $dataParams = []);
+
+    /**
+     * 删除数据
+     * @param $table
+     * @param $condition
+     * @param array $params
+     * @return mixed
+     */
+	public function delete($table, $condition, $params = []);
+
+    /**
+     * 查询统计
+     * @param $table
+     * @param $condition
+     * @param array $params
+     * @return mixed
+     */
+	public function count($table, $condition, $params = []);
 
 
-	/**
-	 * 递增字段
-	 * @param  string $table     表名
-	 * @param  array  $condition 条件
-	 * @param  string $field     字段
-	 * @param  int    $num       递增值
-	 * @return boolean
-	 */
-	public function increment($table, array $condition, $field, $num);
+    /**
+     * 递增字段
+     * @param $table
+     * @param $condition
+     * @param array $params
+     * @param $field
+     * @param $num
+     * @return mixed
+     */
+	public function increment($table, $condition, $params = [], $field, $num);
 
-	/**
-	 * 递减字段
-	 * @param  string $table     表名
-	 * @param  array  $condition 条件
-	 * @param  string $field     字段
-	 * @param  int    $num       递增值
-	 * @return boolean
-	 */
-	public function decrease($table, array $condition, $field, $num);
-	
-	/**
-	 * 获取表字段
-	 * @param  string $table 表名
-	 * @return array
-	 */
+    /**
+     * 递减字段
+     * @param $table
+     * @param $condition
+     * @param array $params
+     * @param $field
+     * @param $num
+     * @return mixed
+     */
+	public function decrease($table, $condition, $params = [], $field, $num);
+
+    /**
+     * 获取表字段
+     * @param $table
+     * @return mixed
+     */
 	public function getFields($table);
 	
 	/**

@@ -21,14 +21,21 @@ class MysqlPdoDriver implements DbInterface {
         $this->config = $config;
     }
 
-    public function select($table, array $condition = [], $field = '*', $lock = false, $order = NULL, $limit = NULL) {
+    public function select($table, $condition = '', $params = [], $field = '*', $lock = false, $order = NULL, $limit = NULL, $group = NULL) {
         $field = !empty($field) ? $field : '*';
         $order = !empty($order) ? ' ORDER BY ' . $order : '';
         $limit = !empty($limit) ? ' LIMIT ' . $limit : '';
+        $group = !empty($group) ? ' GROUP BY ' . $group : '';
         $lock = $lock ? 'for update' : '';
         $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        return $this->query("SELECT {$field} FROM {$table} {$condition['_where']}{$order} {$limit} {$lock}", $condition['_bindParams']);
+        return $this->query("SELECT {$field} FROM {$table} {$condition} {$group} {$order} {$limit} {$lock}", $params);
+    }
+
+    public function count($table, $condition = '', $params = [], $group = NULL) {
+        $table = $this->_table($table);
+        $group = !empty($group) ? ' GROUP BY ' . $group : '';
+        $count = $this->query("SELECT COUNT(*) AS __total FROM {$table} {$condition} {$group}" , $params);
+        return isset($count[0]['__total']) && $count[0]['__total'] ? $count[0]['__total'] : 0;
     }
 
     public function query($sql, array $params = []) {
@@ -57,17 +64,16 @@ class MysqlPdoDriver implements DbInterface {
         throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
     }
 
-    public function insert($table, array $data = []) {
+    public function insert($table, array $data = [], array $params = []) {
         $table = $this->_table($table);
         $values = [];
         $keys = [];
-        $marks = [];
+        $data = $data['data'];
         foreach ($data as $k => $v) {
             $keys[] = "`{$k}`";
             $values[":{$k}"] = $v;
-            $marks[] = ":{$k}";
         }
-        $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $marks) . ")", $values);
+        $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ")", $params);
         $id = $this->getLink()->lastInsertId();
         if ($id) {
             return $id;
@@ -76,52 +82,40 @@ class MysqlPdoDriver implements DbInterface {
         }
     }
 
-    public function update($table, array $condition = [], array $data = []) {
+    public function update($table, $condition = '', $whereParams = [], array $data = [], array $dataParams = []) {
         if (empty($condition)) return false;
-        $values = [];
-        $keys = [];
-        foreach ($data as $k => $v) {
-            $keys[] = "`{$k}`=:_data_{$k}";
-            $values[":_data_{$k}"] = $v;
-        }
         $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        return $this->execute("UPDATE {$table} SET " . implode(', ', $keys) . $condition['_where'], $condition['_bindParams'] + $values);
+        $sql = $data['sql'];
+        return $this->execute("UPDATE {$table} SET " . implode(', ', $sql) . $condition, $whereParams + $dataParams);
+
     }
 
-    public function sum($table, array $condition = [], $field) {
+    public function sum($table, $condition = '', $params = [], $field) {
         $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        $sum = $this->query("SELECT SUM(`{$field}`) as __sum FROM {$table} {$condition['_where']} ", $condition['_bindParams']);
+        
+        $sum = $this->query("SELECT SUM(`{$field}`) as __sum FROM {$table} {$condition} ", $params);
         return isset($sum[0]['__sum']) && $sum[0]['__sum'] ? $sum[0]['__sum'] : 0;
     }
 
-    public function increment($table, array $condition = [], $field, $num = 1) {
+    public function increment($table, $condition = '', $params = [], $field, $num = 1) {
         if (empty($condition) || empty($field)) return false;
         $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        return $this->execute("UPDATE {$table} SET {$field} = {$field} + {$num} " . $condition['_where'], $condition['_bindParams']);
+        
+        return $this->execute("UPDATE {$table} SET {$field} = {$field} + {$num} " . $condition, $params);
     }
 
-    public function decrease($table, array $condition = [], $field, $num = 1) {
+    public function decrease($table, $condition = '',$params = [], $field, $num = 1) {
         if (empty($condition) || empty($field)) return false;
         $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        return $this->execute("UPDATE {$table} SET {$field} = {$field} - {$num} " . $condition['_where'], $condition['_bindParams']);
+        
+        return $this->execute("UPDATE {$table} SET {$field} = {$field} - {$num} " . $condition, $params);
     }
 
-    public function delete($table, array $condition = []) {
+    public function delete($table, $condition = '', $params = []) {
         if (empty($condition)) return false;
         $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        return $this->execute("DELETE FROM {$table} {$condition['_where']}", $condition['_bindParams']);
-    }
-
-    public function count($table, array $condition = []) {
-        $table = $this->_table($table);
-        $condition = $this->_where($condition);
-        $count = $this->query("SELECT COUNT(*) AS __total FROM {$table} " . $condition['_where'], $condition['_bindParams']);
-        return isset($count[0]['__total']) && $count[0]['__total'] ? $count[0]['__total'] : 0;
+        
+        return $this->execute("DELETE FROM {$table} {$condition}", $params);
     }
 
     public function getFields($table) {
@@ -187,38 +181,6 @@ class MysqlPdoDriver implements DbInterface {
 
     protected function _table($table) {
         return (false === strpos($table, ' ')) ? "`{$table}`" : $table;
-    }
-
-    protected function _where(array $condition) {
-        $result = array('_where' => '', '_bindParams' => []);
-        $sql = null;
-        $sqlArr = [];
-        $params = [];
-        foreach ($condition as $k => $v) {
-            if(strtolower($k) == '_sql') {
-                if(is_array($v)) {
-                    foreach($v as $s) {
-                        $sqlArr[] = $s;
-                    }
-                }else {
-                    $sqlArr[] = $v;
-                }
-            }else{
-                if (strpos($k, ':') === false) {
-                    $k = str_replace('`', '', $k);
-                    $key = ':_where_' . str_replace('.', '_', $k);
-                    $field = '`' . str_replace('.', '`.`', $k) . '`';
-                    $sqlArr[] = "{$field} = {$key}";
-                }else{
-                    $key = $k;
-                }
-                $params[$key] = $v;
-            }
-        }
-        if (!$sql) $sql = implode(' AND ', $sqlArr);
-        if ($sql) $result['_where'] = " WHERE " . $sql;
-        $result['_bindParams'] = $params;
-        return $result;
     }
 
     protected function _connect($isMaster = true) {

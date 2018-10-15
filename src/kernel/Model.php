@@ -21,6 +21,7 @@ class Model {
         'where_params' => [],
         'data' => [],
         'data_params' => [],
+        'group' => '',
         'order' => '',
         'limit' => '',
     );
@@ -72,6 +73,11 @@ class Model {
         return $this;
     }
 
+    public function group($group) {
+        $this->options['group'] = $group;
+        return $this;
+    }
+
     public function limit($limit) {
         $this->options['limit'] = $limit;
         return $this;
@@ -84,12 +90,12 @@ class Model {
     }
 
     public function select() {
-        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getField(), $this->_getLock(), $this->_getOrder(), $this->_getLimit());
+        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getField(), $this->_getLock(), $this->_getOrder(), $this->_getLimit(), $this->_getGroup());
         return empty($data) ? [] : $data;
     }
 
     public function count() {
-        return $this->getObj()->count($this->_getTable() . $this->_getJoin(), $this->_getWhere());
+        return $this->getObj()->count($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getGroup());
     }
 
     public function find() {
@@ -99,38 +105,38 @@ class Model {
 
     public function insert() {
         if (empty($this->options['data']) || !is_array($this->options['data'])) return false;
-        return $this->getObj()->insert($this->_getTable(), $this->_getData());
+        return $this->getObj()->insert($this->_getTable(), $this->_getData(), $this->_getDataParams());
     }
 
     public function update() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
         if (empty($this->options['data']) || !is_array($this->options['data'])) return false;
-        $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getData());
+        $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getData(), $this->_getDataParams());
         return ($status === false) ? false : true;
     }
 
     public function delete() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
-        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere());
+        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getWhereParams());
         return ($status === false) ? false : true;
     }
 
     public function setInc($field, $num = 1) {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
         if (empty($field)) return false;
-        $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $field, $num);
+        $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num);
         return ($status === false) ? false : true;
     }
 
     public function setDec($field, $num = 1) {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
         if (empty($field)) return false;
-        $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $field, $num);
+        $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num);
         return ($status === false) ? false : true;
     }
 
     public function sum($field) {
-        return $this->getObj()->sum($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $field);
+        return $this->getObj()->sum($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $field);
 
     }
 
@@ -256,9 +262,19 @@ class Model {
     }
 
     protected function _getWhere() {
-        $where = $this->options['where'];
+        $condition = $this->options['where'];
         $this->options['where'] = [];
-        return $where;
+        $sql = $this->_whereParsing($condition, $this->options['where_params'], ' AND');
+        return $sql ? ' WHERE ' . $sql : '';
+    }
+
+
+    protected function columnQuote($string) {
+        if (strpos($string, '.') !== false) {
+            return '"' . $this->prefix . str_replace('.', '"."', $string) . '"';
+        }
+
+        return '"' . $string . '"';
     }
 
     protected function _getWhereParams() {
@@ -270,7 +286,7 @@ class Model {
     protected function _getData() {
         $data = $this->options['data'];
         $this->options['data'] = [];
-        $data = $this->_dataFilter($data);
+        $data = $this->_dataParsing($data);
         return $data;
     }
 
@@ -286,6 +302,12 @@ class Model {
         return $order;
     }
 
+    protected function _getGroup() {
+        $order = $this->options['group'];
+        $this->options['group'] = '';
+        return $order;
+    }
+
     protected function _getLimit() {
         $limit = $this->options['limit'];
         $this->options['limit'] = [];
@@ -298,18 +320,133 @@ class Model {
         return $limit;
     }
 
-    private function _dataFilter($data = []) {
-        $fields = $this->getObj()->getFields($this->table);
-        $array = [];
-        if (empty($data)) {
-            return $array;
-        }
-        foreach ($fields as $key) {
-            if (array_key_exists($key, $data) && isset($data[$key])) {
-                $array[$key] = $data[$key];
+    private function _whereParsing($data, &$map, $conjunctor) {
+        $stack = [];
+        foreach ($data as $key => $value) {
+            if (is_array($value) && preg_match("/^(AND|OR)(\s+#.*)?$/", $key, $relation_match)) {
+                $relationship = $relation_match[1];
+                $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
+                continue;
+            }
+            if (strtolower($key) == '_sql') {
+                if (is_array($value)) {
+                    foreach ($value as $s) {
+                        $stack[] = $s;
+                    }
+                } else {
+                    $stack[] = $value;
+                }
+            } else {
+                if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
+                    $stack[] = "{$match[1]} {$match['operator']} {$match[3]}";
+                } else {
+                    preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
+                    $key = str_replace('`', '', $match[1]);
+                    $field = '`' . str_replace('.', '`.`', $key) . '`';
+                    $bindField = ':_where_' . str_replace('.', '_', $key);
+
+                    if (isset($match['operator'])) {
+                        $operator = $match['operator'];
+
+                        if (in_array($operator, ['>', '>=', '<', '<='])) {
+                            $stack[] = "{$field} {$operator} {$bindField}";
+                            $map[$bindField] = $value;
+                        } elseif ($operator === '!') {
+                            if (is_array($value)) {
+                                $stack[] = $field . ' NOT IN (' . implode(', ', $value) . ')';
+                            } else {
+                                $stack[] = "{$field} != {$bindField}";
+                                $map[$bindField] = $value;
+                            }
+                        } elseif ($operator === '~' || $operator === '!~') {
+                            if (!is_array($value)) {
+                                $value = [$value];
+                            }
+                            $like_clauses = [];
+                            foreach ($value as $index => $item) {
+                                $item = strval($item);
+
+                                if (!preg_match('/(\[.+\]|_|%.+|.+%)/', $item)) {
+                                    $item = '%' . $item . '%';
+                                }
+                                $like_clauses[] = $field . ($operator === '!~' ? ' NOT' : '') . ' LIKE ' . $bindField . '_' . $index;
+                                $map[$bindField . '_' . $index] = $item;
+                            }
+
+                            $stack[] = '(' . implode($connector, $like_clauses) . ')';
+
+                        } elseif ($operator === '<>' || $operator === '><') {
+                            if (is_array($value)) {
+
+                                $stack[] = '(' . $field . ($operator === '><' ? ' NOT' : '') . ' BETWEEN ' . $bindField . '_a AND ' . $bindField . '_b)';
+                                $map[$bindField . '_a'] = $value[0];
+                                $map[$bindField . '_b'] = $value[0];
+                            }
+                        } elseif ($operator === 'REGEXP') {
+                            $stack[] = $key . ' REGEXP ' . $bindField;
+                            $map[$bindField] = $value;
+                        }
+                    } else {
+                        if (is_array($value)) {
+                            $stack[] = $field . ' IN (' . implode(', ', $value) . ')';
+                        } else {
+                            $stack[] = "{$field} = {$bindField}";
+                            $map[$bindField] = $value;
+                        }
+                    }
+                }
             }
         }
-        return $array;
+        return implode($conjunctor . ' ', $stack);
+    }
+
+    private function _whereConjunct($data, $map, $conjunctor, $outer_conjunctor) {
+        $stack = [];
+        foreach ($data as $value) {
+            $stack[] = '(' . $this->_whereParsing($value, $map, $conjunctor) . ')';
+        }
+        return implode($outer_conjunctor . ' ', $stack);
+    }
+
+    private function _dataParsing($data = [], $type = 0) {
+        $fields = [];
+        $sql = [];
+        $map = [];
+        $tableField = $this->getObj()->getFields($this->table);
+        foreach ($data as $key => $value) {
+            $column = preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key);
+            $bindField = ':_data_' . str_replace('.', '_', $column);
+            $fields[$column] = $bindField;
+            $isField = false;
+            foreach ($tableField as $field) {
+                if($field == $column) {
+                    $isField = true;
+                    break;
+                }
+            }
+            if(!$isField) {
+                unset($data[$key]);
+                continue;
+            }
+            preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
+            if (isset($match['operator'])) {
+                if (is_numeric($value)) {
+                    $sql[] = '`'.$column.'`' . ' = ' . $column . ' ' . $match['operator'] . ' ' . $value;
+                }
+            } else {
+                $sql[] = '`'.$column.'`' . ' = ' . $bindField;
+                if (is_array($value)) {
+                    $map[$bindField] = strpos($key, '[JSON]') === strlen($key) - 6 ? json_encode($value) : serialize($value);
+                } else {
+                    $map[$bindField] = $value;
+                }
+            }
+        }
+        $this->options['data_params'] = $map;
+        return [
+            'sql' => $sql,
+            'data' => $fields,
+        ];
     }
 
 
