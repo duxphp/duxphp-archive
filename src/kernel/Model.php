@@ -416,18 +416,11 @@ class Model {
         foreach ($data as $key => $value) {
             $column = preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key);
             $bindField = ':_data_' . str_replace('.', '_', $column);
-            $fields[$column] = $bindField;
-            $isField = false;
-            foreach ($tableField as $field) {
-                if($field == $column) {
-                    $isField = true;
-                    break;
-                }
-            }
-            if(!$isField) {
+            if(!in_array($column, $tableField)) {
                 unset($data[$key]);
                 continue;
             }
+            $fields[$column] = $bindField;
             preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
             if (isset($match['operator'])) {
                 if (is_numeric($value)) {

@@ -92,7 +92,7 @@ class MysqlPdoDriver implements DbInterface {
 
     public function sum($table, $condition = '', $params = [], $field) {
         $table = $this->_table($table);
-        
+
         $sum = $this->query("SELECT SUM(`{$field}`) as __sum FROM {$table} {$condition} ", $params);
         return isset($sum[0]['__sum']) && $sum[0]['__sum'] ? $sum[0]['__sum'] : 0;
     }
@@ -100,21 +100,21 @@ class MysqlPdoDriver implements DbInterface {
     public function increment($table, $condition = '', $params = [], $field, $num = 1) {
         if (empty($condition) || empty($field)) return false;
         $table = $this->_table($table);
-        
+
         return $this->execute("UPDATE {$table} SET {$field} = {$field} + {$num} " . $condition, $params);
     }
 
     public function decrease($table, $condition = '',$params = [], $field, $num = 1) {
         if (empty($condition) || empty($field)) return false;
         $table = $this->_table($table);
-        
+
         return $this->execute("UPDATE {$table} SET {$field} = {$field} - {$num} " . $condition, $params);
     }
 
     public function delete($table, $condition = '', $params = []) {
         if (empty($condition)) return false;
         $table = $this->_table($table);
-        
+
         return $this->execute("DELETE FROM {$table} {$condition}", $params);
     }
 
