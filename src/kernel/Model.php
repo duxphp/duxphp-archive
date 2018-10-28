@@ -408,16 +408,19 @@ class Model {
         return implode($outer_conjunctor . ' ', $stack);
     }
 
-    private function _dataParsing($data = [], $type = 0) {
+    private function _dataParsing($data = []) {
         $fields = [];
         $sql = [];
         $map = [];
         $tableField = $this->getObj()->getFields($this->table);
+        $restData = [];
+        if (empty($data)) {
+            return $restData;
+        }
         foreach ($data as $key => $value) {
             $column = preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key);
             $bindField = ':_data_' . str_replace('.', '_', $column);
-            if(!in_array($column, $tableField)) {
-                unset($data[$key]);
+            if (!in_array($column, $tableField) || !isset($value)) {
                 continue;
             }
             $fields[$column] = $bindField;
