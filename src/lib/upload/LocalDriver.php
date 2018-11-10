@@ -18,7 +18,10 @@ class LocalDriver implements UploadInterface{
     }
 
     public function rootPath($path) {
-    	if(!(is_dir($path) && is_writable($path))){
+        if (!$this->mkdir($path)) {
+            return false;
+        }
+        if(!is_writable($path)){
             $this->errorMsg = '上传根目录不存在！';
             return false;
         }
