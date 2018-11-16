@@ -47,6 +47,12 @@ Interface StorageInterface {
 	 * 清空缓存
 	 * @return void
 	 */
-    public function clear();
+	public function clear();
+	
+	/**
+	 * 返回存储对象
+	 * @return void
+	 */
+	public function obj();
 		
 }

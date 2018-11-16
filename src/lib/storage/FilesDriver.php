@@ -103,4 +103,8 @@ class FilesDriver implements StorageInterface {
 
         return $dir . $key . '.php';
     }
+
+    public function obj() {
+        return $this;
+    }
 }

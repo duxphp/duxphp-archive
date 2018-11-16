@@ -75,4 +75,8 @@ class MongoDBDriver implements StorageInterface {
     public function clear() {
         return $this->obj->remove();
     }
+
+    public function obj() {
+        return $this->driver;
+    }
 }

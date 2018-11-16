@@ -54,4 +54,8 @@ class RedisDriver implements StorageInterface {
     public function clear() {
         return $this->driver->flushDB();
     }
+
+    public function obj() {
+        return $this->driver;
+    }
 }
