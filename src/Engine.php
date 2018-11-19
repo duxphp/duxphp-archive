@@ -75,7 +75,9 @@ class Engine {
         if (\dux\Config::get('dux.log')) {
             \dux\Dux::log($msg);
         }
-        if (isAjax()) {
+        if (IS_CLI) {
+            echo 'error: ' . $msg;
+        } else if (isAjax()) {
             if (!\dux\Config::get('dux.debug')) {
                 $msg = \dux\Dux::$codes[500];
             }
@@ -114,6 +116,7 @@ class Engine {
                 echo $html;
             });
         }
+        exit;
     }
 
     private function parserFile($file) {
@@ -124,13 +127,19 @@ class Engine {
      * 解析路由
      */
     public function route() {
-        $url = $_SERVER['REQUEST_URI'];
-        if(ROOT_URL) {
-            $strPos = strpos($_SERVER['REQUEST_URI'], ROOT_URL);
-            if($strPos === 0) {
-                $url = substr($_SERVER['REQUEST_URI'], strlen(ROOT_URL));
+        if (!IS_CLI) {
+            $url = $_SERVER['REQUEST_URI'];
+            if (ROOT_URL) {
+                $strPos = strpos($_SERVER['REQUEST_URI'], ROOT_URL);
+                if ($strPos === 0) {
+                    $url = substr($_SERVER['REQUEST_URI'], strlen(ROOT_URL));
+                }
             }
+        } else {
+            $params = getopt('u:');
+            $url = $params['u'];
         }
+
         $routes = \dux\Config::get('dux.routes');
         foreach ($routes as $rule => $mapper) {
             $rule = '/' . str_ireplace(array('\\\\', 'http://', '-', '/', '<', '>', '.'), array('', '', '\-', '\/', '(?<', ">[a-z0-9_%]+)", '\.'), $rule) . '/i';
@@ -149,14 +158,16 @@ class Engine {
                     } else if ('action' === $matchkey) {
                         $mapper = str_ireplace('<action>', $matchval[0], $mapper);
                     } else {
-                        if (!is_int($matchkey)) $_GET[$matchkey] = $matchval[0];
+                        if (!is_int($matchkey)) {
+                            $_GET[$matchkey] = $matchval[0];
+                        }
+
                     }
                 }
                 $url = $mapper;
                 break;
             }
         }
-
 
         $url = trim($url, '/');
         $urlParse = parse_url($url);
@@ -190,7 +201,7 @@ class Engine {
         $modelName = empty($modelName) ? 'Index' : $modelName;
         $actionName = empty($actionName) ? 'index' : $actionName;
         if (!defined('VIEW_LAYER_NAME')) {
-            if ($layer <> 'mobile' && $layer <> 'controller') {
+            if ($layer != 'mobile' && $layer != 'controller') {
                 define('VIEW_LAYER_NAME', \dux\Config::get('dux.module_default'));
             } else {
                 define('VIEW_LAYER_NAME', $layer);

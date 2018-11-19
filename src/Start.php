@@ -48,6 +48,7 @@ class Start {
         }
         if (!defined('VERSION')) define('VERSION', '1.0.0');
         if (!defined('VERSION_DATE')) define('VERSION_DATE', '20180525');
+        if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
