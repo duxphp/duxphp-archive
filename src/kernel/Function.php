@@ -51,7 +51,7 @@ function isWechat() {
  * @return bool
  */
 function isApp() {
-    if ($_SERVER['HTTP_FROM'] == 'app') {
+    if ($_SERVER['HTTP_FROM'] == 'app' || $_GET['webapp'] || preg_match( '/MicroMessenger/', $_SERVER['HTTP_USER_AGENT'] )) {
         return true;
     } else {
         return false;
