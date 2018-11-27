@@ -26,7 +26,8 @@ class Dux {
      * 注册缓存类
      * @param string $configName
      * @param int $group
-     * @return \dux\lib\Cache
+     * @return lib\Cache
+     * @throws \Exception
      */
     public static function cache($configName = 'default', $group = 0) {
         return new \dux\lib\Cache($configName, $group);

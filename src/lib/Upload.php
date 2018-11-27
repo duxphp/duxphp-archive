@@ -93,7 +93,7 @@ class Upload {
 			$file['key'] = $key;
 			$file['extension'] = strtolower( $pathinfo['extension'] );
 			$file['savepath'] = $savePath;
-			$file['savename'] = $saveRuleFunc( $file['tmp_name'] ) . '.' . $file['extension'];
+			$file['savename'] = 'duxup_' . $saveRuleFunc( $file['tmp_name'] ) . '.' . $file['extension'];
 			$file['driver'] = $this->config['driver'];
 			//检查文件类型大小和合法性
 			if (!$this->check($file)) {
