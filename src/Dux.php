@@ -528,15 +528,13 @@ class Dux {
     /**
      * 浏览器log
      * @param $msg
-     * @param string $type
-     * @param string $color
      * @return bool
      */
     public static function browserLog($msg) {
         if (!\dux\Config::get('dux.debug_browser')) {
             return false;
         }
-        \dux\vendor\Profiler::debug($msg);
+        //浏览器调试
         return true;
     }
 
@@ -547,16 +545,6 @@ class Dux {
      * @return bool
      */
     public static function browserTrace($msg = 'trace end') {
-        $traces = debug_backtrace(false);
-        $traces = array_reverse($traces);
-        foreach ($traces as $trace) {
-            $fun = isset($trace['class']) ? $trace['class'] . '::' . $trace['function'] : $trace['function'];
-            $file = isset($trace['file']) ? $trace['file'] : 'unknown file';
-            $file = str_replace(ROOT_PATH, '/', $file);
-            $line = isset($trace['line']) ? $trace['line'] : 'unknown line';
-            $traceMsg = $fun . ' called at [' . $file . ':' . $line . ']';
-            \dux\vendor\Profiler::trace($traceMsg);
-        }
         return true;
     }
 
@@ -568,26 +556,7 @@ class Dux {
         if (!\dux\Config::get('dux.debug_browser')) {
             return false;
         }
-        $script = [];
-        $script[] = "console.group('system');";
-        $script[] = 'console.log("%c", "padding:24px;line-height:48px;background:url(\'https://cdn.duxphp.com/duxjs/images/logo-small.png\') no-repeat;");';
-        $script[] = 'console.log("%c%s", "color: red", "Welcome to use Dux browser debugging tools");';
-        $script[] = 'console.log("%c%s", "color: red", "http://www.duxphp.com");';
-        $profiler = \dux\vendor\Profiler::fetch();
-        $script[] = 'console.log('.json_encode($profiler).');';
-        $script[] = "console.groupEnd();";
-        if($profiler['debug']) {
-        $script[] = "console.group('debug');";
-            foreach ($profiler['debug'] as $vo) {
-                if(is_array($vo)) {
-                    $script[] = 'console.log(' . json_encode($vo) . ');';
-                } else {
-                    $script[] = 'console.log("' . $vo . '");';
-                }
-            }
-        }
-        $script[] = "console.groupEnd();";
-        return '<script>' . implode("", $script) . '</script>';
+        return true;
     }
 
 

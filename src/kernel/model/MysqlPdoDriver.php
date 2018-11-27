@@ -8,8 +8,6 @@
 
 namespace dux\kernel\model;
 
-use dux\vendor\Profiler;
-
 class MysqlPdoDriver implements DbInterface {
 
     protected $config = [];
@@ -40,9 +38,7 @@ class MysqlPdoDriver implements DbInterface {
 
     public function query($sql, array $params = []) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
-        $sTime = -Profiler::elasped();
         $result = $sth->execute();
-        Profiler::saveQuery($this->getSql(), $sTime, 'db');
         if ($result) {
             $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
             return $data;
@@ -53,8 +49,6 @@ class MysqlPdoDriver implements DbInterface {
 
     public function execute($sql, array $params = []) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
-        $sTime = -Profiler::elasped();
-        Profiler::saveQuery($this->getSql(), $sTime, 'db');
         $result = $sth->execute();
         if ($result) {
             $affectedRows = $sth->rowCount();
@@ -142,9 +136,7 @@ class MysqlPdoDriver implements DbInterface {
             return true;
         }
         $this->transaction = true;
-        $sTime = -Profiler::elasped();
         $result = $this->getLink()->beginTransaction();
-        Profiler::saveQuery("begin", $sTime, 'db');
         return $result;
     }
 
@@ -153,9 +145,7 @@ class MysqlPdoDriver implements DbInterface {
             return false;
         }
         $this->transaction = false;
-        $sTime = -Profiler::elasped();
         $result = $this->getLink()->commit();
-        Profiler::saveQuery("commit", $sTime, 'db');
         return $result;
     }
 
@@ -164,9 +154,7 @@ class MysqlPdoDriver implements DbInterface {
             return false;
         }
         $this->transaction = false;
-        $sTime = -Profiler::elasped();
         $result = $this->getLink()->rollBack();
-        Profiler::saveQuery("rollback", $sTime, 'db');
         return $result;
     }
 
