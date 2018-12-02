@@ -322,7 +322,9 @@ class Model {
 
     private function _whereParsing($data, &$map, $conjunctor) {
         $stack = [];
+        $i = 0;
         foreach ($data as $key => $value) {
+            $i++;
             if (is_array($value) && preg_match("/^(AND|OR)(\s+#.*)?$/", $key, $relation_match)) {
                 $relationship = $relation_match[1];
                 $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
@@ -343,11 +345,9 @@ class Model {
                     preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
                     $key = str_replace('`', '', $match[1]);
                     $field = '`' . str_replace('.', '`.`', $key) . '`';
-                    $bindField = ':_where_' . str_replace('.', '_', $key);
-
+                    $bindField = ':_where_' . str_replace('.', '_', $key) . '_' . $i;
                     if (isset($match['operator'])) {
                         $operator = $match['operator'];
-
                         if (in_array($operator, ['>', '>=', '<', '<='])) {
                             $stack[] = "{$field} {$operator} {$bindField}";
                             $map[$bindField] = $value;
