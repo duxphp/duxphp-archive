@@ -96,8 +96,8 @@ class OssDriver implements UploadInterface {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3000);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3000);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array($header));
         $result = curl_exec($ch);
         curl_close($ch);
