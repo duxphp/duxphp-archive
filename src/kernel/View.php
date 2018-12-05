@@ -31,7 +31,7 @@ class View {
      */
     protected $config = [
         'path' => '.',
-        'cache_type' => 'files'
+        'cache_type' => 'files',
     ];
 
     /**
@@ -200,10 +200,10 @@ class View {
      */
     public function addTag(callable $callback) {
         $tag = $callback([$this->__ltag, $this->__rtag], [$this->__ldel, $this->__rdel]);
-        if(empty($tag)) {
+        if (empty($tag)) {
             return [];
         }
-        foreach($tag as $key => $vo) {
+        foreach ($tag as $key => $vo) {
             $this->_template_preg[] = $key;
             $this->_template_replace[] = $vo;
         }
@@ -266,9 +266,13 @@ class View {
         $this->_template_replace[] = [$this, 'parseJs'];
 
         //scss解析
-
         $this->_template_preg[] = '/\/\*[\s]+scss[\s]+\*\/([\s\S]*?)\/\*[\s]+end[\s]+scss[\s]+\*\//';
         $this->_template_replace[] = [$this, 'parseScss'];
+
+        //自动渲染
+        $this->_template_preg[] = '/<(.*?)data-php(.*?)>([\s\S]*?)<\/(.*?)>/';
+        $this->_template_replace[] = [$this, 'parseAutoLabel'];
+
     }
 
     /**
@@ -278,15 +282,31 @@ class View {
      */
     public function templateParse($template) {
         $this->setTags();
-        foreach($this->_template_preg as $key => $vo) {
-            if(is_array($this->_template_replace[$key])) {
+        foreach ($this->_template_preg as $key => $vo) {
+            if (is_array($this->_template_replace[$key])) {
                 $template = preg_replace_callback($vo, $this->_template_replace[$key], $template);
-            }else {
+            } else {
 
                 $template = preg_replace($vo, $this->_template_replace[$key], $template);
             }
         }
         return trim($template);
+    }
+
+    private function parseAutoLabel($var) {
+        $html = "<" . $var[1] . $var[2] . ">\n";
+        $label = $var[4];
+        if ($label == 'style') {
+            $html = str_replace('scss', 'css', $html);
+            $scss = new \Leafo\ScssPhp\Compiler();
+            $html .= $scss->compile($var[3]);
+        }
+        if ($label == 'script') {
+            $packer = new \dux\vendor\Packer($var[3],'Normal', true, false, true);
+            $html .= $packer->pack();
+        }
+        $html .= "\n</" . $label . ">";
+        return $html;
     }
 
     private function parseScss($var) {
@@ -327,17 +347,17 @@ class View {
         $tpl = trim($var[2]);
         $item = trim($var[1]);
         $tpl = ' ' . $tpl;
-        $tpl = preg_replace("/\s([_a-zA-Z]+)=/", ', "\1"=>', $tpl);
+        $tpl = preg_replace(" / \s([_a - zA - Z] +) =/", ', "\1"=>', $tpl);
         $tpl = substr($tpl, 1);
         //匹配必要参数
         $dataArray = array();
-        if (preg_match_all('/\s"([_a-zA-Z]+)"=>"(.+?)"/', $tpl, $result)) {
+        if (preg_match_all('/\s"([_a - zA - Z] +)"=>"(.+?)"/', $tpl, $result)) {
             foreach ($result[1] as $key => $value) {
                 $dataArray[$value] = $result[2][$key];
             }
         }
         //生成模块调用
-        $html = '<?php $' . $item . 'List = target("' . strtolower($dataArray['app']) . '/Label", "service")->' . ucfirst($dataArray['label']) . '([' . $tpl . ']); ';
+        $html = '<?php $' . $item . 'List = target("' . strtolower($dataArray['app']) . ' / Label", "service")->' . ucfirst($dataArray['label']) . '([' . $tpl . ']); ';
         switch ($item) {
             case 'echo':
                 $html .= ' echo $' . $item . 'List; ?>';
