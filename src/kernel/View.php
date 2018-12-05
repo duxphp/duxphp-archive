@@ -228,6 +228,13 @@ class View {
         $this->_template_preg[] = '/' . $this->__ltag . 'for\{(.*?)\}' . $this->__rtag . '/i';
         $this->_template_replace[] = '<?php for (\\1) { ?>';
 
+        $this->_template_preg[] = '/<(.*?)dux-loop=[\'|"](.*?)[\'|"](.*?)>([\s\S]*?)<\/(.*?)>/';
+        $this->_template_replace[] = [$this, 'parseLoop'];
+
+
+        $this->_template_preg[] = '/<(.*?)dux-attr=\"(.*?)\"(.*?)(>|\/>)/';
+        $this->_template_replace[] = [$this, 'parseAttr'];
+
         //注释标签
         $this->_template_preg[] = '/' . $this->__ltag . '\{(\#|\*)(.*?)(\#|\*)\}' . $this->__ltag . '/';
         $this->_template_replace[] = '';
@@ -270,7 +277,7 @@ class View {
         $this->_template_replace[] = [$this, 'parseScss'];
 
         //自动渲染
-        $this->_template_preg[] = '/<(.*?)data-php(.*?)>([\s\S]*?)<\/(.*?)>/';
+        $this->_template_preg[] = '/<(.*?)dux-auto(.*?)>([\s\S]*?)<\/(.*?)>/';
         $this->_template_replace[] = [$this, 'parseAutoLabel'];
 
     }
@@ -293,6 +300,14 @@ class View {
         return trim($template);
     }
 
+    private function parseAttr($var) {
+        return  "<" . $var[1] . "<?php echo " . $var[2] . "; ?>" . $var[3] . $var[4];
+    }
+
+    private function parseLoop($var) {
+        return  "<?php foreach (".$var[2].") { ?>" . "\n<" . $var[1] . $var[3] . ">\n" . $var[4] . "\n</" . $var[5] . "><?php } ?>";
+    }
+
     private function parseAutoLabel($var) {
         $html = "<" . $var[1] . $var[2] . ">\n";
         $label = $var[4];
@@ -300,10 +315,11 @@ class View {
             $html = str_replace('scss', 'css', $html);
             $scss = new \Leafo\ScssPhp\Compiler();
             $html .= $scss->compile($var[3]);
-        }
-        if ($label == 'script') {
-            $packer = new \dux\vendor\Packer($var[3],'Normal', true, false, true);
+        } elseif ($label == 'script') {
+            $packer = new \dux\vendor\Packer($var[3], 'Normal', true, false, true);
             $html .= $packer->pack();
+        }else {
+            $html .= $var[3];
         }
         $html .= "\n</" . $label . ">";
         return $html;
@@ -316,7 +332,7 @@ class View {
 
 
     private function parseJs($var) {
-        $packer = new \dux\vendor\Packer($var[1],'Normal', true, false, true);
+        $packer = new \dux\vendor\Packer($var[1], 'Normal', true, false, true);
         return $packer->pack();
     }
 
@@ -350,7 +366,7 @@ class View {
         $tpl = preg_replace(" / \s([_a - zA - Z] +) =/", ', "\1"=>', $tpl);
         $tpl = substr($tpl, 1);
         //匹配必要参数
-        $dataArray = array();
+        $dataArray = [];
         if (preg_match_all('/\s"([_a - zA - Z] +)"=>"(.+?)"/', $tpl, $result)) {
             foreach ($result[1] as $key => $value) {
                 $dataArray[$value] = $result[2][$key];
