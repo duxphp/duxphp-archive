@@ -1,4 +1,5 @@
 <?php
+
 namespace dux;
 
 error_reporting(E_ALL ^ E_NOTICE);
@@ -20,7 +21,7 @@ class Start {
     private function __clone() {
     }
 
-    public static $_routes = array();
+    public static $_routes = [];
 
 
     /**
@@ -42,7 +43,7 @@ class Start {
      * 定义常量
      */
     protected static function definitions() {
-        if(!defined('ROOT_PATH')) {
+        if (!defined('ROOT_PATH')) {
             echo 'Please define ROOT_PATH constants';
             exit;
         }
@@ -70,8 +71,8 @@ class Start {
      */
     protected static function environment() {
         //设置跨域
-        header('Access-Control-Allow-Origin:'.$_SERVER["HTTP_ORIGIN"]);
-        header('Access-Control-Allow-Headers:'.$_SERVER["HTTP_ACCESS_CONTROL_REQUEST_HEADERS"]);
+        header('Access-Control-Allow-Origin:' . $_SERVER["HTTP_ORIGIN"]);
+        header('Access-Control-Allow-Headers:' . $_SERVER["HTTP_ACCESS_CONTROL_REQUEST_HEADERS"]);
         //判断PHP版本
         if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
             header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
@@ -138,8 +139,19 @@ class Start {
      * 注册核心方法
      */
     protected static function registerCom() {
-        register_shutdown_function(function() {
-        });
+        if (class_exists('\think\org\Slog')) {
+            $config = \dux\Config::get('dux.debug_browser');
+            $keys = explode(',', $config['debug_key']);
+            \think\org\Slog::config([
+                'enable' => $config['debug_browser'],
+                'host' => 'localhost',
+                'optimize' => true,
+                'show_included_files' => true,
+                'error_handler' => $config['debug_browser'],
+                'force_client_id' => $keys[0],
+                'allow_client_ids' => $keys,
+            ]);
+        }
     }
 
     /**
