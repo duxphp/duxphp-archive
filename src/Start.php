@@ -139,19 +139,7 @@ class Start {
      * 注册核心方法
      */
     protected static function registerCom() {
-        if (class_exists('\think\org\Slog')) {
-            $config = \dux\Config::get('dux.debug_browser');
-            $keys = explode(',', $config['debug_key']);
-            \think\org\Slog::config([
-                'enable' => $config['debug_browser'],
-                'host' => 'localhost',
-                'optimize' => true,
-                'show_included_files' => true,
-                'error_handler' => $config['debug_browser'],
-                'force_client_id' => $keys[0],
-                'allow_client_ids' => $keys,
-            ]);
-        }
+
     }
 
     /**
