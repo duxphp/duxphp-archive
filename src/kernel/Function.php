@@ -39,7 +39,7 @@ function isPost() {
  * @return bool
  */
 function isWechat() {
-    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false) {
+    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false && !$_GET['webapp']) {
         return true;
     }
 
@@ -51,7 +51,7 @@ function isWechat() {
  * @return bool
  */
 function isApp() {
-    if ($_SERVER['HTTP_FROM'] == 'app' || $_GET['webapp'] || preg_match( '/MicroMessenger/', $_SERVER['HTTP_USER_AGENT'] )) {
+    if ($_SERVER['HTTP_FROM'] == 'app' || $_GET['webapp']) {
         return true;
     } else {
         return false;

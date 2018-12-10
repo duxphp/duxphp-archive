@@ -217,7 +217,9 @@ class Dux {
 
         $route = \dux\Config::get('dux.route');
         $routeParams = explode(',', $route['params']);
-
+        if($_GET['webapp']) {
+            $params['webapp'] = 1;
+        }
         if (!empty($routeParams) && $get) {
             foreach ($routeParams as $vo) {
                 if (isset($_GET[$vo]) && !isset($params[$vo])) {
