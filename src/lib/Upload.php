@@ -8,151 +8,172 @@ namespace dux\lib;
 
 class Upload {
 
-	protected $uploader = null;
+    protected $uploader = null;
 
-	/**
-	 * 上传配置
-	 * @var array
-	 */
-	protected $config = array(
-        'maxSize'       =>  1048576, //上传的文件大小限制 默认10M
-        'allowExts'     =>  array(), //允许的文件后缀
-        'rootPath'      =>  './upload/', //上传根路径
-        'savePath'      =>  '', //保存路径
-        'saveRule'      =>  'md5_file', //命名规则
-        'driver'        =>	'Local',
-        'driverConfig'  =>  array(),
-    );
+    /**
+     * 上传配置
+     * @var array
+     */
+    protected $config = [
+        'maxSize' => 1048576, //上传的文件大小限制 默认10M
+        'allowExts' => [], //允许的文件后缀
+        'rootPath' => './upload/', //上传根路径
+        'savePath' => '', //保存路径
+        'saveRule' => 'md5_file', //命名规则
+        'driver' => 'Local',
+        'driverConfig' => [],
+    ];
 
     /**
      * 上传文件信息
      * @var array
      */
-	protected $uploadFileInfo = array();
+    protected $uploadFileInfo = [];
 
-	/**
-	 * 错误消息
-	 * @var string
-	 */
-	protected $errorMsg = '';
+    /**
+     * 错误消息
+     * @var string
+     */
+    protected $errorMsg = '';
 
-	/**
-	 * 构建函数
-	 * @param array $config 上传配置
-	 */
-	public function __construct($config = array()) {
-		$this->config = array_merge($this->config, $config);
-		$this->setDriver();
-	}
+    /**
+     * 构建函数
+     * @param array $config 上传配置
+     */
+    public function __construct($config = []) {
+        $this->config = array_merge($this->config, $config);
+        $this->setDriver();
+    }
 
-	/**
-	 * 上传配置
-	 * @param  string $key 上传字段
-	 * @return boolean
-	 */
-	public function upload($key = '') {
-		if(empty($_FILES)) {
-			$this->errorMsg = '没有文件上传！';
-			return false;
-		}
-		if(empty($key)) {
-			$files = $_FILES;
-		} else {
-			$files[$key] = $_FILES[$key];
-		}
-		//上传根目录检查
-		if(!$this->uploader->rootPath($this->config['rootPath'])){
+    /**
+     * 上传远程文件
+     * @param $url
+     */
+    public function uploadRemote($url) {
+        $file = \dux\lib\Http::doGet($url, 300);
+        if (empty($file)) {
+            $this->errorMsg = '文件获取失败！';
+            return false;
+        }
+        $urlData = pathinfo($url);
+        $temp = tempnam('./temp', 'tmp');
+        $handle = fopen($temp, "w");
+        fwrite($handle, $file);
+        fclose($handle);
+        $_FILES['file'] = [
+            'tmp_name' => $temp,
+            'name' => $urlData['basename'],
+            'size' => filesize($temp),
+            'type' => $this->getMimeType($urlData['basename']),
+            'error' => 0,
+        ];
+        return $this->upload();
+    }
+
+    /**
+     * 上传配置
+     * @param  string $key 上传字段
+     * @return boolean
+     */
+    public function upload($key = '') {
+        if (empty($_FILES)) {
+            $this->errorMsg = '没有文件上传！';
+            return false;
+        }
+        if (empty($key)) {
+            $files = $_FILES;
+        } else {
+            $files[$key] = $_FILES[$key];
+        }
+        //上传根目录检查
+        if (!$this->uploader->rootPath($this->config['rootPath'])) {
             $this->errorMsg = $this->uploader->getError();
             return false;
         }
         //上传目录检查
-		$savePath = $this->config['rootPath'] . $this->config['savePath'];
-		if(!$this->uploader->checkPath($savePath)){
+        $savePath = $this->config['rootPath'] . $this->config['savePath'];
+        if (!$this->uploader->checkPath($savePath)) {
             $this->errorMsg = $this->uploader->getError();
             return false;
         }
-		foreach($files as $key =>$file) {
-			if(is_array($file['name'])){
-				$file['name'] = $file['name'][0];
-			}
-			if(is_array($file['type'])){
-				$file['type'] = $file['type'][0];
-			}
-			if(is_array($file['tmp_name'])){
-				$file['tmp_name'] = $file['tmp_name'][0];
-			}
-			if(is_array($file['error'])){
-				$file['error'] = $file['error'][0];
-			}
-			if(is_array($file['size'])){
-				$file['size'] = $file['size'][0];
-			}
-			if( $file['error'] == 4 ) continue;
-			$saveRuleFunc = $this->config['saveRule'];
-			$pathinfo = pathinfo($file['name']);
-			$file['key'] = $key;
-			$file['extension'] = strtolower( $pathinfo['extension'] );
-			$file['savepath'] = $savePath;
-			$file['savename'] = 'duxup_' . $saveRuleFunc( $file['tmp_name'] ) . '.' . $file['extension'];
-			$file['driver'] = $this->config['driver'];
-			//检查文件类型大小和合法性
-			if (!$this->check($file)) {
-				return false;
-			}
-			//存储文件
-			$info = $this->uploader->saveFile($file);
-			if(!$info){
-				$this->errorMsg = $this->uploader->getError();
-				return false;
-			}
-			$this->uploadFileInfo[$key] = $info;
-		}
-		return true;
-	}
+        foreach ($files as $key => $file) {
+            if (is_array($file['name'])) {
+                $file['name'] = $file['name'][0];
+            }
+            if (is_array($file['type'])) {
+                $file['type'] = $file['type'][0];
+            }
+            if (is_array($file['tmp_name'])) {
+                $file['tmp_name'] = $file['tmp_name'][0];
+            }
+            if (is_array($file['error'])) {
+                $file['error'] = $file['error'][0];
+            }
+            if (is_array($file['size'])) {
+                $file['size'] = $file['size'][0];
+            }
+            if ($file['error'] == 4) continue;
+            $saveRuleFunc = $this->config['saveRule'];
+            $pathinfo = pathinfo($file['name']);
+            $file['key'] = $key;
+            $file['extension'] = strtolower($pathinfo['extension']);
+            $file['savepath'] = $savePath;
+            $file['savename'] = 'duxup_' . $saveRuleFunc($file['tmp_name']) . '.' . $file['extension'];
+            $file['driver'] = $this->config['driver'];
+            //检查文件类型大小和合法性
+            if (!$this->check($file)) {
+                return false;
+            }
+            //存储文件
+            $info = $this->uploader->saveFile($file);
+            if (!$info) {
+                $this->errorMsg = $this->uploader->getError();
+                return false;
+            }
+            $this->uploadFileInfo[$key] = $info;
+            unlink($file['tmp_name']);
+        }
+        return true;
+    }
 
-	/**
-	 * 检测文件合法性
-	 * @param  string $file 文件名
-	 * @return boolean
-	 */
-	protected function check($file) {
-		//文件上传失败
-		if($file['error'] !== 0) {
-			$this->errorMsg= '文件上传失败！';
-			return false;
-		}	
-		//检查文件类型
-		$this->allowExts = array_map('strtolower', $this->config['allowExts']);		
-		if( !in_array($file['extension'], $this->config['allowExts'])) {
-			$this->errorMsg = '上传文件类型不允许！';
-			return false;
-		}
-		//检查文件大小
-		if ($file['size'] > $this->config['maxSize']) {
-			$this->errorMsg = '上传文件大小超出限制！';
-			return false;
-		}
-		//检查是否合法上传
-		if(!is_uploaded_file($file['tmp_name'])) {
-			$this->errorMsg = '非法上传文件！';
-			return false;
-		}
-		// 如果是图像文件 检测文件格式
-		if( in_array($file['extension'], array('gif','jpg','jpeg','bmp','png','swf')) && false === getimagesize($file['tmp_name']) ) {
-			$this->errorMsg = '非法图像文件！';
-			return false;
-		}
-		//检查通过，返回true
-		return true;
-	}
+    /**
+     * 检测文件合法性
+     * @param  string $file 文件名
+     * @return boolean
+     */
+    protected function check($file) {
+        //文件上传失败
+        if ($file['error'] !== 0) {
+            $this->errorMsg = '文件上传失败！';
+            return false;
+        }
+        //检查文件类型
+        $this->allowExts = array_map('strtolower', $this->config['allowExts']);
+        if (!in_array($file['extension'], $this->config['allowExts'])) {
+            $this->errorMsg = '上传文件类型不允许！';
+            return false;
+        }
+        //检查文件大小
+        if ($file['size'] > $this->config['maxSize']) {
+            $this->errorMsg = '上传文件大小超出限制！';
+            return false;
+        }
+        // 如果是图像文件 检测文件格式
+        if (in_array($file['extension'], ['gif', 'jpg', 'jpeg', 'bmp', 'png', 'swf']) && false === getimagesize($file['tmp_name'])) {
+            $this->errorMsg = '非法图像文件！';
+            return false;
+        }
+        //检查通过，返回true
+        return true;
+    }
 
-	/**
-	 * 设置驱动
-	 */
-	protected function setDriver() {
-		$uploadDriver = __NAMESPACE__.'\upload\\' . ucfirst($this->config['driver'] ).'Driver';
-		$this->uploader = new $uploadDriver($this->config);
-		if(!$this->uploader){
+    /**
+     * 设置驱动
+     */
+    protected function setDriver() {
+        $uploadDriver = __NAMESPACE__ . '\upload\\' . ucfirst($this->config['driver']) . 'Driver';
+        $this->uploader = new $uploadDriver($this->config);
+        if (!$this->uploader) {
             throw new \Exception("Upload Driver '{$this->config['driver']}' not found'", 500);
         }
     }
@@ -161,16 +182,92 @@ class Upload {
      * 获取上传文件信息
      * @return array
      */
-	public function getUploadFileInfo() {
-		return $this->uploadFileInfo;
-	}
+    public function getUploadFileInfo() {
+        return $this->uploadFileInfo;
+    }
 
     /**
      * 获取框架错误
      * @return string
      */
-    public function getError(){
+    public function getError() {
         return $this->errorMsg;
+    }
+
+    /**
+     * 获取类型
+     * @param $filename
+     * @return mixed|string
+     */
+    public function getMimeType($filename) {
+        $idx = explode('.', $filename);
+        $count_explode = count($idx);
+        $idx = strtolower($idx[$count_explode - 1]);
+
+        $mimet = [
+            'txt' => 'text/plain',
+            'htm' => 'text/html',
+            'html' => 'text/html',
+            'php' => 'text/html',
+            'css' => 'text/css',
+            'js' => 'application/javascript',
+            'json' => 'application/json',
+            'xml' => 'application/xml',
+            'swf' => 'application/x-shockwave-flash',
+            'flv' => 'video/x-flv',
+
+            // images
+            'png' => 'image/png',
+            'jpe' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'jpg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp',
+            'ico' => 'image/vnd.microsoft.icon',
+            'tiff' => 'image/tiff',
+            'tif' => 'image/tiff',
+            'svg' => 'image/svg+xml',
+            'svgz' => 'image/svg+xml',
+
+            // archives
+            'zip' => 'application/zip',
+            'rar' => 'application/x-rar-compressed',
+            'exe' => 'application/x-msdownload',
+            'msi' => 'application/x-msdownload',
+            'cab' => 'application/vnd.ms-cab-compressed',
+
+            // audio/video
+            'mp3' => 'audio/mpeg',
+            'qt' => 'video/quicktime',
+            'mov' => 'video/quicktime',
+
+            // adobe
+            'pdf' => 'application/pdf',
+            'psd' => 'image/vnd.adobe.photoshop',
+            'ai' => 'application/postscript',
+            'eps' => 'application/postscript',
+            'ps' => 'application/postscript',
+
+            // ms office
+            'doc' => 'application/msword',
+            'rtf' => 'application/rtf',
+            'xls' => 'application/vnd.ms-excel',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'docx' => 'application/msword',
+            'xlsx' => 'application/vnd.ms-excel',
+            'pptx' => 'application/vnd.ms-powerpoint',
+
+
+            // open office
+            'odt' => 'application/vnd.oasis.opendocument.text',
+            'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+        ];
+
+        if (isset($mimet[$idx])) {
+            return $mimet[$idx];
+        } else {
+            return 'application/octet-stream';
+        }
     }
 
 }
