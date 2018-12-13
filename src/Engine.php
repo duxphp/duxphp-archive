@@ -38,8 +38,8 @@ class Engine {
             if (!file_exists($file)) {
                 return false;
             }
-            self::$classes[$classFile] = $classFile;
-            require_once $classFile;
+            self::$classes[$classFile] = $file;
+            require_once $file;
         }
         return true;
     }
