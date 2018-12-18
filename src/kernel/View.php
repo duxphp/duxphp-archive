@@ -363,17 +363,17 @@ class View {
         $tpl = trim($var[2]);
         $item = trim($var[1]);
         $tpl = ' ' . $tpl;
-        $tpl = preg_replace(" / \s([_a - zA - Z] +) =/", ', "\1"=>', $tpl);
+        $tpl = preg_replace(" /\s([_a-zA-Z]+)=/", ', "\1"=>', $tpl);
         $tpl = substr($tpl, 1);
         //匹配必要参数
         $dataArray = [];
-        if (preg_match_all('/\s"([_a - zA - Z] +)"=>"(.+?)"/', $tpl, $result)) {
+        if (preg_match_all('/\s"([_a-zA-Z]+)"=>"(.+?)"/', $tpl, $result)) {
             foreach ($result[1] as $key => $value) {
                 $dataArray[$value] = $result[2][$key];
             }
         }
         //生成模块调用
-        $html = '<?php $' . $item . 'List = target("' . strtolower($dataArray['app']) . ' / Label", "service")->' . ucfirst($dataArray['label']) . '([' . $tpl . ']); ';
+        $html = '<?php $' . $item . 'List = target("' . strtolower($dataArray['app']) . '/Label", "service")->' . ucfirst($dataArray['label']) . '([' . $tpl . ']); ';
         switch ($item) {
             case 'echo':
                 $html .= ' echo $' . $item . 'List; ?>';
@@ -382,7 +382,7 @@ class View {
                 $html .= '$' . $dataArray['list'] . ' = $' . $item . 'List; ?>';
                 break;
             default:
-                $html .= ' if(is_array($' . $item . 'List)) foreach($' . $item . 'List as   $' . $item . 'Key =>  $' . $item . '){ $' . $item . '["i"] = $' . $item . 'Key + 1;  ?>';
+                $html .= 'if(is_array($' . $item . 'List)) foreach($' . $item . 'List as $' . $item . 'Key =>  $' . $item . '){ $' . $item . '["i"] = $' . $item . 'Key + 1;  ?>';
                 break;
         }
         return $html;

@@ -353,6 +353,9 @@ class Model {
                             $map[$bindField] = $value;
                         } elseif ($operator === '!') {
                             if (is_array($value)) {
+                                foreach($value as $k => $v) {
+                                    $value[$k] = "'".$v."'";
+                                }
                                 $stack[] = $field . ' NOT IN (' . implode(', ', $value) . ')';
                             } else {
                                 $stack[] = "{$field} != {$bindField}";
@@ -388,6 +391,9 @@ class Model {
                         }
                     } else {
                         if (is_array($value)) {
+                            foreach($value as $k => $v) {
+                                $value[$k] = "'".$v."'";
+                            }
                             $stack[] = $field . ' IN (' . implode(', ', $value) . ')';
                         } else {
                             $stack[] = "{$field} = {$bindField}";
