@@ -131,7 +131,9 @@ class Upload {
                 return false;
             }
             $this->uploadFileInfo[$key] = $info;
-            unlink($file['tmp_name']);
+            if(is_file($file['tmp_name'])) {
+                @unlink($file['tmp_name']);
+            }
         }
         return true;
     }
