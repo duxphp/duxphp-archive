@@ -195,7 +195,7 @@ class Model {
             $filedSql = [];
             foreach ($fields as $vo) {
                 preg_match('/([a-zA-Z0-9_\-\.\(\)]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $vo, $match);
-                if (isset($match[1], $match[2])) {
+                if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['sum', 'count'])) {
                     $filedSql[] = $match[1] . ' as ' . $match[2];
                 } else {
                     $filedSql[] = $vo;
@@ -203,6 +203,7 @@ class Model {
             }
             $filedSql = implode(',', $filedSql);
         }
+        $filedSql = str_replace('{pre}', $this->config['prefix'], $filedSql);
         return $filedSql;
     }
 
