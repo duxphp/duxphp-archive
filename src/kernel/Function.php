@@ -634,8 +634,8 @@ function load_ui($path = '') {
         $css = '//cdn.duxphp.com/duxjs/css/dux.css?v=1.0.9';
         $js = '//cdn.duxphp.com/duxjs/js/dux.min.js?v=1.0.9';
     }else {
-        $css = ROOT_URL . '/public/duxui/css/dux.css?v=1.0.9';
-        $js = ROOT_URL . '/public/duxui/js/dux.min.js?v=1.0.9';
+        $css = ROOT_URL . '/public/common/css/dux.css?v=1.0.9';
+        $js = ROOT_URL . '/public/common/js/dux.min.js?v=1.0.9';
     }
     $data = [];
     $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";

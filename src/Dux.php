@@ -521,6 +521,9 @@ class Dux {
         }else {
             $file = $dir . $fileName . '.log';
         }
+        if(is_array($msg)) {
+            $msg = json_encode($msg, JSON_UNESCAPED_UNICODE);
+        }
         if (!error_log($type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . "\r\n", 3, $file)) {
             error_log("File '{$file}' Write failure");
         }

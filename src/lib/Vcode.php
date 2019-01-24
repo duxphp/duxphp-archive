@@ -41,7 +41,7 @@ class Vcode {
      * @param int $height 验证码高度 默认 35
      * @param int $codeNum 验证码数量 默认4
      */
-    public function __construct($width = 120, $height = 35, $codeNum = 4, $fontFace = '', $vcodeName = '') {
+    public function __construct($width = 120, $height = 35, $codeNum = 4, $fontFace = '') {
         //初始化
         $this->width = $width;
         $this->height = $height;
@@ -49,10 +49,6 @@ class Vcode {
         //字体
         if ($fontFace) {
             $this->fontFace = $fontFace;
-        }
-        //session名
-        if ($vcodeName) {
-            $this->vcodeName = $vcodeName;
         }
         //设置干扰元素数量
         $number = floor($width * $height / 20);
@@ -76,29 +72,33 @@ class Vcode {
         $this->setDisturbColor();
         //生成code
         $this->createCode();
-        //写入SESSION
-        \dux\Dux::session()->set($this->vcodeName, $this->code);
 
         //往图片上添加文本
         $this->outputText($this->fontFace);
         //输出图像
-        $this->ouputImage();
+        return $this->ouputImage();
     }
 
     /**
      * 较验验证码
-     * @param string $vCode
+     * @param string $code
+     * @param string $token
+     * @param int $time
      * @return bool
      */
-    public function check($vCode = '') {
-        if (empty($vCode)) {
+    public function check($code = '', $token = '', $time = 0) {
+        if (empty($code)) {
             return false;
         }
         if (empty($this->chinese)) {
-            $vCode = strtolower($vCode);
+            $code = strtolower($code);
         }
-        $code = strtolower(\dux\Dux::session()->get($this->vcodeName));
-        if ($vCode <> $code) {
+        $config = \dux\Config::get('dux.use');
+        $code = md5($config['safe_key'] . $code . $time);
+        if ($code <> $token) {
+            return false;
+        }
+        if($time + 600 < time()) {
             return false;
         }
         return true;
@@ -166,22 +166,24 @@ class Vcode {
 
     //输出图像
     private function ouputImage() {
-        ob_clean();    //防止出现'图像因其本身有错无法显示'的问题
-        if (imagetypes() & IMG_GIF) {
-            header("Content-Type:image/gif");
-            imagepng($this->image);
-        } else if (imagetypes() & IMG_JPG) {
-            header("Content-Type:image/jpeg");
-            imagepng($this->image);
-        } else if (imagetypes() & IMG_PNG) {
-            header("Content-Type:image/png");
-            imagepng($this->image);
-        } else if (imagetypes() & IMG_WBMP) {
-            header("Content-Type:image/vnd.wap.wbmp");
-            imagepng($this->image);
-        } else {
-            die("PHP不支持图像创建");
+        ob_clean();
+        ob_start();
+        imagepng($this->image);
+        $data = ob_get_contents();
+        ob_end_clean();
+        $config = \dux\Config::get('dux.use');
+        $time = time();
+        if (empty($this->chinese)) {
+            $code = strtolower($this->code);
+        }else {
+            $code = $this->code;
         }
+        $token = md5($config['safe_key'] . $code . $time);
+        return [
+            'image' => base64_encode($data),
+            'time' => $time,
+            'token' => $token,
+        ];
     }
 
     /*
