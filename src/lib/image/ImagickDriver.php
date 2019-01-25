@@ -279,7 +279,7 @@ class ImagickDriver implements ImageInterface {
                 break;
             case 'jpg':
             case 'jpeg':
-                $this->imgRes->setImageCompressionQuality(100);
+                $this->imgRes->setImageCompressionQuality(90);
                 $this->imgRes->writeImage($filename);
                 break;
             case 'png':

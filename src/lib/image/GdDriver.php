@@ -223,7 +223,11 @@ class GdDriver implements ImageInterface {
             $this->error = '无法对该图片格式进行处理！';
             return false;
         }
-        return $func($this->imgRes, $filename);
+        if ('jpeg' == $type || 'jpg' == $type) {
+            return $func($this->imgRes, $filename, 90);
+        }else {
+            return $func($this->imgRes, $filename);
+        }
     }
 
     public function getRGB() {
