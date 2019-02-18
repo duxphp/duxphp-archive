@@ -50,21 +50,26 @@ class Upload {
      * @param $url
      */
     public function uploadRemote($url) {
-        $file = \dux\lib\Http::doGet($url, 300);
+        $urlPath = parse_url($url);
+        $file = \dux\lib\Http::doGet($url, 20, 'Referer: ' . $url);
         if (empty($file)) {
             $this->errorMsg = '文件获取失败！';
             return false;
         }
         $urlData = pathinfo($url);
-        $temp = tempnam('./temp', 'tmp');
+        $temp = tempnam(ini_get('upload_tmp_dir'), 'tmp');
         $handle = fopen($temp, "w");
         fwrite($handle, $file);
         fclose($handle);
+        @chmod($temp, 0777);
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $temp);
+
         $_FILES['file'] = [
             'tmp_name' => $temp,
             'name' => $urlData['basename'],
             'size' => filesize($temp),
-            'type' => $this->getMimeType($urlData['basename']),
+            'type' => $mime,
             'error' => 0,
         ];
         return $this->upload();
@@ -96,6 +101,7 @@ class Upload {
             $this->errorMsg = $this->uploader->getError();
             return false;
         }
+        $mimes = new \Mimey\MimeTypes;
         foreach ($files as $key => $file) {
             if (is_array($file['name'])) {
                 $file['name'] = $file['name'][0];
@@ -114,9 +120,10 @@ class Upload {
             }
             if ($file['error'] == 4) continue;
             $saveRuleFunc = $this->config['saveRule'];
-            $pathinfo = pathinfo($file['name']);
+            //文件格式
+            $ext = $mimes->getExtension($file['type']);
             $file['key'] = $key;
-            $file['extension'] = strtolower($pathinfo['extension']);
+            $file['extension'] = $ext;
             $file['savepath'] = $savePath;
             $file['savename'] = 'duxup_' . $saveRuleFunc($file['tmp_name']) . '.' . $file['extension'];
             $file['driver'] = $this->config['driver'];
@@ -131,7 +138,7 @@ class Upload {
                 return false;
             }
             $this->uploadFileInfo[$key] = $info;
-            if(is_file($file['tmp_name'])) {
+            if (is_file($file['tmp_name'])) {
                 @unlink($file['tmp_name']);
             }
         }
@@ -150,10 +157,12 @@ class Upload {
             return false;
         }
         //检查文件类型
-        $this->allowExts = array_map('strtolower', $this->config['allowExts']);
-        if (!in_array($file['extension'], $this->config['allowExts'])) {
-            $this->errorMsg = '上传文件类型不允许！';
-            return false;
+        if ($this->config['allowExts'] <> '*') {
+            $this->allowExts = array_map('strtolower', $this->config['allowExts']);
+            if (!in_array($file['extension'], $this->config['allowExts'])) {
+                $this->errorMsg = '上传文件类型不允许！';
+                return false;
+            }
         }
         //检查文件大小
         if ($file['size'] > $this->config['maxSize']) {
@@ -161,7 +170,7 @@ class Upload {
             return false;
         }
         // 如果是图像文件 检测文件格式
-        if (in_array($file['extension'], ['gif', 'jpg', 'jpeg', 'bmp', 'png', 'swf']) && false === getimagesize($file['tmp_name'])) {
+        if (in_array($file['extension'], ['gif', 'jpg', 'jpeg', 'bmp', 'png']) && false === getimagesize($file['tmp_name'])) {
             $this->errorMsg = '非法图像文件！';
             return false;
         }
@@ -196,80 +205,5 @@ class Upload {
         return $this->errorMsg;
     }
 
-    /**
-     * 获取类型
-     * @param $filename
-     * @return mixed|string
-     */
-    public function getMimeType($filename) {
-        $idx = explode('.', $filename);
-        $count_explode = count($idx);
-        $idx = strtolower($idx[$count_explode - 1]);
-
-        $mimet = [
-            'txt' => 'text/plain',
-            'htm' => 'text/html',
-            'html' => 'text/html',
-            'php' => 'text/html',
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'json' => 'application/json',
-            'xml' => 'application/xml',
-            'swf' => 'application/x-shockwave-flash',
-            'flv' => 'video/x-flv',
-
-            // images
-            'png' => 'image/png',
-            'jpe' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'jpg' => 'image/jpeg',
-            'gif' => 'image/gif',
-            'bmp' => 'image/bmp',
-            'ico' => 'image/vnd.microsoft.icon',
-            'tiff' => 'image/tiff',
-            'tif' => 'image/tiff',
-            'svg' => 'image/svg+xml',
-            'svgz' => 'image/svg+xml',
-
-            // archives
-            'zip' => 'application/zip',
-            'rar' => 'application/x-rar-compressed',
-            'exe' => 'application/x-msdownload',
-            'msi' => 'application/x-msdownload',
-            'cab' => 'application/vnd.ms-cab-compressed',
-
-            // audio/video
-            'mp3' => 'audio/mpeg',
-            'qt' => 'video/quicktime',
-            'mov' => 'video/quicktime',
-
-            // adobe
-            'pdf' => 'application/pdf',
-            'psd' => 'image/vnd.adobe.photoshop',
-            'ai' => 'application/postscript',
-            'eps' => 'application/postscript',
-            'ps' => 'application/postscript',
-
-            // ms office
-            'doc' => 'application/msword',
-            'rtf' => 'application/rtf',
-            'xls' => 'application/vnd.ms-excel',
-            'ppt' => 'application/vnd.ms-powerpoint',
-            'docx' => 'application/msword',
-            'xlsx' => 'application/vnd.ms-excel',
-            'pptx' => 'application/vnd.ms-powerpoint',
-
-
-            // open office
-            'odt' => 'application/vnd.oasis.opendocument.text',
-            'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
-        ];
-
-        if (isset($mimet[$idx])) {
-            return $mimet[$idx];
-        } else {
-            return 'application/octet-stream';
-        }
-    }
 
 }
