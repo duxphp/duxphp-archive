@@ -628,11 +628,13 @@ function log_no($pre = '') {
  * 基础UI库
  * @return string
  */
-function load_ui($path = '') {
+function load_ui($path = '', $cssLoad = true) {
     $css = ROOT_URL . '/public/common/css/dux.css?v=1.0.9';
     $js = ROOT_URL . '/public/common/js/dux.min.js?v=1.0.9';
     $data = [];
-    $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
+    if($cssLoad) {
+        $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
+    }
     $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-debug="'.($config['debug_browser'] ? true : false).'" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>'."\r\n";
     return join("", $data);
 }
