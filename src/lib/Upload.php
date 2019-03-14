@@ -121,7 +121,10 @@ class Upload {
             if ($file['error'] == 4) continue;
             $saveRuleFunc = $this->config['saveRule'];
             //文件格式
-            $ext = $mimes->getExtension($file['type']);
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if(!$ext) {
+                $ext = $mimes->getExtension($file['type']);
+            }
             $file['key'] = $key;
             $file['extension'] = $ext;
             $file['savepath'] = $savePath;
