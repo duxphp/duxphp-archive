@@ -126,7 +126,7 @@ class Upload {
                 $ext = $mimes->getExtension($file['type']);
             }
             $file['key'] = $key;
-            $file['extension'] = $ext;
+            $file['extension'] = strtolower($ext);
             $file['savepath'] = $savePath;
             $file['savename'] = 'duxup_' . $saveRuleFunc($file['tmp_name']) . '.' . $file['extension'];
             $file['driver'] = $this->config['driver'];
