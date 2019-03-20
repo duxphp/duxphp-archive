@@ -440,7 +440,7 @@ class Model {
             } else {
                 $sql[] = '`'.$column.'`' . ' = ' . $bindField;
                 if (is_array($value)) {
-                    $map[$bindField] = strpos($key, '[JSON]') === strlen($key) - 6 ? json_encode($value) : serialize($value);
+                    $map[$bindField] = json_encode($value, JSON_UNESCAPED_UNICODE);
                 } else {
                     $map[$bindField] = $value;
                 }
