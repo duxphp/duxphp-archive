@@ -366,6 +366,7 @@ class Model {
                             if (!is_array($value)) {
                                 $value = [$value];
                             }
+                            $connector = ' OR ';
                             $like_clauses = [];
                             foreach ($value as $index => $item) {
                                 $item = strval($item);
@@ -439,7 +440,7 @@ class Model {
             } else {
                 $sql[] = '`'.$column.'`' . ' = ' . $bindField;
                 if (is_array($value)) {
-                    $map[$bindField] = json_encode($value, JSON_UNESCAPED_UNICODE);
+                    $map[$bindField] = strpos($key, '[JSON]') === strlen($key) - 6 ? json_encode($value) : serialize($value);
                 } else {
                     $map[$bindField] = $value;
                 }
