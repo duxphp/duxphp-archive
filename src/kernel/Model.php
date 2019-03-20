@@ -366,7 +366,7 @@ class Model {
                             if (!is_array($value)) {
                                 $value = [$value];
                             }
-                            $connector = ' OR ';
+						    $connector = ' OR ';
                             $like_clauses = [];
                             foreach ($value as $index => $item) {
                                 $item = strval($item);

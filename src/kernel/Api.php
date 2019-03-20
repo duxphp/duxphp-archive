@@ -53,7 +53,7 @@ class Api {
             'code' => $code,
             'message' => $msg,
         ];
-        \dux\Dux::header($code, function () use ($data) {
+        \dux\Dux::header(200, function () use ($data) {
             $this->returnData($data);
         });
     }
