@@ -44,14 +44,16 @@ class Api {
      * 返回错误数据
      * @param int $code
      * @param string $msg
+     * @param string $url
      */
-    public function error($msg = '', $code = 500) {
+    public function error($msg = '', $code = 500, $url = '') {
         if (empty($msg)) {
             $msg = \dux\Dux::$codes[$code];
         }
         $data = [
             'code' => $code,
             'message' => $msg,
+            'url' => $url
         ];
         \dux\Dux::header(200, function () use ($data) {
             $this->returnData($data);
