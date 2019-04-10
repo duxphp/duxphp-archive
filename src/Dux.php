@@ -503,7 +503,7 @@ class Dux {
      * @param string $fileName
      * @return bool
      */
-    public static function log($msg, $type = 'log', $fileName = '') {
+    public static function log($msg, $type = 'INFO', $fileName = '') {
         $types = ['INFO', 'WARN', 'DEBUG', 'ERROR'];
         $type = strtoupper($type);
         if (!in_array($type, $types)) {

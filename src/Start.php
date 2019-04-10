@@ -8,7 +8,7 @@ ini_set('display_errors', '1');
 /**
  * 最低PHP版本要求
  */
-const PHP_REQUIRED = '7.0.0';
+const PHP_REQUIRED = '7.1.0';
 
 class Start {
 
@@ -76,7 +76,7 @@ class Start {
         //判断PHP版本
         if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
             header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
-            echo 'Can only run in PHP is greater than 7.0';
+            echo 'Can only run in PHP is greater than 7.1';
             exit;
         }
         //兼容环境信息
