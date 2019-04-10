@@ -385,7 +385,7 @@ class Model {
 
                                 $stack[] = '(' . $field . ($operator === '><' ? ' NOT' : '') . ' BETWEEN ' . $bindField . '_a AND ' . $bindField . '_b)';
                                 $map[$bindField . '_a'] = $value[0];
-                                $map[$bindField . '_b'] = $value[0];
+                                $map[$bindField . '_b'] = $value[1];
                             }
                         } elseif ($operator === 'REGEXP') {
                             $stack[] = $key . ' REGEXP ' . $bindField;
