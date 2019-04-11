@@ -458,7 +458,7 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
  * @param string $type
  * @return bool
  */
-function dux_log($msg, $type = 'log') {
+function dux_log($msg, $type = 'INFO') {
     return \dux\Dux::log($msg, $type);
 }
 
