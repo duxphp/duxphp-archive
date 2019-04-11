@@ -446,7 +446,7 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
         $string = implode("", $tem);
     }
     if ($split) {
-        $array = str_split($string, 4);
+        $array = str_split($string, $split);
         $string = implode($glue, $array);
     }
     return $string;
