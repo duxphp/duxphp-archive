@@ -22,7 +22,7 @@ class Email {
         'smtp_username'  => '',             //邮箱帐号
         'smtp_password'  => '',             //邮箱密码
         'smtp_from_to'   => '',             //发件人邮箱
-        'smtp_from_name' => 'canphp',       //发件人
+        'smtp_from_name' => 'duxphp',       //发件人
     );
 
     /**
