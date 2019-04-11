@@ -485,15 +485,8 @@ function date_tran($time) {
     // 计算出当前日期时间到之前的日期时间的毫秒数，以便进行下一步的计算
     $time = time() - $agoTime;
 
-    if ($time >= 31104000) { // N年前
-        $num = (int)($time / 31104000);
-
-        return $num . '年前';
-    }
-    if ($time >= 2592000) { // N月前
-        $num = (int)($time / 2592000);
-
-        return $num . '月前';
+    if ($time >= 2592000) {
+        return date('Y年m月', $time);
     }
     if ($time >= 86400) { // N天前
         $num = (int)($time / 86400);
