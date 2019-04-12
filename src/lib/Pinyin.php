@@ -2,7 +2,7 @@
 namespace dux\lib;
 
 /**
- * 汉子转拼音
+ * 汉字转拼音
  */
 
 class Pinyin{
