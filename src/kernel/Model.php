@@ -24,6 +24,7 @@ class Model {
         'group' => '',
         'order' => '',
         'limit' => '',
+        'return' => false
     );
 
     protected $table = '';
@@ -83,6 +84,11 @@ class Model {
         return $this;
     }
 
+    public function fetchSql($status = true) {
+        $this->options['return'] = $status;
+        return $this;
+    }
+
     public function where(array $where = [], $bindParams = []) {
         $this->options['where'] = $where;
         $this->options['where_params'] = $bindParams;
@@ -90,12 +96,12 @@ class Model {
     }
 
     public function select() {
-        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getField(), $this->_getLock(), $this->_getOrder(), $this->_getLimit(), $this->_getGroup());
+        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getField(), $this->_getLock(), $this->_getOrder(), $this->_getLimit(), $this->_getGroup(), $this->_getFetchSql());
         return empty($data) ? [] : $data;
     }
 
     public function count() {
-        return $this->getObj()->count($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getGroup());
+        return $this->getObj()->count($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getGroup(), $this->_getFetchSql());
     }
 
     public function find() {
@@ -105,39 +111,38 @@ class Model {
 
     public function insert() {
         if (empty($this->options['data']) || !is_array($this->options['data'])) return false;
-        return $this->getObj()->insert($this->_getTable(), $this->_getData(), $this->_getDataParams());
+        return $this->getObj()->insert($this->_getTable(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
     }
 
     public function update() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
         if (empty($this->options['data']) || !is_array($this->options['data'])) return false;
-        $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getData(), $this->_getDataParams());
+        $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function delete() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
-        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getWhereParams());
+        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function setInc($field, $num = 1) {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
         if (empty($field)) return false;
-        $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num);
+        $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function setDec($field, $num = 1) {
         if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
         if (empty($field)) return false;
-        $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num);
+        $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function sum($field) {
-        return $this->getObj()->sum($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $field);
-
+        return $this->getObj()->sum($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $field, $this->_getFetchSql());
     }
 
     public function getFields() {
@@ -148,14 +153,14 @@ class Model {
         $sql = trim($sql);
         if (empty($sql)) return array();
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
-        return $this->getObj()->query($sql, $params);
+        return $this->getObj()->query($sql, $params, $this->_getFetchSql());
     }
 
     public function execute($sql, $params = array()) {
         $sql = trim($sql);
         if (empty($sql)) return false;
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
-        return $this->getObj()->execute($sql, $params);
+        return $this->getObj()->execute($sql, $params, $this->_getFetchSql());
     }
 
     public function getSql() {
@@ -260,6 +265,12 @@ class Model {
         $lock = $this->options['lock'];
         $this->options['lock'] = [];
         return $lock;
+    }
+
+    protected function _getFetchSql() {
+        $return = $this->options['return'];
+        $this->options['return'] = false;
+        return $return;
     }
 
     protected function _getWhere() {

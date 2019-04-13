@@ -19,25 +19,28 @@ class MysqlPdoDriver implements DbInterface {
         $this->config = $config;
     }
 
-    public function select($table, $condition = '', $params = [], $field = '*', $lock = false, $order = NULL, $limit = NULL, $group = NULL) {
+    public function select($table, $condition = '', $params = [], $field = '*', $lock = false, $order = NULL, $limit = NULL, $group = NULL, $return = false) {
         $field = !empty($field) ? $field : '*';
         $order = !empty($order) ? ' ORDER BY ' . $order : '';
         $limit = !empty($limit) ? ' LIMIT ' . $limit : '';
         $group = !empty($group) ? ' GROUP BY ' . $group : '';
         $lock = $lock ? 'for update' : '';
         $table = $this->_table($table);
-        return $this->query("SELECT {$field} FROM {$table} {$condition} {$group} {$order} {$limit} {$lock}", $params);
+        return $this->query("SELECT {$field} FROM {$table} {$condition} {$group} {$order} {$limit} {$lock}", $params, $return);
     }
 
-    public function count($table, $condition = '', $params = [], $group = NULL) {
+    public function count($table, $condition = '', $params = [], $group = NULL, $return = false) {
         $table = $this->_table($table);
         $group = !empty($group) ? ' GROUP BY ' . $group : '';
-        $count = $this->query("SELECT COUNT(*) AS __total FROM {$table} {$condition} {$group}" , $params);
+        $count = $this->query("SELECT COUNT(*) AS __total FROM {$table} {$condition} {$group}" , $params, $return);
         return isset($count[0]['__total']) && $count[0]['__total'] ? $count[0]['__total'] : 0;
     }
 
-    public function query($sql, array $params = []) {
+    public function query($sql, array $params = [], $return = false) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
+        if($return) {
+            return $this->getSql();
+        }
         $result = $sth->execute();
         if ($result) {
             $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
@@ -47,8 +50,11 @@ class MysqlPdoDriver implements DbInterface {
         throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
     }
 
-    public function execute($sql, array $params = []) {
+    public function execute($sql, array $params = [], $return = false) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
+        if($return) {
+            return $this->getSql();
+        }
         $result = $sth->execute();
         if ($result) {
             $affectedRows = $sth->rowCount();
@@ -58,7 +64,7 @@ class MysqlPdoDriver implements DbInterface {
         throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
     }
 
-    public function insert($table, array $data = [], array $params = []) {
+    public function insert($table, array $data = [], array $params = [], $return = false) {
         $table = $this->_table($table);
         $values = [];
         $keys = [];
@@ -67,7 +73,7 @@ class MysqlPdoDriver implements DbInterface {
             $keys[] = "`{$k}`";
             $values[":{$k}"] = $v;
         }
-        $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ")", $params);
+        $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ")", $params, $return);
         $id = $this->getLink()->lastInsertId();
         if ($id) {
             return $id;
@@ -76,40 +82,39 @@ class MysqlPdoDriver implements DbInterface {
         }
     }
 
-    public function update($table, $condition = '', $whereParams = [], array $data = [], array $dataParams = []) {
+    public function update($table, $condition = '', $whereParams = [], array $data = [], array $dataParams = [], $return = false) {
         if (empty($condition)) return false;
         $table = $this->_table($table);
         $sql = $data['sql'];
-        return $this->execute("UPDATE {$table} SET " . implode(', ', $sql) . $condition, $whereParams + $dataParams);
-
+        return $this->execute("UPDATE {$table} SET " . implode(', ', $sql) . $condition, $whereParams + $dataParams, $return);
     }
 
-    public function sum($table, $condition = '', $params = [], $field) {
+    public function sum($table, $condition = '', $params = [], $field, $return = false) {
         $table = $this->_table($table);
 
-        $sum = $this->query("SELECT SUM(`{$field}`) as __sum FROM {$table} {$condition} ", $params);
+        $sum = $this->query("SELECT SUM(`{$field}`) as __sum FROM {$table} {$condition} ", $params, $return);
         return isset($sum[0]['__sum']) && $sum[0]['__sum'] ? $sum[0]['__sum'] : 0;
     }
 
-    public function increment($table, $condition = '', $params = [], $field, $num = 1) {
+    public function increment($table, $condition = '', $params = [], $field, $num = 1, $return = false) {
         if (empty($condition) || empty($field)) return false;
         $table = $this->_table($table);
 
-        return $this->execute("UPDATE {$table} SET {$field} = {$field} + {$num} " . $condition, $params);
+        return $this->execute("UPDATE {$table} SET {$field} = {$field} + {$num} " . $condition, $params, $return = false);
     }
 
-    public function decrease($table, $condition = '',$params = [], $field, $num = 1) {
+    public function decrease($table, $condition = '',$params = [], $field, $num = 1, $return = false) {
         if (empty($condition) || empty($field)) return false;
         $table = $this->_table($table);
 
-        return $this->execute("UPDATE {$table} SET {$field} = {$field} - {$num} " . $condition, $params);
+        return $this->execute("UPDATE {$table} SET {$field} = {$field} - {$num} " . $condition, $params, $return);
     }
 
-    public function delete($table, $condition = '', $params = []) {
+    public function delete($table, $condition = '', $params = [], $return = false) {
         if (empty($condition)) return false;
         $table = $this->_table($table);
 
-        return $this->execute("DELETE FROM {$table} {$condition}", $params);
+        return $this->execute("DELETE FROM {$table} {$condition}", $params, $return);
     }
 
     public function getFields($table) {
