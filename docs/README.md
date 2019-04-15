@@ -1,21 +1,11 @@
 <p align="center">
   <a href="https://github.com/duxphp/duxphp">
-   <img alt="DuxCMS" src="https://github.com/duxphp/duxphp/blob/master/docs/logo.png?raw=true">
+   <img alt="DuxPHP" src="https://github.com/duxphp/duxphp/blob/master/docs/logo.png?raw=true">
   </a>
 </p>
 
 <p align="center">
-  为快速站点开发而生
-</p>
-
-<p align="center">
-  <a href="https://github.com/duxphp/duxphp">
-    <img alt="maven" src="https://img.shields.io/badge/duxcms-v3-blue.svg">
-  </a>
-
-  <a href="https://github.com/duxphp/duxphp/blob/master/LICENSE">
-    <img alt="code style" src="https://img.shields.io/badge/apache-licenses-brightgreen.svg">
-  </a>
+  为快速开发而生
 </p>
 
 # 简介
@@ -51,13 +41,11 @@ DuxPHP是一款轻量级高效率的PHP开发框架，框架支持HMVC模式，�
 
 # 文档
 
-[中文开发使用文档](<https://duxphp.github.io/duxphp/>)
+[中文开发使用文档](<https://duxphp.github.io/DuxPHP-Document/>)
 
 # 开源协议
 
-[Apache License](https://github.com/duxphp/duxphp/blob/master/LICENSE)
-
-> 本开源协议只适用于该框架，不包含框架的衍生产品，衍生产品请看对应的授权协议
+[Apache License](https://github.com/duxphp/duxphp/blob/master/LICENSE) 
 
 # 讨论
 
