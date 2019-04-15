@@ -7,7 +7,7 @@
     <meta name="description" content="Description">
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <link rel="stylesheet" href="//unpkg.com/docsify/themes/vue.css">
+    <link rel="stylesheet" href="//unpkg.com/docsify/themes/buble.css">
 </head>
 <body>
 <div id="app"></div>
@@ -22,13 +22,14 @@
         coverpage: false,
         name: 'DuxPHP',
         repo: 'https://github.com/duxphp/duxphp',
-        plugins: [
-            // EditOnGithubPlugin.create('https://duxphp.github.io/duxphp/', 'https://github.com/duxphp/duxphp/blob/master/docs/', '编辑该文档'),
-        ]
+        themeable: {
+          readyTransition : true, // default
+          responsiveTables: true  // default
+        }
     }
 </script>
-<script src="//unpkg.com/docsify"></script>
-<script src="//unpkg.com/docsify/lib/plugins/search.min.js"></script>
+<script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+<script src="//unpkg.com/docsify/lib/plugins/search.js"></script>
 <script src="//unpkg.com/docsify-copy-code"></script>
 <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script>
 <script src="//unpkg.com/prismjs/components/prism-bash.min.js"></script>

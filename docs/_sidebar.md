@@ -20,7 +20,7 @@
   * [客户端](lib/client)
   * [Cookie](lib/cookie)
   * [邮件发送](lib/email)
-  * [数据验证过滤](lib/fliter)
+  * [数据验证过滤](lib/filter)
   * [网络请求](lib/http)
   * [图片处理](lib/image)
   * [分页类](lib/page)
