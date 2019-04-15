@@ -12,8 +12,8 @@
 <body>
 <div id="app"></div>
 <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
-<script src="//unpkg.com/docsify/lib/plugins/search.js"></script>
 <script src="//unpkg.com/docsify-edit-on-github/index.js"></script>
+<script src="//unpkg.com/docsify/lib/plugins/search.js"></script>
 <script src="//unpkg.com/docsify-copy-code"></script>
 <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script>
 <script src="//unpkg.com/prismjs/components/prism-bash.min.js"></script>
@@ -34,20 +34,7 @@
           responsiveTables: true  // default
         },
         plugins: [
-        EditOnGithubPlugin.create('https://duxphp.github.io/duxphp/', 'https://github.com/duxphp/duxphp/blob/master/docs/', '编辑该文档'),
-        function (hook, vm) {
-            hook.beforeEach(function (html) {
-            //var url = 'https://github.com/duxphp/duxphp/blob/master/docs/' + vm.route.file;
-            var github = "<div  data-tooltip-title=\"Star it if you like\" data-tooltip-position=\"top\" class=\"tool-tip\"><iframe src=\"https://ghbtns.com/github-btn.html?user=duxphp&amp;repo=duxphp&amp;type=watch&amp;count=true\" allowtransparency=\"true\" frameborder=\"0\" scrolling=\"0\" width=\"110\" height=\"20\" style='margin:0 10px -6px'></iframe></div>";
-
-            return "<div class=\"tool-docs-header\">"
-                + github
-                + "</div>"
-                + '\n\n'
-                + html
-                + '\n----\n'
-            })
-        },
+            EditOnGithubPlugin.create('https://duxphp.github.io/duxphp/', 'https://github.com/duxphp/duxphp/blob/master/docs/', '编辑该文档'),
         ]
     }
 </script>
