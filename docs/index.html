@@ -25,11 +25,15 @@
         themeable: {
           readyTransition : true, // default
           responsiveTables: true  // default
-        }
+        },
+        plugins: [
+            EditOnGithubPlugin.create(docBase, docEditBase, title)
+        ]
     }
 </script>
 <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
 <script src="//unpkg.com/docsify/lib/plugins/search.js"></script>
+<script src="//unpkg.com/docsify-edit-on-github/index.js"></script>
 <script src="//unpkg.com/docsify-copy-code"></script>
 <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script>
 <script src="//unpkg.com/prismjs/components/prism-bash.min.js"></script>
