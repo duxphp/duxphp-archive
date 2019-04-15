@@ -41,7 +41,7 @@ DuxPHP是一款轻量级高效率的PHP开发框架，框架支持HMVC模式，�
 
 # 文档
 
-[中文开发使用文档](<https://duxphp.github.io/DuxPHP-Document/>)
+[中文开发使用文档](<https://duxphp.github.io/duxphp/>)
 
 # 开源协议
 
