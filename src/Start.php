@@ -119,6 +119,13 @@ class Start {
      * 加载核心文件
      */
     protected static function loadFile() {
+        if(IS_CLI) {
+            $params = getopt('u:m:');
+            $_SERVER['REQUEST_URI'] = $params['u'];
+            if($params['m']) {
+                if (!defined('SYSTEM_MODEL')) define('SYSTEM_MODEL', $params['m']);
+            }
+        }
     }
 
     /**
