@@ -257,7 +257,7 @@ class Filter {
      * @return int
      */
     public function validatePhone($field, $value, $params) {
-        if (!preg_match("/(^1[3|4|5|7|8][0-9]{9}$)/", $value)) {
+        if (!preg_match("/(^1{10}$)/", $value)) {
             $this->errorMsg = '{name}输入不正确!';
             return false;
         }
