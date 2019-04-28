@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * 判断AJAX
  */
@@ -75,7 +74,10 @@ function isApi() {
  * @return array|null
  */
 function hook($layer, $name, $method, $vars = []) {
-    if (empty($name)) return null;
+    if (empty($name)) {
+        return null;
+    }
+
     $apiPath = APP_PATH . '*/' . $layer . '/' . ucfirst($name) . ucfirst($layer) . '.php';
 
     $apiList = glob($apiPath);
@@ -118,7 +120,10 @@ function hook($layer, $name, $method, $vars = []) {
  * @return array|null
  */
 function run($layer, $name, $method, $vars = [], $error = false) {
-    if (empty($name)) return null;
+    if (empty($name)) {
+        return null;
+    }
+
     $apiPath = APP_PATH . '*/' . $layer . '/' . ucfirst($name) . ucfirst($layer) . '.php';
 
     $apiList = glob($apiPath);
@@ -262,7 +267,7 @@ function data_sign($data) {
     $config = \dux\Config::get('dux.use');
     if (!is_array($data)) {
         $data = [
-            'data' => $data
+            'data' => $data,
         ];
     }
     ksort($data);
@@ -281,7 +286,7 @@ function data_sign_has($data, $sign = '') {
     }
     if (!is_array($data)) {
         $data = [
-            'data' => $data
+            'data' => $data,
         ];
     }
     $sign = url_base64_decode($sign);
@@ -298,7 +303,7 @@ function data_sign_has($data, $sign = '') {
  */
 function url_base64_encode($string) {
     $data = base64_encode($string);
-    $data = str_replace(array('+','/','='),array('-','_',''),$data);
+    $data = str_replace(array('+', '/', '='), array('-', '_', ''), $data);
     return $data;
 }
 
@@ -308,14 +313,13 @@ function url_base64_encode($string) {
  * @return bool|string
  */
 function url_base64_decode($string) {
-    $data = str_replace(array('-','_'),array('+','/'),$string);
+    $data = str_replace(array('-', '_'), array('+', '/'), $string);
     $mod4 = strlen($data) % 4;
     if ($mod4) {
         $data .= substr('====', $mod4);
     }
     return base64_decode($data);
 }
-
 
 /**
  * 遍历所有文件和目录
@@ -387,7 +391,6 @@ function del_dir($dir) {
     }
 }
 
-
 /**
  * 隐藏字符串
  * @param $string
@@ -398,8 +401,10 @@ function del_dir($dir) {
  * @return bool|string
  */
 function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split = 0) {
-    if (empty($string))
+    if (empty($string)) {
         return false;
+    }
+
     $array = [];
     if ($type == 0 || $type == 1 || $type == 4) {
         $strlen = $length = mb_strlen($string);
@@ -411,15 +416,19 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
     }
     if ($type == 0) {
         for ($i = $bengin; $i < ($bengin + $len); $i++) {
-            if (isset($array[$i]))
+            if (isset($array[$i])) {
                 $array[$i] = "*";
+            }
+
         }
         $string = implode("", $array);
     } else if ($type == 1) {
         $array = array_reverse($array);
         for ($i = $bengin; $i < ($bengin + $len); $i++) {
-            if (isset($array[$i]))
+            if (isset($array[$i])) {
                 $array[$i] = "*";
+            }
+
         }
         $string = implode("", array_reverse($array));
     } else if ($type == 2) {
@@ -435,8 +444,10 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
         $right = $len;
         $tem = [];
         for ($i = 0; $i < ($length - $right); $i++) {
-            if (isset($array[$i]))
+            if (isset($array[$i])) {
                 $tem[] = $i >= $left ? "*" : $array[$i];
+            }
+
         }
         $array = array_chunk(array_reverse($array), $right);
         $array = array_reverse($array[0]);
@@ -462,7 +473,6 @@ function dux_log($msg, $type = 'INFO') {
     return \dux\Dux::log($msg, $type);
 }
 
-
 /**
  * 浏览器日志
  * @param $msg
@@ -480,7 +490,7 @@ function browser_log($msg) {
  * @return string
  */
 function date_tran($time) {
-    $agoTime = (int)$time;
+    $agoTime = (int) $time;
 
     // 计算出当前日期时间到之前的日期时间的毫秒数，以便进行下一步的计算
     $time = time() - $agoTime;
@@ -492,17 +502,17 @@ function date_tran($time) {
         return date('m月d日', $time);
     }
     if ($time >= 86400) { // N天前
-        $num = (int)($time / 86400);
+        $num = (int) ($time / 86400);
 
         return $num . '天前';
     }
     if ($time >= 3600) { // N小时前
-        $num = (int)($time / 3600);
+        $num = (int) ($time / 3600);
 
         return $num . '小时前';
     }
     if ($time > 60) { // N分钟前
-        $num = (int)($time / 60);
+        $num = (int) ($time / 60);
 
         return $num . '分钟前';
     }
@@ -615,10 +625,9 @@ function str_insert($str, $i, $substr) {
  * @return string
  */
 function log_no($pre = '') {
-    mt_srand((double)microtime() * 1000000);
+    mt_srand((double) microtime() * 1000000);
     return $pre . date('Ymd') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
 }
-
 
 /**
  * 基础UI库
@@ -628,10 +637,10 @@ function load_ui($path = '', $cssLoad = true) {
     $css = ROOT_URL . '/public/common/css/dux.css?v=1.0.9';
     $js = ROOT_URL . '/public/common/js/dux.min.js?v=1.0.9';
     $data = [];
-    if($cssLoad) {
-        $data[] = '<link rel="stylesheet" href="' . $css . '">'."\r\n";
+    if ($cssLoad) {
+        $data[] = '<link rel="stylesheet" href="' . $css . '">' . "\r\n";
     }
-    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-debug="'.($config['debug_browser'] ? true : false).'" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>'."\r\n";
+    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-debug="' . ($config['debug_browser'] ? true : false) . '" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>' . "\r\n";
     return join("", $data);
 }
 
@@ -643,12 +652,29 @@ function load_ui($path = '', $cssLoad = true) {
 function load_js($name = 'jquery') {
     $data = [
         'jquery' => '//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js',
-        'vue' => '//cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js'
+        'vue' => '//cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js',
     ];
     $nameArray = explode(',', $name);
     $returnData = [];
     foreach ($nameArray as $vo) {
-        $returnData[] = '<script type="text/javascript" src="' . $data[$vo] . '"></script>'."\r\n";
+        $returnData[] = '<script type="text/javascript" src="' . $data[$vo] . '"></script>' . "\r\n";
     }
     return join("", $returnData);
+}
+
+/**
+ * 对象转list
+ * @param $objList
+ * @param array $keyList
+ * @return array
+ */
+function objectToList($objList, $keyList = ['key', 'text']) {
+    $list = [];
+    foreach ($objList as $k => $v) {
+        $list[] = [
+            $keyList[0] => $k,
+            $keyList[1] => $v,
+        ];
+    }
+    return $list;
 }
