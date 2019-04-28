@@ -670,6 +670,9 @@ function load_js($name = 'jquery') {
  */
 function objectToList($objList, $keyList = ['key', 'text']) {
     $list = [];
+    if(!$objList) {
+        return [];
+    }
     foreach ($objList as $k => $v) {
         $list[] = [
             $keyList[0] => $k,
