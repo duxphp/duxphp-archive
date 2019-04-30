@@ -110,33 +110,57 @@ class Model {
     }
 
     public function insert() {
-        if (empty($this->options['data']) || !is_array($this->options['data'])) return false;
+        if (empty($this->options['data']) || !is_array($this->options['data'])) {
+            return false;
+        }
+
         return $this->getObj()->insert($this->_getTable(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
     }
 
     public function update() {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
-        if (empty($this->options['data']) || !is_array($this->options['data'])) return false;
+        if (empty($this->options['where']) || !is_array($this->options['where'])) {
+            return false;
+        }
+
+        if (empty($this->options['data']) || !is_array($this->options['data'])) {
+            return false;
+        }
+
         $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function delete() {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
+        if (empty($this->options['where']) || !is_array($this->options['where'])) {
+            return false;
+        }
+
         $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function setInc($field, $num = 1) {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
-        if (empty($field)) return false;
+        if (empty($this->options['where']) || !is_array($this->options['where'])) {
+            return false;
+        }
+
+        if (empty($field)) {
+            return false;
+        }
+
         $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
 
     public function setDec($field, $num = 1) {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) return false;
-        if (empty($field)) return false;
+        if (empty($this->options['where']) || !is_array($this->options['where'])) {
+            return false;
+        }
+
+        if (empty($field)) {
+            return false;
+        }
+
         $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
         return ($status === false) ? false : true;
     }
@@ -151,14 +175,20 @@ class Model {
 
     public function query($sql, $params = array()) {
         $sql = trim($sql);
-        if (empty($sql)) return array();
+        if (empty($sql)) {
+            return array();
+        }
+
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
         return $this->getObj()->query($sql, $params, $this->_getFetchSql());
     }
 
     public function execute($sql, $params = array()) {
         $sql = trim($sql);
-        if (empty($sql)) return false;
+        if (empty($sql)) {
+            return false;
+        }
+
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
         return $this->getObj()->execute($sql, $params, $this->_getFetchSql());
     }
@@ -200,7 +230,7 @@ class Model {
             $filedSql = [];
             foreach ($fields as $vo) {
                 preg_match('/([a-zA-Z0-9_\-\.\(\)]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $vo, $match);
-                if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min','max', 'avg', 'sum', 'count'])) {
+                if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min', 'max', 'avg', 'sum', 'count'])) {
                     $filedSql[] = $match[1] . ' as ' . $match[2];
                 } else {
                     $filedSql[] = $vo;
@@ -222,17 +252,25 @@ class Model {
             '>' => 'left',
             '<' => 'right',
             '<>' => 'full',
-            '><' => 'inner'
+            '><' => 'inner',
         );
         $sql = [];
         foreach ($join as $vo) {
             list($table, $relation, $way) = $vo;
             preg_match('/([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $table, $match);
             $table = $this->prefix . $match[1] . (isset($match[3]) ? ' as ' . $match[3] : '');
-            if (count($relation) == 1) {
-                $relation = 'USING ("' . $relation . '")';
+            if (!$relation[0]) {
+                $str = [];
+                foreach ($relation as $k => $v) {
+                    $str[] = $k . ' = ' . $v;
+                }
+                $relation = implode(' AND ', $str);
             } else {
-                $relation = $relation[0] . ' = ' . $relation[1];
+                if (count($relation) == 1) {
+                    $relation = 'USING ("' . $relation . '")';
+                } else {
+                    $relation = $relation[0] . ' = ' . $relation[1];
+                }
             }
             $relation = 'on ' . $relation;
             $sql[] = " {$joinArray[$way]} join {$table} {$relation} ";
@@ -279,7 +317,6 @@ class Model {
         $sql = $this->_whereParsing($condition, $this->options['where_params'], ' AND');
         return $sql ? ' WHERE ' . $sql : '';
     }
-
 
     protected function columnQuote($string) {
         if (strpos($string, '.') !== false) {
@@ -365,8 +402,8 @@ class Model {
                             $map[$bindField] = $value;
                         } elseif ($operator === '!') {
                             if (is_array($value)) {
-                                foreach($value as $k => $v) {
-                                    $value[$k] = "'".$v."'";
+                                foreach ($value as $k => $v) {
+                                    $value[$k] = "'" . $v . "'";
                                 }
                                 $stack[] = $field . ' NOT IN (' . implode(', ', $value) . ')';
                             } else {
@@ -377,7 +414,7 @@ class Model {
                             if (!is_array($value)) {
                                 $value = [$value];
                             }
-						    $connector = ' OR ';
+                            $connector = ' OR ';
                             $like_clauses = [];
                             foreach ($value as $index => $item) {
                                 $item = strval($item);
@@ -404,8 +441,8 @@ class Model {
                         }
                     } else {
                         if (is_array($value)) {
-                            foreach($value as $k => $v) {
-                                $value[$k] = "'".$v."'";
+                            foreach ($value as $k => $v) {
+                                $value[$k] = "'" . $v . "'";
                             }
                             $stack[] = $field . ' IN (' . implode(', ', $value) . ')';
                         } else {
@@ -446,10 +483,10 @@ class Model {
             preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
             if (isset($match['operator'])) {
                 if (is_numeric($value)) {
-                    $sql[] = '`'.$column.'`' . ' = ' . $column . ' ' . $match['operator'] . ' ' . $value;
+                    $sql[] = '`' . $column . '`' . ' = ' . $column . ' ' . $match['operator'] . ' ' . $value;
                 }
             } else {
-                $sql[] = '`'.$column.'`' . ' = ' . $bindField;
+                $sql[] = '`' . $column . '`' . ' = ' . $bindField;
                 if (is_array($value)) {
                     $map[$bindField] = json_encode($value, JSON_UNESCAPED_UNICODE);
                 } else {
@@ -463,6 +500,5 @@ class Model {
             'data' => $fields,
         ];
     }
-
 
 }
