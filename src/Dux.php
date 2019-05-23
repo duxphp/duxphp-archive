@@ -217,7 +217,7 @@ class Dux {
 
         $route = \dux\Config::get('dux.route');
         $routeParams = explode(',', $route['params']);
-        if($_GET['webapp']) {
+        if ($_GET['webapp']) {
             $params['webapp'] = 1;
         }
         if (!empty($routeParams) && $get) {
@@ -454,12 +454,17 @@ class Dux {
      * 页面不存在
      */
     public static function notFound() {
-        static::header(404, function () {
-            if (!headers_sent()) {
-                header("Content-Type: text/html; charset=UTF-8");
-            }
-            echo file_get_contents(CORE_PATH . 'tpl/404.html');
-        });
+        if (!IS_CLI) {
+            static::header(404, function () {
+                if (!headers_sent()) {
+                    header("Content-Type: text/html; charset=UTF-8");
+                }
+                echo file_get_contents(CORE_PATH . 'tpl/404.html');
+            });
+        } else {
+            echo 'The request does not exist';
+            return;
+        }
     }
 
 
@@ -470,16 +475,21 @@ class Dux {
      * @param int $code
      */
     public static function errorPage($title, $msg, $code = 503) {
-        static::header($code, function () use ($title, $msg, $code) {
-            if (!headers_sent()) {
-                header("Content-Type: text/html; charset=UTF-8");
-            }
-            $html = file_get_contents(CORE_PATH . 'tpl/error.html');
-            $html = str_replace('{$title}', $title, $html);
-            $html = str_replace('{$code}', $code, $html);
-            $html = str_replace('{$msg}', $msg, $html);
-            exit($html);
-        });
+        if (!IS_CLI) {
+            static::header($code, function () use ($title, $msg, $code) {
+                if (!headers_sent()) {
+                    header("Content-Type: text/html; charset=UTF-8");
+                }
+                $html = file_get_contents(CORE_PATH . 'tpl/error.html');
+                $html = str_replace('{$title}', $title, $html);
+                $html = str_replace('{$code}', $code, $html);
+                $html = str_replace('{$msg}', $msg, $html);
+                exit($html);
+            });
+        }else {
+            echo $msg;
+            return;
+        }
     }
 
     /**
@@ -516,12 +526,12 @@ class Dux {
                 return false;
             }
         }
-        if(empty($fileName)) {
+        if (empty($fileName)) {
             $file = $dir . date('Y-m-d') . '.log';
-        }else {
+        } else {
             $file = $dir . $fileName . '.log';
         }
-        if(is_array($msg)) {
+        if (is_array($msg)) {
             $msg = json_encode($msg, JSON_UNESCAPED_UNICODE);
         }
         if (!error_log($type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . "\r\n", 3, $file)) {

@@ -28,7 +28,10 @@ class Start {
      * 运行框架
      */
     public static function run() {
-        self::environment();
+        if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
+        if(!IS_CLI) {
+            self::environment();
+        }
         self::definitions();
         self::loadFile();
         self::loadConfig();
@@ -49,7 +52,6 @@ class Start {
         }
         if (!defined('VERSION')) define('VERSION', '1.1.15');
         if (!defined('VERSION_DATE')) define('VERSION_DATE', '20190413');
-        if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);

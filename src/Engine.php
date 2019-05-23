@@ -140,106 +140,100 @@ class Engine {
             $url = $params['u'];
         }
 
-        $routes = \dux\Config::get('dux.routes');
-        foreach ($routes as $rule => $mapper) {
-            $rule = '/' . str_ireplace(array('\\\\', 'http://', '-', '/', '<', '>', '.'), array('', '', '\-', '\/', '(?<', ">[a-z0-9_%]+)", '\.'), $rule) . '/i';
-            if (preg_match($rule, $url, $matches, PREG_OFFSET_CAPTURE)) {
-                if ($matches[0][1] !== 0) {
-                    continue;
-                }
-                foreach ($matches as $matchkey => $matchval) {
-
-                    if (('layer' === $matchkey)) {
-                        $mapper = str_ireplace('<layer>', $matchval[0], $mapper);
-                    } else if ('app' === $matchkey) {
-                        $mapper = str_ireplace('<app>', $matchval[0], $mapper);
-                    } else if ('module' === $matchkey) {
-                        $mapper = str_ireplace('<module>', $matchval[0], $mapper);
-                    } else if ('action' === $matchkey) {
-                        $mapper = str_ireplace('<action>', $matchval[0], $mapper);
-                    } else {
-                        if (!is_int($matchkey)) {
-                            $_GET[$matchkey] = $matchval[0];
-                        }
-
+        if (!empty($url) || !IS_CLI) {
+            $url = trim($url, '/');
+            $urlParse = parse_url($url);
+            $urlPath = explode('.', $urlParse['path'], 2);
+            $urlArray = explode("/", $urlPath[0], 5);
+            $moduleConfig = \dux\Config::get('dux.module');
+            $moduleRule = array_flip($moduleConfig);
+            $roleName = null;
+            unset($_GET['/' . $urlParse['path']]);
+            if (in_array($urlArray[0], $moduleConfig)) {
+                $roleName = $urlArray[0];
+                $layer = $moduleRule[$urlArray[0]];
+                $appName = $urlArray[1];
+                $modelName = $urlArray[2];
+                $actionName = $urlArray[3];
+                $params = $urlArray[4];
+            } else {
+                foreach ($moduleRule as $key => $vo) {
+                    if (empty($key)) {
+                        $layer = $vo;
+                        continue;
                     }
                 }
-                $url = $mapper;
-                break;
+                $appName = $urlArray[0];
+                $modelName = $urlArray[1];
+                $actionName = $urlArray[2];
+                $params = $urlArray[3] . '/' . $urlArray[4];
             }
-        }
-
-        $url = trim($url, '/');
-        $urlParse = parse_url($url);
-        $urlPath = explode('.', $urlParse['path'], 2);
-        $urlArray = explode("/", $urlPath[0], 5);
-        $moduleConfig = \dux\Config::get('dux.module');
-        $moduleRule = array_flip($moduleConfig);
-        $roleName = null;
-        unset($_GET['/' . $urlParse['path']]);
-        if (in_array($urlArray[0], $moduleConfig)) {
-            $roleName = $urlArray[0];
-            $layer = $moduleRule[$urlArray[0]];
-            $appName = $urlArray[1];
-            $modelName = $urlArray[2];
-            $actionName = $urlArray[3];
-            $params = $urlArray[4];
-        } else {
-            foreach ($moduleRule as $key => $vo) {
-                if (empty($key)) {
-                    $layer = $vo;
-                    continue;
+            $layer = empty($layer) ? \dux\Config::get('dux.module_default') : $layer;
+            $appName = empty($appName) ? 'index' : $appName;
+            $modelName = empty($modelName) ? 'Index' : $modelName;
+            $actionName = empty($actionName) ? 'index' : $actionName;
+            if (!defined('VIEW_LAYER_NAME')) {
+                if ($layer != 'mobile' && $layer != 'controller') {
+                    define('VIEW_LAYER_NAME', \dux\Config::get('dux.module_default'));
+                } else {
+                    define('VIEW_LAYER_NAME', $layer);
                 }
             }
-            $appName = $urlArray[0];
-            $modelName = $urlArray[1];
-            $actionName = $urlArray[2];
-            $params = $urlArray[3] . '/' . $urlArray[4];
-        }
-        $layer = empty($layer) ? \dux\Config::get('dux.module_default') : $layer;
-        $appName = empty($appName) ? 'index' : $appName;
-        $modelName = empty($modelName) ? 'Index' : $modelName;
-        $actionName = empty($actionName) ? 'index' : $actionName;
-        if (!defined('VIEW_LAYER_NAME')) {
-            if ($layer != 'mobile' && $layer != 'controller') {
-                define('VIEW_LAYER_NAME', \dux\Config::get('dux.module_default'));
-            } else {
-                define('VIEW_LAYER_NAME', $layer);
+            if (!defined('ROLE_NAME')) {
+                define('ROLE_NAME', $roleName);
+            }
+
+            if (!defined('LAYER_NAME')) {
+                define('LAYER_NAME', $layer);
+            }
+
+            if (!defined('APP_NAME')) {
+                define('APP_NAME', strtolower($appName));
+            }
+
+            if (!defined('MODULE_NAME')) {
+                define('MODULE_NAME', ucfirst($modelName));
+            }
+
+            if (!defined('ACTION_NAME')) {
+                define('ACTION_NAME', $actionName);
+            }
+
+            $paramArray = explode("/", $params);
+            if (!empty($paramArray)) {
+                $paramArray = array_filter($paramArray);
+            }
+
+            $get = [];
+            foreach ($paramArray as $key => $value) {
+                $list = explode('-', $value, 2);
+                if (count($list) == 2) {
+                    $get[$list[0]] = $list[1];
+                }
+            }
+            $_GET = array_merge($get, $_GET);
+        } else {
+            if (!defined('VIEW_LAYER_NAME')) {
+                define('VIEW_LAYER_NAME', '');
+            }
+            if (!defined('ROLE_NAME')) {
+                define('ROLE_NAME', '');
+            }
+
+            if (!defined('LAYER_NAME')) {
+                define('LAYER_NAME', '');
+            }
+
+            if (!defined('APP_NAME')) {
+                define('APP_NAME', '');
+            }
+            if (!defined('MODULE_NAME')) {
+                define('MODULE_NAME', '');
+            }
+            if (!defined('ACTION_NAME')) {
+                define('ACTION_NAME', '');
             }
         }
-        if (!defined('ROLE_NAME')) {
-            define('ROLE_NAME', $roleName);
-        }
-
-        if (!defined('LAYER_NAME')) {
-            define('LAYER_NAME', $layer);
-        }
-
-        if (!defined('APP_NAME')) {
-            define('APP_NAME', strtolower($appName));
-        }
-
-        if (!defined('MODULE_NAME')) {
-            define('MODULE_NAME', ucfirst($modelName));
-        }
-
-        if (!defined('ACTION_NAME')) {
-            define('ACTION_NAME', $actionName);
-        }
-
-        $paramArray = explode("/", $params);
-        if (!empty($paramArray)) {
-            $paramArray = array_filter($paramArray);
-        }
-
-        $get = [];
-        foreach ($paramArray as $key => $value) {
-            $list = explode('-', $value, 2);
-            if (count($list) == 2) {
-                $get[$list[0]] = $list[1];
-            }
-        }
-        $_GET = array_merge($get, $_GET);
     }
 
     /**
@@ -247,6 +241,11 @@ class Engine {
      * @throws \Exception
      */
     public function run() {
+        if(IS_CLI && (!APP_NAME || !LAYER_NAME || !MODULE_NAME || !ACTION_NAME)) {
+            echo 'dux cli start';
+            return;
+        }
+
         $class = '\app\\' . APP_NAME . '\\' . LAYER_NAME . '\\' . MODULE_NAME . ucfirst(LAYER_NAME);
         $action = ACTION_NAME;
         if (!class_exists($class)) {
