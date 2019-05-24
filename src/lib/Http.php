@@ -108,7 +108,6 @@ class Http {
         	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 1); // 检查证书中是否设置域名  
 		}
 		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-		curl_setopt($ch, CURLOPT_REFERER, $_SERVER['HTTP_HOST']);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array($header));//模拟的header头
 		$result = curl_exec($ch);
 		curl_close($ch);
@@ -133,7 +132,6 @@ class Http {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
 		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-		curl_setopt($ch, CURLOPT_REFERER, $_SERVER['HTTP_HOST']);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array($header));//模拟的header头
 		$result = curl_exec($ch);
 		curl_close($ch);
