@@ -135,11 +135,19 @@ class View {
      * 模板输出显示
      * @param $file
      * @param null $data
+     * @param integer $type
      * @throws \Exception
      */
-    public function render($file, $data = null) {
-        $this->exists($file);
-        $template = $this->compile($this->template, $data);
+    public function render($file, $data = null, $type = 0) {
+        if(!$type) {
+            $this->exists($file);
+            $template = $this->compile($this->template, $data);
+        }else {
+            if (is_array($data)) {
+                $this->vars = array_merge($this->vars, $data);
+            }
+            $template = $this->templateParse($file);
+        }
         extract($this->vars);
         eval('?>' . $template);
     }
@@ -148,11 +156,12 @@ class View {
      * 获取渲染模板内容
      * @param string $file 模板文件名
      * @param array $data 赋值数据
+     * @param integer $type 类型
      * @return string 模板内容
      */
-    public function fetch($file, $data = null) {
+    public function fetch($file, $data = null, $type = 0) {
         ob_start();
-        $this->render($file, $data);
+        $this->render($file, $data, $type);
         return ob_get_clean();
     }
 
