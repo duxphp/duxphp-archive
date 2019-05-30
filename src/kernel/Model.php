@@ -262,7 +262,11 @@ class Model {
             if (!$relation[0]) {
                 $str = [];
                 foreach ($relation as $k => $v) {
-                    $str[] = $k . ' = ' . $v;
+                    if($k == '_sql') {
+                        $str[] = $v;
+                    }else {
+                        $str[] = $k . ' = ' . $v;
+                    }
                 }
                 $relation = implode(' AND ', $str);
             } else {
