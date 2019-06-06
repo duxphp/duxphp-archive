@@ -400,7 +400,7 @@ function del_dir($dir) {
  * @param string $glue
  * @return bool|string
  */
-function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split = 0) {
+function hide_str($string = '', $bengin = 0, $len = 4, $type = 0, $glue = "@", $split = 0) {
     if (empty($string)) {
         return false;
     }
@@ -469,7 +469,7 @@ function hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split
  * @param string $type
  * @return bool
  */
-function dux_log($msg, $type = 'INFO') {
+function dux_log($msg = '', $type = 'INFO') {
     return \dux\Dux::log($msg, $type);
 }
 
@@ -480,7 +480,7 @@ function dux_log($msg, $type = 'INFO') {
  * @param string $color
  * @return bool
  */
-function browser_log($msg) {
+function browser_log($msg = '') {
     return \dux\Dux::browserLog($msg);
 }
 
@@ -525,7 +525,7 @@ function date_tran($time) {
  * @param $html
  * @return string
  */
-function html_in($html) {
+function html_in($html = '') {
     return \dux\lib\Str::htmlIn($html);
 
 }
@@ -535,7 +535,7 @@ function html_in($html) {
  * @param $str
  * @return string
  */
-function html_out($str) {
+function html_out($str = '') {
     return \dux\lib\Str::htmlOut($str);
 }
 
@@ -544,7 +544,7 @@ function html_out($str) {
  * @param $str
  * @return string
  */
-function html_clear($str) {
+function html_clear($str = '') {
     return strip_tags(\dux\lib\Str::htmlClear($str));
 }
 
@@ -553,7 +553,7 @@ function html_clear($str) {
  * @param $str
  * @return mixed
  */
-function str_html($str) {
+function str_html($str = '') {
     $str = str_replace("\n", '<br>', $str);
     return $str;
 }
@@ -574,7 +574,7 @@ function str_len($str, $len = 20, $suffix = true) {
  * @param $str
  * @return int|mixed
  */
-function int_format($str) {
+function int_format($str = 0) {
     return \dux\lib\Str::intFormat($str);
 }
 
@@ -583,7 +583,7 @@ function int_format($str) {
  * @param $money
  * @return string
  */
-function price_format($money) {
+function price_format($money = 0) {
     return \dux\lib\Str::priceFormat($money);
 }
 
@@ -606,7 +606,7 @@ function price_calculate($n1, $symbol, $n2, $scale = '2') {
  * @param $substr
  * @return string
  */
-function str_insert($str, $i, $substr) {
+function str_insert($str = 0, $i, $substr = 0) {
     $startstr = '';
     for ($j = 0; $j < $i; $j++) {
         $startstr .= $str[$j];
