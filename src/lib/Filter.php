@@ -579,7 +579,11 @@ class Filter {
      * 自定义过滤函数
      */
     public function filterFunction($field, $value, $params) {
-        return call_user_func($params, $value);
+        if (!empty($value)) {
+            return call_user_func($params, $value);
+        } else {
+            return call_user_func($params);
+        }
     }
 
 
