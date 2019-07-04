@@ -38,7 +38,7 @@ class Image {
      * @param string $driver 图片驱动
      */
     public function __construct($img, $driver = 'gd') {
-        $this->md5 = md5_file($img);
+        $this->md5 = md5_file($img) . $driver;
         $this->img = $img;
         $this->driver = $driver;
     }
