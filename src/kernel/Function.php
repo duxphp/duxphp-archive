@@ -651,8 +651,8 @@ function load_ui($path = '', $cssLoad = true) {
  */
 function load_js($name = 'jquery') {
     $data = [
-        'jquery' => 'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js',
-        'vue' => 'https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js',
+        'jquery' => 'https://lib.baomitu.com/jquery/3.4.1/jquery.min.js',
+        'vue' => 'https://lib.baomitu.com/vue/2.6.10/vue.min.js',
     ];
     $nameArray = explode(',', $name);
     $returnData = [];
