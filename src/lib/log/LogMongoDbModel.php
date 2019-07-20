@@ -196,8 +196,10 @@ class LogMongoDbModel extends BaseLogMongoDbModel {
 
             $startInt = strrpos($pathArr['dirname'],$dir);
 
+            $file = $pathArr['dirname'];
+
             if($startInt !== false)
-                $file = substr($filePath,$startInt);
+                $file = substr($file,$startInt);
         }
 
         if(empty($name))
@@ -256,6 +258,22 @@ class LogMongoDbModel extends BaseLogMongoDbModel {
         $modelData = $this->logDataModel();
 
         return $modelData->where(['log_id' => $logId])->order('create_time desc')->select();
+    }
+
+
+    /**
+     * 获取目录列表
+     * @return mixed
+     */
+    public function getFileList(){
+
+        $where = [
+            'module'        => $this->module()
+        ];
+
+        $fileArr = $this->distinct($this->_getTable(),'file',$where);
+
+        return $fileArr;
     }
 
 }

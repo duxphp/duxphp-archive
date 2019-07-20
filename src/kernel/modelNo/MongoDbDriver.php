@@ -190,7 +190,7 @@ class MongoDbDriver {
      */
     public function aggregate($collName, array $where, array $group){
         $cmd = [
-            'aggregate' => $this->_db. '.' . $collName,
+            'aggregate' => $collName,
             'pipeline' => [
                 ['$match' => $where],
                 ['$group' => $group]
@@ -218,7 +218,7 @@ class MongoDbDriver {
     public function distinct($collName, $key, array $where){
         $result = [];
         $cmd = [
-            'distinct' => $this->_db. '.' . $collName,
+            'distinct' => $collName,
             'key' => $key,
             'query' => $where
         ];
