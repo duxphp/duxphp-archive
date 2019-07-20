@@ -6,7 +6,7 @@
 
 namespace dux\lib\log;
 
-class MongoDBDriver implements LogInterface {
+class MongoDbDriver implements LogInterface {
 
     protected $driver = NULL;
 
