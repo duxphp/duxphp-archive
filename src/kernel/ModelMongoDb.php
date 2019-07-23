@@ -499,7 +499,7 @@ abstract class ModelMongoDb {
             return false;
 
         $group = [
-            $this->getPrimary() => null,
+            $this->primaryDefault => null,
             'result'   => [
                 '$sum' => '$' . $field
             ]
