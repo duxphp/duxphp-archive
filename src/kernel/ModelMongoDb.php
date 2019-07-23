@@ -268,6 +268,10 @@ abstract class ModelMongoDb {
                 if(!in_array($vo,$defaultFields))
                     continue;
 
+                //字段转换
+                if($vo == $this->getPrimary() && $this->getPrimary() != $this->primaryDefault)
+                    $vo = $this->primaryDefault;
+
                 $fieldsList[] = $vo;
             }
         }
@@ -562,6 +566,7 @@ abstract class ModelMongoDb {
         $this->defaultFields = array_keys($this->paramDefaultFields());
 
         array_unshift($this->defaultFields,$this->getPrimary());
+        array_unshift($this->defaultFields,$this->primaryDefault);
 
         return $this->defaultFields;
     }
@@ -721,6 +726,10 @@ abstract class ModelMongoDb {
 
             $fieldOrder = trim($fieldOrder);
 
+            //字段转换
+            if($fieldOrder == $this->getPrimary() && $this->getPrimary() != $this->primaryDefault)
+                $fieldOrder = $this->primaryDefault;
+
             $list[$fieldOrder] = $sortOrder ? -1 : 1;
         }
 
@@ -749,8 +758,8 @@ abstract class ModelMongoDb {
         foreach ($fields as $k=>$v)
             $list[$v] = 1;
 
-        if(!in_array($this->getPrimary(),$fields))
-            $list[$this->getPrimary()] = 0;
+        if(!in_array($this->primaryDefault,$fields))
+            $list[$this->primaryDefault] = 0;
 
         return $list;
     }
