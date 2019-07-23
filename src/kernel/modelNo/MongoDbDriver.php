@@ -15,6 +15,14 @@ class MongoDbDriver {
     private $_dbuser;
     private $_db;
 
+    /**
+     * 默认主键名称
+     * @var string
+     */
+    private $primaryDefault = '_id';
+
+    private $primary = '';
+
     public function __construct($param = array()){
         if(!empty($param['host'])){
             $this->_host = $param['host'] ? $param['host'] . ':'  : '';
@@ -45,6 +53,24 @@ class MongoDbDriver {
         new \MongoDB\Driver\WriteConcern(\MongoDB\Driver\WriteConcern::MAJORITY, 1000);
     }
 
+    /**
+     * 设置主键名称
+     * @param $pri
+     * @return $this
+     */
+    public function setPrimary($pri){
+        $this->primary = $pri;
+        return $this;
+    }
+
+    /**
+     * 获取主键名称
+     * @return string
+     */
+    public function getPrimary(){
+
+        return !empty($this->primary) ? $this->primary : $this->primaryDefault;
+    }
 
     /**
      * 插入数据
@@ -60,11 +86,13 @@ class MongoDbDriver {
 
         foreach ($document as $val){
 
-            $id = new \MongoDB\BSON\ObjectID;
+            if(!isset($val[$this->primaryDefault])){
+                $val[$this->primaryDefault] = new \MongoDB\BSON\ObjectID;
+            }
 
-            $ids[] = (string)$id;
+            $id = is_object($val[$this->primaryDefault]) ? (string)$val[$this->primaryDefault] : $val[$this->primaryDefault];
 
-            $val['_id'] = $id;
+            $ids[] = $id;
 
             $bulk->insert($val);
         }
@@ -194,12 +222,20 @@ class MongoDbDriver {
             'pipeline' => [
                 ['$match' => $where],
                 ['$group' => $group]
-            ]
+            ],
+            'cursor' => new \stdClass,
         ];
 
         $result = $this->command($cmd)->toArray();
 
-        return $result[0]->result;
+        $returnData = null;
+
+        if(isset($result[0]->result))
+            $returnData = $result[0]->result;
+        else
+            $returnData = (array)$result[0];
+
+        return $returnData;
     }
 
     /**
@@ -235,8 +271,13 @@ class MongoDbDriver {
             return [];
 
         $tmp = (array)$data;
-        if(isset($tmp['_id']))
-            $tmp['_id'] = (string)$tmp['_id'];
+        //主键转换
+        if(isset($tmp[$this->primaryDefault]))
+            $tmp[$this->getPrimary()] = is_object($tmp[$this->primaryDefault]) ? (string)$tmp[$this->primaryDefault] : $tmp[$this->primaryDefault];
+
+        if($this->primaryDefault != $this->getPrimary())
+            unset($tmp[$this->primaryDefault]);
+
         return $tmp;
     }
 

@@ -16,6 +16,12 @@ abstract class ModelMongoDb {
     protected $config = [];
     protected $database = 'default';
 
+    /**
+     * 默认主键名称
+     * @var string
+     */
+    protected $primaryDefault = '_id';
+
     protected $options = array(
         'table' => '',
         'field' => null,
@@ -168,6 +174,15 @@ abstract class ModelMongoDb {
     }
 
 
+    public function delete() {
+        if (empty($this->options['where']) || !is_array($this->options['where'])) {
+            return false;
+        }
+
+        $status = $this->_delete($this->_getTable(), $this->_getWhere());
+        return ($status === false) ? false : $status;
+    }
+
     /**
      * 查询
      * @param $table
@@ -228,13 +243,8 @@ abstract class ModelMongoDb {
         return $db->distinct($table,$key,$where);
     }
 
-    public function delete() {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) {
-            return false;
-        }
-
-        $status = $this->_delete($this->_getTable(), $this->_getWhere());
-        return ($status === false) ? false : $status;
+    public function sum($field) {
+        return $this->_sum($this->_getTable(),$this->_getWhere(),$field);
     }
 
     public function getFields() {
@@ -274,20 +284,20 @@ abstract class ModelMongoDb {
     protected function _getTable() {
         $table = $this->options['table'];
         $this->options['table'] = '';
-       if (empty($table)) {
+        if (empty($table)) {
 
-           if(!empty($this->table)){
-               $table = $this->table;
-           }else{
-               $class = get_called_class();
-               $class = str_replace('\\', '/', $class);
-               $class = basename($class);
-               $class = substr($class, 0, -5);
-               $class = preg_replace("/(?=[A-Z])/", "_\$1", $class);
-               $class = substr($class, 1);
-               $class = strtolower($class);
-               $table = $class;
-           }
+            if(!empty($this->table)){
+                $table = $this->table;
+            }else{
+                $class = get_called_class();
+                $class = str_replace('\\', '/', $class);
+                $class = basename($class);
+                $class = substr($class, 0, -5);
+                $class = preg_replace("/(?=[A-Z])/", "_\$1", $class);
+                $class = substr($class, 1);
+                $class = strtolower($class);
+                $table = $class;
+            }
 
         } else {
             preg_match('/([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $table, $match);
@@ -471,6 +481,33 @@ abstract class ModelMongoDb {
         return $db->delete($table,$where);
     }
 
+    /**
+     * 求和
+     * @param $table
+     * @param $where
+     * @param $field
+     * @return bool
+     */
+    private function _sum($table,$where,$field){
+
+        $db = $this->db();
+
+        if(!$db)
+            return false;
+
+        if($table === false)
+            return false;
+
+        $group = [
+            $this->getPrimary() => null,
+            'result'   => [
+                '$sum' => '$' . $field
+            ]
+        ];
+
+        return $db->aggregate($table,$where,$group);
+    }
+
     /* 方法定义 */
 
     /**
@@ -483,7 +520,12 @@ abstract class ModelMongoDb {
             self::$objArr[$this->database] = new \dux\kernel\modelNo\MongoDbDriver($this->config);
         }
 
-        return self::$objArr[$this->database];
+        $obj = self::$objArr[$this->database];
+
+        if(method_exists($obj, 'setPrimary'))
+            $obj = $obj->setPrimary($this->getPrimary());
+
+        return $obj;
     }
 
     /**
@@ -540,6 +582,14 @@ abstract class ModelMongoDb {
     /*############################# 字段操作end #############################*/
 
 
+    /**
+     * 解析where条件
+     * @param $whereData
+     * @return array
+     */
+    protected function whereParsing($whereData){
+        return $this->_whereParsing($whereData);
+    }
 
     /**
      * 解析where条件
@@ -565,12 +615,12 @@ abstract class ModelMongoDb {
         $getVal = function ($field,$value){
 
             if(!is_array($value))
-                return $this->_dataParsing([$field => $value])[$field];
+                return $this->_dataParsing([$field => $value],false)[$field];
 
             $list = [];
 
             foreach ($value as $val)
-                $list[] = $this->_dataParsing([$field => $val])[$field];
+                $list[] = $this->_dataParsing([$field => $val],false)[$field];
 
             return $list;
         };
@@ -600,6 +650,9 @@ abstract class ModelMongoDb {
             preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
             $key = str_replace('`', '', $match[1]);
 
+            if($key == $this->getPrimary() && $this->getPrimary() != $this->primaryDefault)
+                $key = $this->primaryDefault; //主键字段转换
+
             if (isset($match['operator'])) {
                 $operator = $match['operator'];
 
@@ -616,7 +669,7 @@ abstract class ModelMongoDb {
 
                     if(is_array($value)){
                         foreach ($value as $val)
-                            $valList[] = new \MongoDB\BSON\Regex($getVal($key,$value),'i');
+                            $valList[] = new \MongoDB\BSON\Regex($getVal($key,$val),'i');
                     }else{
                         $valList[] = new \MongoDB\BSON\Regex($getVal($key,$value),'i');
                     }
@@ -633,7 +686,7 @@ abstract class ModelMongoDb {
         }
 
         return $whereList;
-     }
+    }
 
 
 
@@ -720,9 +773,21 @@ abstract class ModelMongoDb {
 
         //字段类型
         $type = $this->paramTypeFields();
-        $type[$this->getPrimary()] = function ($v){
-            return new \MongoDB\BSON\ObjectId($v);
-        };
+
+        if(!isset($type[$this->getPrimary()])){
+            $type[$this->getPrimary()] = function ($v = null){
+                return new \MongoDB\BSON\ObjectId($v);
+            };
+        }
+
+        //默认id
+        $type[$this->primaryDefault] = $type[$this->getPrimary()];
+
+        //主键处理
+        if($this->getPrimary() != $this->primaryDefault && isset($data[$this->getPrimary()])){
+            $data[$this->primaryDefault] = $data[$this->getPrimary()];
+            unset($data[$this->getPrimary()]);
+        }
 
         foreach ($data as $key=>&$v){
 
@@ -736,6 +801,9 @@ abstract class ModelMongoDb {
             else
                 settype($v,$fieldType);
         }
+
+        if($dataDefault && !isset($data[$this->primaryDefault]))
+            $data[$this->primaryDefault] = $type[$this->primaryDefault]();
 
         return $data;
     }
