@@ -204,6 +204,32 @@ abstract class ModelMongoDb {
     }
 
     /**
+     * 增加
+     * @param $field
+     * @param int $num
+     * @return bool
+     */
+    public function setInc($field, $num = 1) {
+
+        $status = $this->_setInc($this->_getTable(), $this->_getWhere(),$field,$num);
+        return ($status === false) ? false : $status;
+    }
+
+    /**
+     * 减少
+     * @param $field
+     * @param int $num
+     * @return bool
+     */
+    public function setDec($field, $num = 1) {
+
+        $num *= -1;
+
+        $status = $this->_setInc($this->_getTable(), $this->_getWhere(),$field,$num);
+        return ($status === false) ? false : $status;
+    }
+
+    /**
      * 聚合查询
      * @param $table
      * @param $where
@@ -243,8 +269,14 @@ abstract class ModelMongoDb {
         return $db->distinct($table,$key,$where);
     }
 
+    /**
+     * 求条数
+     * @param $field
+     * @return bool|int
+     */
     public function sum($field) {
-        return $this->_sum($this->_getTable(),$this->_getWhere(),$field);
+        $sum = $this->_sum($this->_getTable(),$this->_getWhere(),$field);
+        return empty($sum) ? 0 : $sum;
     }
 
     public function getFields() {
@@ -483,6 +515,33 @@ abstract class ModelMongoDb {
             return false;
 
         return $db->delete($table,$where);
+    }
+
+    /**
+     * 字段增加(减少)
+     * @param $table
+     * @param $where
+     * @param $field
+     * @param int $num
+     * @return bool
+     */
+    private function _setInc($table,$where,$field,$num = 1){
+
+        $db = $this->db();
+
+        if(!$db)
+            return false;
+
+        if($table === false)
+            return false;
+
+        $set = [
+            '$inc'      => [
+                $field  => $num
+            ]
+        ];
+
+        return $db->update($table,$where,$set);
     }
 
     /**

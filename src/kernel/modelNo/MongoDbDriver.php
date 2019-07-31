@@ -14,6 +14,10 @@ class MongoDbDriver {
     private $_password;
     private $_dbuser;
     private $_db;
+    private $_options;
+    private $_driverOptions;
+
+    private $_wtimeout = 1000;
 
     /**
      * 默认主键名称
@@ -33,11 +37,17 @@ class MongoDbDriver {
 
             $this->_dbuser = !empty($param['dbuser']) ? $param['dbuser'] : $param['dbuser'];
 
+            $this->_options = !empty($param['options']) ? $param['options'] : [];
+            $this->_driverOptions = !empty($param['driverOptions']) ? $param['driverOptions'] : [];
+
+            if(!empty($param['wtimeout']))
+                $this->_wtimeout = $param['wtimeout'];
+
             $mongo = "mongodb://" . $this->_username . $this->_password . '@' . $this->_host . $this->_port . '/' . $this->_dbuser;
         }else{
             return false;
         }
-        $this->_manager = new \MongoDB\Driver\Manager($mongo);
+        $this->_manager = new \MongoDB\Driver\Manager($mongo,$this->_options,$this->_driverOptions);
     }
 
     public function getInstense(){
@@ -50,7 +60,7 @@ class MongoDbDriver {
         return new \MongoDB\Driver\BulkWrite;
     }
     public function getWriteConcern(){
-        new \MongoDB\Driver\WriteConcern(\MongoDB\Driver\WriteConcern::MAJORITY, 1000);
+        new \MongoDB\Driver\WriteConcern(\MongoDB\Driver\WriteConcern::MAJORITY, $this->_wtimeout);
     }
 
     /**
