@@ -28,7 +28,13 @@ class Start {
      * 运行框架
      */
     public static function run() {
+        if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
+            header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
+            echo 'Can only run in PHP is greater than 7.1';
+            exit;
+        }
         if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
+        date_default_timezone_set('PRC');
         if(!IS_CLI) {
             self::environment();
         }
@@ -75,14 +81,7 @@ class Start {
         //设置跨域
         header('Access-Control-Allow-Origin:' . $_SERVER["HTTP_ORIGIN"]);
         header('Access-Control-Allow-Headers:' . $_SERVER["HTTP_ACCESS_CONTROL_REQUEST_HEADERS"]);
-        //判断PHP版本
-        if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
-            header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
-            echo 'Can only run in PHP is greater than 7.1';
-            exit;
-        }
         //兼容环境信息
-        date_default_timezone_set('PRC');
         if (!isset($_SERVER['HTTP_REFERER'])) {
             $_SERVER['HTTP_REFERER'] = '';
         }
