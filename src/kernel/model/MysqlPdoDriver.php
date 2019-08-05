@@ -12,8 +12,27 @@ class MysqlPdoDriver implements DbInterface {
 
     protected $config = [];
     protected $link = NULL;
+    /**
+     * 连接超时 重连次数
+     * @var int
+     */
+    protected $linkNum = 3;
+    /**
+     * 当前连接次数
+     * @var int
+     */
+    protected $linkCurrentNum = 0;
+
     protected $sqlMeta = array('sql' => '', 'params' => [], 'link' => NULL);
     protected $transaction = false;
+
+    protected $errorCode = [
+        //连接失败
+        'gone_away'     => [
+            2006,
+            2013
+        ]
+    ];
 
     public function __construct($config = []) {
         $this->config = $config;
@@ -43,11 +62,20 @@ class MysqlPdoDriver implements DbInterface {
         }
         $result = $sth->execute();
         if ($result) {
+            $this->linkCurrentNum = 0;
             $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
             return $data;
         }
         $err = $sth->errorInfo();
-        throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
+
+        //检测是否连接失效
+        if(in_array($sth->errorCode(),$this->errorCode['gone_away']) && $this->linkCurrentNum < $this->linkNum){
+            $this->linkCurrentNum++;
+            $this->link = null;//清空连接变量
+            return self::query($sql,$params,$return);
+        }
+
+        throw new \PDOException('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
     }
 
     public function execute($sql, array $params = [], $return = false) {
@@ -57,11 +85,20 @@ class MysqlPdoDriver implements DbInterface {
         }
         $result = $sth->execute();
         if ($result) {
+            $this->linkCurrentNum = 0;
             $affectedRows = $sth->rowCount();
             return $affectedRows;
         }
         $err = $sth->errorInfo();
-        throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
+
+        //检测是否连接失效
+        if(in_array($sth->errorCode(),$this->errorCode['gone_away']) && $this->linkCurrentNum < $this->linkNum){
+            $this->linkCurrentNum++;
+            $this->link = null;//清空连接变量
+            return self::execute($sql,$params,$return);
+        }
+
+        throw new \PDOException('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
     }
 
     public function insert($table, array $data = [], array $params = [], $return = false) {
@@ -200,7 +237,7 @@ class MysqlPdoDriver implements DbInterface {
             }
         }
         if (!$pdo) {
-            throw new \Exception('connect database error :' . $error, 500);
+            throw new \PDOException('connect database error :' . $error, 500);
         }
         $pdo->exec("set names {$db['charset']}");
         return $pdo;
