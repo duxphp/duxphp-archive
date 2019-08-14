@@ -44,6 +44,7 @@ class Controller {
             $this->assign('layout', $this->_getView()->fetch($tpl));
             $tpl = $this->layout;
         }
+        
         return $this->_getView()->render($tpl);
     }
 

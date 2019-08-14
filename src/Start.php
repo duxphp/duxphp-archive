@@ -35,7 +35,7 @@ class Start {
         }
         if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
         date_default_timezone_set('PRC');
-        if(!IS_CLI) {
+        if (!IS_CLI) {
             self::environment();
         }
         self::definitions();
@@ -59,6 +59,7 @@ class Start {
         if (!defined('VERSION')) define('VERSION', '1.1.15');
         if (!defined('VERSION_DATE')) define('VERSION_DATE', '20190413');
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
+        if (!defined('METHOD')) define('METHOD', $_SERVER['REQUEST_METHOD']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
         if (!defined('CORE_PATH')) define('CORE_PATH', __DIR__ . '/');
@@ -120,10 +121,10 @@ class Start {
      * 加载核心文件
      */
     protected static function loadFile() {
-        if(IS_CLI) {
+        if (IS_CLI) {
             $params = getopt('u:m:');
             $_SERVER['REQUEST_URI'] = $params['u'];
-            if($params['m']) {
+            if ($params['m']) {
                 if (!defined('SYSTEM_MODEL')) define('SYSTEM_MODEL', $params['m']);
             }
         }
@@ -147,7 +148,10 @@ class Start {
      * 注册核心方法
      */
     protected static function registerCom() {
-
+        ob_start();
+        register_shutdown_function(function () {
+            header("duxDebug: " . json_encode(\dux\Engine::$logs));
+        });
     }
 
     /**

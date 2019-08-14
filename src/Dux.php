@@ -434,7 +434,7 @@ class Dux {
         508 => 'Loop Detected',
 
         510 => 'Not Extended',
-        511 => 'Network Authentication Required'
+        511 => 'Network Authentication Required',
     ];
 
     /**
@@ -447,6 +447,7 @@ class Dux {
             $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
             header(implode(' ', [$protocol, $code, self::$codes[$code]]));
         }
+        $logs = \dux\Engine::$logs;
         exit($callback());
     }
 
@@ -486,7 +487,7 @@ class Dux {
                 $html = str_replace('{$msg}', $msg, $html);
                 exit($html);
             });
-        }else {
+        } else {
             echo $msg;
             return;
         }
@@ -523,31 +524,47 @@ class Dux {
 
         $log_driver = defined('LOG_DRIVER') ? LOG_DRIVER : \dux\Config::get('dux.log_driver');
 
-        if(empty($log_driver))
+        if (empty($log_driver)) {
             $log_driver = 'files';
-
-        $keyName = 'log.' . $log_driver;
-
-        $driver = null;
-
-        if(isset(self::$objArr[$keyName]))
-            $driver = self::$objArr[$keyName];
-        else
-            $driver = new \dux\lib\Log($log_driver);
-
-        $flag = null;
-
-        try{
-
-            $flag = $driver->log($msg,$type,$fileName);
-        }catch (\Exception $e){
-
-            //定义常量
-            if (!defined('LOG_DRIVER')) define('LOG_DRIVER', 'files');
-
-            throw new \Exception($e->getMessage(), $e->getCode());
         }
 
+        $keyName = 'log.' . $log_driver;
+        $driver = null;
+
+        if (isset(self::$objArr[$keyName])) {
+            $driver = self::$objArr[$keyName];
+        } else {
+            $driver = new \dux\lib\Log($log_driver);
+        }
+        $flag = null;
+        $trace = debug_backtrace();
+        $curTarce = [];
+        if ($trace[1]['file']) {
+            $curTarce = $trace[1];
+        } else {
+            $curTarce = $trace[0];
+        }
+        $queryData = \dux\Engine::parserArray($_GET);
+        $requestData = \dux\Engine::parserArray(request());
+        $file = \dux\Engine::parserFile($curTarce['file']);
+        \dux\Engine::$logs[] = [
+            'url' => URL,
+            'method' => $type,
+            'desc' => "line {$curTarce['line']} in file {$file}",
+            'title' => $curTarce['args'][0],
+            'file' => $curTarce['file'],
+            'line' => $curTarce['line'],
+            'trace' => [],
+            'query' => $queryData,
+            'request' => $requestData,
+        ];
+
+        try {
+            $flag = $driver->log($msg, $type, $fileName);
+        } catch (\Exception $e) {
+            if (!defined('LOG_DRIVER')) define('LOG_DRIVER', 'files');
+            throw new \Exception($e->getMessage(), $e->getCode());
+        }
         return $flag;
     }
 
@@ -561,7 +578,6 @@ class Dux {
         if (!\dux\Config::get('dux.debug_browser')) {
             return false;
         }
-        //浏览器调试
         return true;
     }
 

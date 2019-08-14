@@ -4,7 +4,8 @@ namespace dux;
 
 class Engine {
 
-    protected static $classes = array();
+    public static $classes = [];
+    public static $logs = [];
 
     public function __construct() {
         $this->init();
@@ -23,7 +24,7 @@ class Engine {
      * 注册类
      */
     public function autoload() {
-        spl_autoload_register(array(__CLASS__, 'loadClass'));
+        spl_autoload_register([__CLASS__, 'loadClass']);
     }
 
     /**
@@ -32,7 +33,7 @@ class Engine {
      * @return bool
      */
     public function loadClass($class) {
-        $classFile = str_replace(array('\\', '_'), '/', $class) . '.php';
+        $classFile = str_replace(['\\', '_'], '/', $class) . '.php';
         $file = ROOT_PATH . $classFile;
         if (!isset(self::$classes[$file])) {
             if (!file_exists($file)) {
@@ -48,8 +49,8 @@ class Engine {
      * 结果异常错误
      */
     public function handleErrors() {
-        set_error_handler(array($this, 'handleError'));
-        set_exception_handler(array($this, 'handleException'));
+        set_error_handler([$this, 'handleError']);
+        set_exception_handler([$this, 'handleException']);
     }
 
     /**
@@ -71,12 +72,37 @@ class Engine {
      * @param $e
      */
     public function handleException($e) {
-        $msg = "{$e->getMessage()} line {$e->getLine()} in file {$this->parserFile($e->getFile())}";
+        $title = "{$e->getMessage()}";
+        $desc = "line {$e->getLine()} in file {$this->parserFile($e->getFile())}";
+        $trace = [];
+        foreach ($e->getTrace() as $value) {
+            if (empty($value['file'])) {
+                continue;
+            }
+            $trace[] = [
+                'file' => $value['file'],
+                'line' => $value['line'],
+            ];
+        }
+        $queryData = \dux\Engine::parserArray($_GET);
+        $requestData = \dux\Engine::parserArray(request());
+        $duxDebug = [
+            'url' => URL,
+            'method' => METHOD,
+            'title' => $title,
+            'desc' => $desc,
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
+            'trace' => $trace,
+            'query' => $queryData,
+            'request' => $requestData,
+        ];
+        self::$logs[] = $duxDebug;
         if (\dux\Config::get('dux.log')) {
-            \dux\Dux::log($msg);
+            \dux\Dux::log($desc);
         }
         if (IS_CLI) {
-            echo 'error: ' . $msg;
+            echo 'error: ' . $desc;
         } else if (isAjax()) {
             if (!\dux\Config::get('dux.debug')) {
                 $msg = \dux\Dux::$codes[500];
@@ -84,42 +110,54 @@ class Engine {
             $data = [
                 'code' => 500,
                 'message' => $msg,
-                'line' => "line {$e->getLine()} in file {$this->parserFile($e->getFile())}",
-                'trace' => $e->getTrace(),
+                'line' => $desc,
+                'trace' => $trace,
             ];
-            \dux\Dux::header(500, function () use ($data) {
-                if (!headers_sent()) {
-                    header("application/json; charset=UTF-8");
-                }
-                echo json_encode($data);
-            });
+            if (!\dux\Config::get('dux.debug_browser')) {
+                \dux\Dux::header(500, function () use ($data) {
+                    if (!headers_sent()) {
+                        header("application/json; charset=UTF-8");
+                    }
+                    echo json_encode($data);
+                });
+            }
         } else {
-            $html = "<title>Dux System Engine</title>";
+            $html = "<title>{$title}</title>";
             if (!\dux\Config::get('dux.debug')) {
                 \dux\Dux::notFound();
             } else {
-                $html .= "<h1>{$e->getMessage()}</h1>";
-                $html .= "<code>line {$e->getLine()} in file {$this->parserFile($e->getFile())}</code>";
+                $html .= "<h1>{$title}</h1>";
+                $html .= "<code>{$desc}</code>";
                 $html .= "<p>";
-                foreach ($e->getTrace() as $value) {
-                    $html .= "{$value['file']} line {$value['line']} <br>";
-                }
+                $html .= implode('<br>', $trace);
                 $html .= "</p>";
             }
-
             $html .= "<p> run time " . \dux\Dux::runTime() . "s</p>";
 
-            \dux\Dux::header(500, function () use ($html) {
-                if (!headers_sent()) {
-                    header("Content-Type: text/html; charset=UTF-8");
-                }
-                echo $html;
-            });
+            if (!\dux\Config::get('dux.debug_browser')) {
+                \dux\Dux::header(500, function () use ($html) {
+                    if (!headers_sent()) {
+                        header("Content-Type: text/html; charset=UTF-8");
+                    }
+                    echo $html;
+                });
+            }
         }
         exit;
     }
 
-    private function parserFile($file) {
+    public static function parserArray($list) {
+        $data = [];
+        foreach ($list as $key => $vo) {
+            $data[] = [
+                'name' => $key,
+                'value' => $vo,
+            ];
+        }
+        return $data;
+    }
+
+    public static function parserFile($file) {
         return str_replace(ROOT_PATH, '/', $file);
     }
 
@@ -241,7 +279,7 @@ class Engine {
      * @throws \Exception
      */
     public function run() {
-        if(IS_CLI && (!APP_NAME || !LAYER_NAME || !MODULE_NAME || !ACTION_NAME)) {
+        if (IS_CLI && (!APP_NAME || !LAYER_NAME || !MODULE_NAME || !ACTION_NAME)) {
             echo 'dux cli start';
             return;
         }
