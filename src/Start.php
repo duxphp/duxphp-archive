@@ -150,7 +150,9 @@ class Start {
     protected static function registerCom() {
         ob_start();
         register_shutdown_function(function () {
-            header("duxDebug: " . json_encode(\dux\Engine::$logs));
+            if (\dux\Config::get('dux.debug_browser')) {
+                header("duxDebug: " . json_encode(\dux\Engine::$logs));
+            }
         });
     }
 
