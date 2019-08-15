@@ -12,7 +12,7 @@ class Model {
     protected $database = 'default';
     protected $prefix = '';
 
-    protected $options = array(
+    protected $options = [
         'table' => '',
         'field' => null,
         'lock' => false,
@@ -24,8 +24,9 @@ class Model {
         'group' => '',
         'order' => '',
         'limit' => '',
-        'return' => false
-    );
+        'return' => false,
+        'original' => false,
+    ];
 
     protected $table = '';
 
@@ -84,6 +85,11 @@ class Model {
         return $this;
     }
 
+    public function original($original = true) {
+        $this->options['original'] = $original;
+        return $this;
+    }
+
     public function fetchSql($status = true) {
         $this->options['return'] = $status;
         return $this;
@@ -127,7 +133,11 @@ class Model {
         }
 
         $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
+        if ($this->_getOriginal()) {
+            return $status;
+        }
         return ($status === false) ? false : true;
+
     }
 
     public function delete() {
@@ -136,6 +146,9 @@ class Model {
         }
 
         $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getFetchSql());
+        if ($this->_getOriginal()) {
+            return $status;
+        }
         return ($status === false) ? false : true;
     }
 
@@ -149,6 +162,9 @@ class Model {
         }
 
         $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
+        if ($this->_getOriginal()) {
+            return $status;
+        }
         return ($status === false) ? false : true;
     }
 
@@ -162,6 +178,9 @@ class Model {
         }
 
         $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
+        if ($this->_getOriginal()) {
+            return $status;
+        }
         return ($status === false) ? false : true;
     }
 
@@ -173,17 +192,17 @@ class Model {
         return $this->getObj()->getFields($this->_getTable());
     }
 
-    public function query($sql, $params = array()) {
+    public function query($sql, $params = []) {
         $sql = trim($sql);
         if (empty($sql)) {
-            return array();
+            return [];
         }
 
         $sql = str_replace('{pre}', $this->config['prefix'], $sql);
         return $this->getObj()->query($sql, $params, $this->_getFetchSql());
     }
 
-    public function execute($sql, $params = array()) {
+    public function execute($sql, $params = []) {
         $sql = trim($sql);
         if (empty($sql)) {
             return false;
@@ -248,12 +267,12 @@ class Model {
         if (empty($join)) {
             return '';
         }
-        $joinArray = array(
+        $joinArray = [
             '>' => 'left',
             '<' => 'right',
             '<>' => 'full',
             '><' => 'inner',
-        );
+        ];
         $sql = [];
         foreach ($join as $vo) {
             list($table, $relation, $way) = $vo;
@@ -262,9 +281,9 @@ class Model {
             if (!$relation[0]) {
                 $str = [];
                 foreach ($relation as $k => $v) {
-                    if($k == '_sql') {
+                    if ($k == '_sql') {
                         $str[] = $v;
-                    }else {
+                    } else {
                         $str[] = $k . ' = ' . $v;
                     }
                 }
@@ -307,6 +326,12 @@ class Model {
         $lock = $this->options['lock'];
         $this->options['lock'] = [];
         return $lock;
+    }
+
+    protected function _getOriginal() {
+        $return = $this->options['original'];
+        $this->options['original'] = false;
+        return $return;
     }
 
     protected function _getFetchSql() {
@@ -373,7 +398,7 @@ class Model {
         return $limit;
     }
 
-    private function _whereParsing($data, &$map, $conjunctor,$inheritField = '') {
+    private function _whereParsing($data, &$map, $conjunctor, $inheritField = '') {
         $stack = [];
         $i = 0;
 
@@ -384,7 +409,7 @@ class Model {
             $i++;
             if (is_array($value) && preg_match("/^(AND|OR)(\s+#.*)?$/", $key, $relation_match)) {
                 $relationship = $relation_match[1];
-                $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship,$inheritField2) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
+                $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship, $inheritField2) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
                 continue;
             }
             if (strtolower($key) == '_sql') {
@@ -410,7 +435,7 @@ class Model {
                         if (in_array($operator, ['>', '>=', '<', '<='])) {
                             $stack[] = "{$field} {$operator} {$bindField}";
                             $map[$bindField] = $value;
-                        } elseif ($operator === '!') {
+                        } else if ($operator === '!') {
                             if (is_array($value)) {
                                 foreach ($value as $k => $v) {
                                     $value[$k] = "'" . $v . "'";
@@ -420,7 +445,7 @@ class Model {
                                 $stack[] = "{$field} != {$bindField}";
                                 $map[$bindField] = $value;
                             }
-                        } elseif ($operator === '~' || $operator === '!~') {
+                        } else if ($operator === '~' || $operator === '!~') {
                             if (!is_array($value)) {
                                 $value = [$value];
                             }
@@ -438,14 +463,14 @@ class Model {
 
                             $stack[] = '(' . implode($connector, $like_clauses) . ')';
 
-                        } elseif ($operator === '<>' || $operator === '><') {
+                        } else if ($operator === '<>' || $operator === '><') {
                             if (is_array($value)) {
 
                                 $stack[] = '(' . $field . ($operator === '><' ? ' NOT' : '') . ' BETWEEN ' . $bindField . '_a AND ' . $bindField . '_b)';
                                 $map[$bindField . '_a'] = $value[0];
                                 $map[$bindField . '_b'] = $value[1];
                             }
-                        } elseif ($operator === 'REGEXP') {
+                        } else if ($operator === 'REGEXP') {
                             $stack[] = $key . ' REGEXP ' . $bindField;
                             $map[$bindField] = $value;
                         }
