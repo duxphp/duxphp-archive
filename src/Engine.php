@@ -135,7 +135,9 @@ class Engine {
                 $html .= "<h1>{$title}</h1>";
                 $html .= "<code>{$desc}</code>";
                 $html .= "<p>";
-                $html .= implode('<br>', $trace);
+                foreach ($trace as $vo) {
+                    $html .= implode('<br>', 'line ' . $vo['line'] . ' in file ' . $vo['file']);
+                }
                 $html .= "</p>";
             }
             $html .= "<p> run time " . \dux\Dux::runTime() . "s</p>";
