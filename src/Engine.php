@@ -6,6 +6,7 @@ class Engine {
 
     public static $classes = [];
     public static $logs = [];
+    public static $sqls = [];
 
     public function __construct() {
         $this->init();
@@ -86,6 +87,10 @@ class Engine {
         }
         $queryData = \dux\Engine::parserArray($_GET);
         $requestData = \dux\Engine::parserArray(request());
+        $sqlData = [];
+        if (\dux\Config::get('dux.debug_sql')) {
+            $sqlData = self::$sqls;
+        }
         $duxDebug = [
             'url' => URL,
             'method' => METHOD,
@@ -96,6 +101,7 @@ class Engine {
             'trace' => $trace,
             'query' => $queryData,
             'request' => $requestData,
+            'sql' => $sqlData
         ];
         self::$logs[] = $duxDebug;
         if (\dux\Config::get('dux.log')) {

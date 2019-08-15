@@ -152,6 +152,8 @@ class Start {
         register_shutdown_function(function () {
             if (\dux\Config::get('dux.debug_browser')) {
                 header("duxDebug: " . json_encode(\dux\Engine::$logs));
+                \dux\Engine::$logs = [];
+                \dux\Engine::$sqls = [];
             }
         });
     }

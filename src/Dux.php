@@ -547,6 +547,10 @@ class Dux {
         $queryData = \dux\Engine::parserArray($_GET);
         $requestData = \dux\Engine::parserArray(request());
         $file = \dux\Engine::parserFile($curTarce['file']);
+        $sqlData = [];
+        if (\dux\Config::get('dux.debug_sql')) {
+            $sqlData = \dux\Engine::$sqls;
+        }
         \dux\Engine::$logs[] = [
             'url' => URL,
             'method' => $type,
@@ -557,6 +561,7 @@ class Dux {
             'trace' => [],
             'query' => $queryData,
             'request' => $requestData,
+            'sql' => $sqlData,
         ];
 
         try {
