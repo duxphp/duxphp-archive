@@ -136,7 +136,7 @@ class Engine {
                 $html .= "<code>{$desc}</code>";
                 $html .= "<p>";
                 foreach ($trace as $vo) {
-                    $html .= implode('<br>', 'line ' . $vo['line'] . ' in file ' . $vo['file']);
+                    $html .= 'line ' . $vo['line'] . ' in file ' . $vo['file'] . '<br>';
                 }
                 $html .= "</p>";
             }
