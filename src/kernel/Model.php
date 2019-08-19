@@ -18,10 +18,11 @@ class Model {
         'lock' => false,
         'join' => [],
         'where' => [],
-        'where_params' => [],
+        //'bind_params' => [],
         'data' => [],
-        'data_params' => [],
-        'group' => '',
+        //'bind_params' => [],
+        'bind_params' => [],
+        'append' => [],
         'order' => '',
         'limit' => '',
         'return' => false,
@@ -61,27 +62,27 @@ class Model {
 
     public function data(array $data = [], $bindParams = []) {
         $this->options['data'] = $data;
-        $this->options['data_params'] = $bindParams;
+        $this->options['bind_params'] = $bindParams;
         return $this;
     }
 
     public function lock($lock = true) {
-        $this->options['lock'] = $lock;
+        $this->options['append']['lock'] = $lock;
         return $this;
     }
 
     public function order($order) {
-        $this->options['order'] = $order;
+        $this->options['append']['order'] = $order;
         return $this;
     }
 
     public function group($group) {
-        $this->options['group'] = $group;
+        $this->options['append']['group'] = $group;
         return $this;
     }
 
     public function limit($limit) {
-        $this->options['limit'] = $limit;
+        $this->options['append']['limit'] = $limit;
         return $this;
     }
 
@@ -97,17 +98,17 @@ class Model {
 
     public function where(array $where = [], $bindParams = []) {
         $this->options['where'] = $where;
-        $this->options['where_params'] = $bindParams;
+        $this->options['bind_params'] = $bindParams;
         return $this;
     }
 
     public function select() {
-        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getField(), $this->_getLock(), $this->_getOrder(), $this->_getLimit(), $this->_getGroup(), $this->_getFetchSql());
+        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
         return empty($data) ? [] : $data;
     }
 
     public function count() {
-        return $this->getObj()->count($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $this->_getGroup(), $this->_getFetchSql());
+        return $this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
     public function find() {
@@ -115,37 +116,70 @@ class Model {
         return isset($data[0]) ? $data[0] : [];
     }
 
+    protected function columnQuote($string) {
+        if (strpos($string, '.') !== false) {
+            return '`' . $this->prefix . str_replace('.', '".`', $string) . '`';
+        }
+        return '`' . $string . '`';
+    }
+
     public function insert() {
         if (empty($this->options['data']) || !is_array($this->options['data'])) {
             return false;
         }
-
-        return $this->getObj()->insert($this->_getTable(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
+        $table = $this->_getTable();
+        $datas = $this->_getData();
+        if (empty($datas) || !is_array($datas)) {
+            return false;
+        }
+        if (!isset($datas[0])) {
+            $datas = [$datas];
+        }
+        $columns = [];
+        foreach ($datas as $data) {
+            foreach ($data as $key => $value) {
+                $columns[] = $this->columnQuote($key);
+            }
+        }
+        $columns = array_unique($columns);
+        $stack = [];
+        foreach ($datas as $key => $data) {
+            $stack[] = '(' . implode(', ', $this->_dataParsing($data, $key)) . ')';
+        }
+        return $this->getObj()->insert($table, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
     }
 
     public function update() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
         }
-
         if (empty($this->options['data']) || !is_array($this->options['data'])) {
             return false;
         }
-
-        $status = $this->getObj()->update($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getData(), $this->_getDataParams(), $this->_getFetchSql());
+        $table = $this->_getTable();
+        $datas = $this->_getData();
+        $where = $this->_getWhere();
+        if (empty($datas) || !is_array($datas)) {
+            return false;
+        }
+        $columns = [];
+        foreach ($datas as $key => $data) {
+            $columns[] = $this->columnQuote(preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key));
+        }
+        $columns = array_unique($columns);
+        $stack = $this->_dataParsing($datas);
+        $status = $this->getObj()->update($table, $where, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
         if ($this->_getOriginal()) {
             return $status;
         }
         return ($status === false) ? false : true;
-
     }
 
     public function delete() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
         }
-
-        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $this->_getFetchSql());
+        $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getBindParams(), $this->_getFetchSql());
         if ($this->_getOriginal()) {
             return $status;
         }
@@ -153,39 +187,35 @@ class Model {
     }
 
     public function setInc($field, $num = 1) {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) {
-            return false;
-        }
-
-        if (empty($field)) {
-            return false;
-        }
-
-        $status = $this->getObj()->increment($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
-        if ($this->_getOriginal()) {
-            return $status;
-        }
-        return ($status === false) ? false : true;
+        return $this->data([
+            $field . '[+]' => $num,
+        ])->update();
     }
 
     public function setDec($field, $num = 1) {
-        if (empty($this->options['where']) || !is_array($this->options['where'])) {
-            return false;
-        }
-
-        if (empty($field)) {
-            return false;
-        }
-
-        $status = $this->getObj()->decrease($this->_getTable(), $this->_getWhere(), $this->_getWhereParams(), $field, $num, $this->_getFetchSql());
-        if ($this->_getOriginal()) {
-            return $status;
-        }
-        return ($status === false) ? false : true;
+        return $this->data([
+            $field . '[-]' => $num,
+        ])->update();
     }
 
-    public function sum($field) {
-        return $this->getObj()->sum($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getWhereParams(), $field, $this->_getFetchSql());
+    public function sum($field = '') {
+        $this->field($field);
+        return $this->getObj()->aggregate('SUM', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+    }
+
+    public function avg($field = '') {
+        $this->field($field);
+        return $this->getObj()->aggregate('AVG', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+    }
+
+    public function max($field = '') {
+        $this->field($field);
+        return $this->getObj()->aggregate('MAX', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+    }
+
+    public function min($field = '') {
+        $this->field($field);
+        return $this->getObj()->aggregate('MIN', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
     public function getFields() {
@@ -245,6 +275,8 @@ class Model {
         $this->options['field'] = [];
         if (empty($fields)) {
             $filedSql = '*';
+        }else if(is_string($fields)) {
+            $filedSql = $fields;
         } else {
             $filedSql = [];
             foreach ($fields as $vo) {
@@ -268,10 +300,10 @@ class Model {
             return '';
         }
         $joinArray = [
-            '>' => 'left',
-            '<' => 'right',
-            '<>' => 'full',
-            '><' => 'inner',
+            '>' => 'LEFT',
+            '<' => 'RIGHT',
+            '<>' => 'FULL',
+            '><' => 'INNER',
         ];
         $sql = [];
         foreach ($join as $vo) {
@@ -296,7 +328,7 @@ class Model {
                 }
             }
             $relation = 'on ' . $relation;
-            $sql[] = " {$joinArray[$way]} join {$table} {$relation} ";
+            $sql[] = " {$joinArray[$way]} JOIN {$table} {$relation} ";
         }
         return implode(' ', $sql);
     }
@@ -343,73 +375,54 @@ class Model {
     protected function _getWhere() {
         $condition = $this->options['where'];
         $this->options['where'] = [];
-        $sql = $this->_whereParsing($condition, $this->options['where_params'], ' AND');
-        return $sql ? ' WHERE ' . $sql : '';
+        return $this->_whereParsing($condition, $this->options['bind_params'], ' AND ');
     }
 
-    protected function columnQuote($string) {
-        if (strpos($string, '.') !== false) {
-            return '"' . $this->prefix . str_replace('.', '"."', $string) . '"';
-        }
-
-        return '"' . $string . '"';
-    }
-
-    protected function _getWhereParams() {
-        $where = $this->options['where_params'];
-        $this->options['where_params'] = [];
+    protected function _getBindParams() {
+        $where = $this->options['bind_params'];
+        $this->options['bind_params'] = [];
         return $where;
     }
 
     protected function _getData() {
         $data = $this->options['data'];
         $this->options['data'] = [];
-        $data = $this->_dataParsing($data);
         return $data;
     }
 
-    protected function _getDataParams() {
-        $where = $this->options['data_params'];
-        $this->options['data_params'] = [];
-        return $where;
-    }
-
-    protected function _getOrder() {
-        $order = $this->options['order'];
-        $this->options['order'] = '';
-        return $order;
-    }
-
-    protected function _getGroup() {
-        $order = $this->options['group'];
-        $this->options['group'] = '';
-        return $order;
-    }
-
-    protected function _getLimit() {
-        $limit = $this->options['limit'];
-        $this->options['limit'] = [];
-        if (empty($limit)) {
-            return 0;
+    protected function _getAppend() {
+        $append = $this->options['append'];
+        $appendData = [];
+        foreach ($append as $key => $vo) {
+            if ($key == 'group') {
+                $appendData[] = ' GROUP BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
+            }
+            if ($key == 'order') {
+                $appendData[] = ' ORDER BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
+            }
+            if ($key == 'having') {
+                $appendData[] = ' HAVING ' . $vo;
+            }
+            if ($key == 'lock' && $vo == true) {
+                $appendData[] = ' FOR UPDATE ';
+            }
+            if ($key == 'limit') {
+                $appendData[] = ' LIMIT ' . (is_array($vo) ? implode(',', $vo) : ($vo ? $vo : 0));
+            }
         }
-        if (is_array($limit)) {
-            $limit = $limit[0] . ',' . $limit[1];
-        }
-        return $limit;
+        $this->options['append'] = [];
+        return implode(' ', $appendData);
     }
 
     private function _whereParsing($data, &$map, $conjunctor, $inheritField = '') {
         $stack = [];
         $i = 0;
-
         foreach ($data as $key => $value) {
-
-            $inheritField2 = $inheritField . '_' . $i;
-
+            $tmpField = $inheritField . '_' . $i;
             $i++;
             if (is_array($value) && preg_match("/^(AND|OR)(\s+#.*)?$/", $key, $relation_match)) {
                 $relationship = $relation_match[1];
-                $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship, $inheritField2) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
+                $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship, $tmpField) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
                 continue;
             }
             if (strtolower($key) == '_sql') {
@@ -418,7 +431,7 @@ class Model {
                         $stack[] = $s;
                     }
                 } else {
-                    $stack[] = $value;
+                    $stack[] = $key . '=' . $value;
                 }
             } else {
                 if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
@@ -428,7 +441,7 @@ class Model {
                     $key = str_replace('`', '', $match[1]);
                     $field = '`' . str_replace('.', '`.`', $key) . '`';
 
-                    $bindField = ':_where_' . str_replace('.', '_', $key) . $inheritField2 . '_' . $i;
+                    $bindField = ':_where_' . str_replace('.', '_', $key) . $tmpField . '_' . $i;
 
                     if (isset($match['operator'])) {
                         $operator = $match['operator'];
@@ -465,7 +478,6 @@ class Model {
 
                         } else if ($operator === '<>' || $operator === '><') {
                             if (is_array($value)) {
-
                                 $stack[] = '(' . $field . ($operator === '><' ? ' NOT' : '') . ' BETWEEN ' . $bindField . '_a AND ' . $bindField . '_b)';
                                 $map[$bindField . '_a'] = $value[0];
                                 $map[$bindField . '_b'] = $value[1];
@@ -499,10 +511,8 @@ class Model {
         return implode($outer_conjunctor . ' ', $stack);
     }
 
-    private function _dataParsing($data = []) {
-        $fields = [];
-        $sql = [];
-        $map = [];
+    private function _dataParsing($data = [], $inheritField = '') {
+        $stack = [];
         $tableField = $this->getObj()->getFields($this->table);
         $restData = [];
         if (empty($data)) {
@@ -510,30 +520,25 @@ class Model {
         }
         foreach ($data as $key => $value) {
             $column = preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key);
-            $bindField = ':_data_' . str_replace('.', '_', $column);
+            $bindField = ':_data_' . ($inheritField ? $inheritField . '_' : '') . str_replace('.', '_', $column);
             if (!in_array($column, $tableField) || !isset($value)) {
                 continue;
             }
-            $fields[$column] = $bindField;
             preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
             if (isset($match['operator'])) {
                 if (is_numeric($value)) {
-                    $sql[] = '`' . $column . '`' . ' = ' . $column . ' ' . $match['operator'] . ' ' . $value;
+                    $stack[] = '`' . $column . '`' . $match['operator'] . ' ' . $value;
                 }
             } else {
-                $sql[] = '`' . $column . '`' . ' = ' . $bindField;
+                $stack[] = $bindField;
                 if (is_array($value)) {
-                    $map[$bindField] = json_encode($value, JSON_UNESCAPED_UNICODE);
+                    $this->options['bind_params'][$bindField] = json_encode($value, JSON_UNESCAPED_UNICODE);
                 } else {
-                    $map[$bindField] = $value;
+                    $this->options['bind_params'][$bindField] = $value;
                 }
             }
         }
-        $this->options['data_params'] = $map;
-        return [
-            'sql' => $sql,
-            'data' => $fields,
-        ];
+        return $stack;
     }
 
 }
