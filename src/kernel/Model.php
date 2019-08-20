@@ -423,7 +423,7 @@ class Model {
                 continue;
             }
             if (strtolower($key) == '_sql') {
-                if (!is_array($value[0])) {
+                if (!is_array($value)) {
                     $value = [$value];
                 }
                 foreach ($value as $s) {
