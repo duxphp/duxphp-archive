@@ -74,7 +74,7 @@ class MysqlPdoDriver implements DbInterface {
         $condition = !empty($condition) ? ' WHERE ' . $condition : '';
         $stock = [];
         foreach ($columns as $key => $vo) {
-            $stock[] = '`' . $vo . '`' . ' = ' . $values[$key];
+            $stock[] = $vo . ' = ' . $values[$key];
         }
         return $this->execute("UPDATE {$table} SET " . implode(', ', $stock) . $condition, $params, $return);
     }

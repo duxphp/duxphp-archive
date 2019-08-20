@@ -18,9 +18,7 @@ class Model {
         'lock' => false,
         'join' => [],
         'where' => [],
-        //'bind_params' => [],
         'data' => [],
-        //'bind_params' => [],
         'bind_params' => [],
         'append' => [],
         'order' => '',
@@ -135,17 +133,14 @@ class Model {
         if (!isset($datas[0])) {
             $datas = [$datas];
         }
+        $stack = [];
         $columns = [];
-        foreach ($datas as $data) {
-            foreach ($data as $key => $value) {
-                $columns[] = $this->columnQuote($key);
-            }
+        foreach ($datas as $key => $data) {
+            $dataParams = $this->_dataParsing($data, $key);
+            $columns = array_merge($columns, $dataParams['fields']);
+            $stack[] = '(' . implode(', ', $dataParams['stack']) . ')';
         }
         $columns = array_unique($columns);
-        $stack = [];
-        foreach ($datas as $key => $data) {
-            $stack[] = '(' . implode(', ', $this->_dataParsing($data, $key)) . ')';
-        }
         return $this->getObj()->insert($table, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
     }
 
@@ -162,12 +157,9 @@ class Model {
         if (empty($datas) || !is_array($datas)) {
             return false;
         }
-        $columns = [];
-        foreach ($datas as $key => $data) {
-            $columns[] = $this->columnQuote(preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key));
-        }
-        $columns = array_unique($columns);
-        $stack = $this->_dataParsing($datas);
+        $dataParams = $this->_dataParsing($datas);
+        $stack = $dataParams['stack'];
+        $columns = array_unique($dataParams['fields']);
         $status = $this->getObj()->update($table, $where, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
         if ($this->_getOriginal()) {
             return $status;
@@ -275,16 +267,20 @@ class Model {
         $this->options['field'] = [];
         if (empty($fields)) {
             $filedSql = '*';
-        }else if(is_string($fields)) {
+        } else if (is_string($fields)) {
             $filedSql = $fields;
         } else {
             $filedSql = [];
-            foreach ($fields as $vo) {
-                preg_match('/([a-zA-Z0-9_\-\.\(\)]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $vo, $match);
-                if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min', 'max', 'avg', 'sum', 'count'])) {
-                    $filedSql[] = $match[1] . ' as ' . $match[2];
-                } else {
-                    $filedSql[] = $vo;
+            foreach ($fields as $key => $vo) {
+                if(is_string($key)) {
+                    $filedSql[] = $vo . ' AS ' . $this->columnQuote($key);
+                }else {
+                    preg_match('/([a-zA-Z0-9_\-\.\(\)]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $vo, $match);
+                    if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min', 'max', 'avg', 'sum', 'count'])) {
+                        $filedSql[] = $match[1] . ' as ' . $this->columnQuote($match[2]);
+                    } else {
+                        $filedSql[] = $vo;
+                    }
                 }
             }
             $filedSql = implode(',', $filedSql);
@@ -394,24 +390,25 @@ class Model {
         $append = $this->options['append'];
         $appendData = [];
         foreach ($append as $key => $vo) {
-            if ($key == 'group') {
-                $appendData[] = ' GROUP BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
+            if ($key == 'group' && $vo) {
+                $appendData[1] = ' GROUP BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
             }
-            if ($key == 'order') {
-                $appendData[] = ' ORDER BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
+            if ($key == 'order' && $vo) {
+                $appendData[2] = ' ORDER BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
             }
-            if ($key == 'having') {
-                $appendData[] = ' HAVING ' . $vo;
+            if ($key == 'having' && $vo) {
+                $appendData[0] = ' HAVING ' . $vo;
             }
             if ($key == 'lock' && $vo == true) {
-                $appendData[] = ' FOR UPDATE ';
+                $appendData[4] = ' FOR UPDATE ';
             }
-            if ($key == 'limit') {
-                $appendData[] = ' LIMIT ' . (is_array($vo) ? implode(',', $vo) : ($vo ? $vo : 0));
+            if ($key == 'limit' && $vo) {
+                $appendData[3] = ' LIMIT ' . (is_array($vo) ? implode(',', $vo) : ($vo ? $vo : 0));
             }
         }
         $this->options['append'] = [];
-        return implode(' ', $appendData);
+        ksort($appendData);
+        return $appendData ? implode(' ', $appendData) : '';
     }
 
     private function _whereParsing($data, &$map, $conjunctor, $inheritField = '') {
@@ -426,12 +423,11 @@ class Model {
                 continue;
             }
             if (strtolower($key) == '_sql') {
-                if (is_array($value)) {
-                    foreach ($value as $s) {
-                        $stack[] = $s;
-                    }
-                } else {
-                    $stack[] = $key . '=' . $value;
+                if (!is_array($value[0])) {
+                    $value = [$value];
+                }
+                foreach ($value as $s) {
+                    $stack[] = $s;
                 }
             } else {
                 if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
@@ -513,6 +509,7 @@ class Model {
 
     private function _dataParsing($data = [], $inheritField = '') {
         $stack = [];
+        $fields = [];
         $tableField = $this->getObj()->getFields($this->table);
         $restData = [];
         if (empty($data)) {
@@ -524,10 +521,12 @@ class Model {
             if (!in_array($column, $tableField) || !isset($value)) {
                 continue;
             }
+            $column = $this->columnQuote($column);
+            $fields[] = $column;
             preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
             if (isset($match['operator'])) {
                 if (is_numeric($value)) {
-                    $stack[] = '`' . $column . '`' . $match['operator'] . ' ' . $value;
+                    $stack[] = $column . $match['operator'] . ' ' . $value;
                 }
             } else {
                 $stack[] = $bindField;
@@ -538,7 +537,10 @@ class Model {
                 }
             }
         }
-        return $stack;
+        return [
+            'stack' => $stack,
+            'fields' => $fields,
+        ];
     }
 
 }
