@@ -118,7 +118,7 @@ class MysqlPdoDriver implements DbInterface {
         if ($return) {
             return $this->getSql();
         }
-        if (!IS_CLI) {
+        if (!IS_CLI && \dux\Config::get('dux.debug_sql')) {
             $time = microtime();
             $result = $sth->execute();
             $endTime = microtime();
