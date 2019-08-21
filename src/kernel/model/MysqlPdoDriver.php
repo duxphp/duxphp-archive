@@ -106,11 +106,11 @@ class MysqlPdoDriver implements DbInterface {
     }
 
     public function query($sql, array $params = [], $return = false) {
-        return $this->exec($sql, $params, $return, \PDO::FETCH_ASSOC);
+        return $this->exec($sql, $params, $return, 1);
     }
 
     public function execute($sql, array $params = [], $return = false) {
-        return $this->exec($sql, $params, $return, \PDO::FETCH_COLUMN);
+        return $this->exec($sql, $params, $return, 0);
     }
 
     private function exec($sql, $params, $return, $type) {
@@ -129,8 +129,11 @@ class MysqlPdoDriver implements DbInterface {
         }
         if ($result) {
             $this->linkCurrentNum = 0;
-            $data = $sth->fetchAll($type);
-            return $data;
+            if($type) {
+                return $sth->fetchAll(\PDO::FETCH_ASSOC);
+            }else {
+                return $sth->rowCount();
+            }
         }
         $err = $sth->errorInfo();
         if (in_array($sth->errorCode(), $this->errorCode['gone_away']) && $this->linkCurrentNum < $this->linkNum) {
