@@ -538,7 +538,6 @@ class Dux {
         }
         $flag = null;
         $trace = debug_backtrace();
-        $curTarce = [];
         if ($trace[1]['file']) {
             $curTarce = $trace[1];
         } else {

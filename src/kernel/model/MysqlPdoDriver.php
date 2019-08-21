@@ -118,13 +118,15 @@ class MysqlPdoDriver implements DbInterface {
         if ($return) {
             return $this->getSql();
         }
-        $time = microtime();
-        $result = $sth->execute();
-        $endTime = microtime();
-        \dux\Engine::$sqls[] = [
-            'sql' => $this->getSql(),
-            'time' => round($endTime - $time, 2),
-        ];
+        if (!IS_CLI) {
+            $time = microtime();
+            $result = $sth->execute();
+            $endTime = microtime();
+            \dux\Engine::$sqls[] = [
+                'sql' => $this->getSql(),
+                'time' => round($endTime - $time, 2),
+            ];
+        }
         if ($result) {
             $this->linkCurrentNum = 0;
             $data = $sth->fetchAll($type);
