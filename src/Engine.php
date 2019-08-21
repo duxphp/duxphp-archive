@@ -115,7 +115,7 @@ class Engine {
             }
             $data = [
                 'code' => 500,
-                'message' => $msg,
+                'message' => $title,
                 'line' => $desc,
                 'trace' => $trace,
             ];
