@@ -105,7 +105,7 @@ class Engine {
         ];
         self::$logs[] = $duxDebug;
         if (\dux\Config::get('dux.log')) {
-            \dux\Dux::log($desc);
+            \dux\Dux::log($title . ' ' . $desc);
         }
         if (IS_CLI) {
             echo 'error: ' . $desc;
