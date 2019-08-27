@@ -90,7 +90,9 @@ class MysqlPdoDriver implements DbInterface {
         $table = $this->_table($table);
         $obj = $this->getLink()->prepare("DESCRIBE {$table}");
         $obj->execute();
-        return $obj->fetchAll(\PDO::FETCH_COLUMN);
+        $data = $obj->fetchAll(\PDO::FETCH_COLUMN);
+        $obj->closeCursor();
+        return $data;
     }
 
     public function getSql() {
@@ -115,24 +117,29 @@ class MysqlPdoDriver implements DbInterface {
 
     private function exec($sql, $params, $return, $type) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
+        $sqlStr = $this->getSql();
         if ($return) {
-            return $this->getSql();
+            return $sqlStr;
         }
         $time = microtime();
         $result = $sth->execute();
         $endTime = microtime();
         if (!IS_CLI && \dux\Config::get('dux.debug_sql')) {
             \dux\Engine::$sqls[] = [
-                'sql' => $this->getSql(),
+                'sql' => $sqlStr,
                 'time' => round($endTime - $time, 2),
             ];
         }
         if ($result) {
             $this->linkCurrentNum = 0;
             if($type) {
-                return $sth->fetchAll(\PDO::FETCH_ASSOC);
+                $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
+                $sth->closeCursor();
+                return $data;
             }else {
-                return $sth->rowCount();
+                $data = $sth->rowCount();
+                $sth->closeCursor();
+                return $data;
             }
         }
         $err = $sth->errorInfo();
@@ -141,7 +148,7 @@ class MysqlPdoDriver implements DbInterface {
             $this->link = null;
             return $this->exec($sql, $params, $return, $type);
         }
-        throw new \PDOException('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
+        throw new \PDOException('Database SQL: "' . $sqlStr . '". ErrorInfo: ' . $err[2], 500);
     }
 
     public function beginTransaction() {
