@@ -9,7 +9,8 @@
     ],
     "require": {
         "php": ">=7.0",
-        "leafo/scssphp": "~0.1",
+        "leafo/scssphp": "^0.1",
+        "nelexa/zip": "^3.0",
         "intervention/image": "^2.0",
         "ralouphie/mimey": "^2.0",
         "endroid/qr-code": "^3.0"
