@@ -21,9 +21,6 @@ class Start {
     private function __clone() {
     }
 
-    public static $_routes = [];
-
-
     /**
      * 运行框架
      */
@@ -148,14 +145,6 @@ class Start {
      * 注册核心方法
      */
     protected static function registerCom() {
-        ob_start();
-        register_shutdown_function(function () {
-            if (\dux\Config::get('dux.debug_browser')) {
-                header("duxDebug: " . json_encode(\dux\Engine::$logs));
-            }
-            \dux\Engine::$logs = [];
-            \dux\Engine::$sqls = [];
-        });
     }
 
     /**
@@ -166,20 +155,13 @@ class Start {
     }
 
     /**
-     * 注册路由
-     */
-    protected static function route() {
-    }
-
-    /**
      * 启动框架
      */
     protected static function start() {
         if (strtolower($_SERVER['REQUEST_METHOD']) == 'options') {
             Dux::header(204);
         }
-        $dux = new \dux\Engine();
-        $dux->run();
+        (new \dux\Engine())->run();
     }
 
 }
