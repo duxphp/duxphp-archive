@@ -8,7 +8,7 @@ ini_set('display_errors', '1');
 /**
  * 最低PHP版本要求
  */
-const PHP_REQUIRED = '7.1.0';
+const PHP_REQUIRED = '7.2.0';
 
 class Start {
 
@@ -30,7 +30,7 @@ class Start {
     public static function run() {
         if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
             header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
-            echo 'Can only run in PHP is greater than 7.1';
+            echo 'Can only run in PHP is greater than 7.2';
             exit;
         }
         if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
@@ -56,8 +56,8 @@ class Start {
             echo 'Please define ROOT_PATH constants';
             exit;
         }
-        if (!defined('VERSION')) define('VERSION', '1.1.15');
-        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20190413');
+        if (!defined('VERSION')) define('VERSION', '1.2.0 dev');
+        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20191015');
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
         if (!defined('METHOD')) define('METHOD', $_SERVER['REQUEST_METHOD']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
