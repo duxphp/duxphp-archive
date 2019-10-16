@@ -5,8 +5,6 @@ namespace dux;
 class Engine {
 
     public static $classes = [];
-    public static $logs = [];
-    public static $sqls = [];
 
     public function __construct() {
         $this->init();
@@ -87,10 +85,6 @@ class Engine {
         }
         $queryData = \dux\Engine::parserArray($_GET);
         $requestData = \dux\Engine::parserArray(request());
-        $sqlData = [];
-        if (\dux\Config::get('dux.debug_sql')) {
-            $sqlData = self::$sqls;
-        }
         $duxDebug = [
             'url' => URL,
             'method' => METHOD,
@@ -101,14 +95,12 @@ class Engine {
             'trace' => $trace,
             'query' => $queryData,
             'request' => $requestData,
-            'sql' => $sqlData
         ];
-        self::$logs[] = $duxDebug;
         if (\dux\Config::get('dux.log')) {
             \dux\Dux::log($title . ' ' . $desc);
         }
         if (IS_CLI) {
-            echo 'error: ' . $desc;
+            exit('error: ' . $desc);
         } else if (isAjax()) {
             if (!\dux\Config::get('dux.debug')) {
                 $msg = \dux\Dux::$codes[500];
@@ -124,7 +116,7 @@ class Engine {
                     if (!headers_sent()) {
                         header("application/json; charset=UTF-8");
                     }
-                    echo json_encode($data);
+                    exit(json_encode($data));
                 });
             }
         } else {
@@ -141,17 +133,13 @@ class Engine {
                 $html .= "</p>";
             }
             $html .= "<p> run time " . \dux\Dux::runTime() . "s</p>";
-
-            if (!\dux\Config::get('dux.debug_browser')) {
-                \dux\Dux::header(500, function () use ($html) {
-                    if (!headers_sent()) {
-                        header("Content-Type: text/html; charset=UTF-8");
-                    }
-                    echo $html;
-                });
-            }
+            \dux\Dux::header(500, function () use ($html) {
+                if (!headers_sent()) {
+                    header("Content-Type: text/html; charset=UTF-8");
+                }
+                exit($html);
+            });
         }
-        exit;
     }
 
     public static function parserArray($list) {
@@ -203,12 +191,6 @@ class Engine {
                 $actionName = $urlArray[3];
                 $params = $urlArray[4];
             } else {
-                foreach ($moduleRule as $key => $vo) {
-                    if (empty($key)) {
-                        $layer = $vo;
-                        continue;
-                    }
-                }
                 $appName = $urlArray[0];
                 $modelName = $urlArray[1];
                 $actionName = $urlArray[2];
@@ -218,38 +200,29 @@ class Engine {
             $appName = empty($appName) ? 'index' : $appName;
             $modelName = empty($modelName) ? 'Index' : $modelName;
             $actionName = empty($actionName) ? 'index' : $actionName;
+
             if (!defined('VIEW_LAYER_NAME')) {
-                if ($layer != 'mobile' && $layer != 'controller') {
-                    define('VIEW_LAYER_NAME', \dux\Config::get('dux.module_default'));
-                } else {
-                    define('VIEW_LAYER_NAME', $layer);
-                }
+                define('VIEW_LAYER_NAME', \dux\Config::get('dux.module_default'));
             }
             if (!defined('ROLE_NAME')) {
                 define('ROLE_NAME', $roleName);
             }
-
             if (!defined('LAYER_NAME')) {
                 define('LAYER_NAME', $layer);
             }
-
             if (!defined('APP_NAME')) {
                 define('APP_NAME', strtolower($appName));
             }
-
             if (!defined('MODULE_NAME')) {
                 define('MODULE_NAME', ucfirst($modelName));
             }
-
             if (!defined('ACTION_NAME')) {
                 define('ACTION_NAME', $actionName);
             }
-
             $paramArray = explode("/", $params);
             if (!empty($paramArray)) {
                 $paramArray = array_filter($paramArray);
             }
-
             $get = [];
             foreach ($paramArray as $key => $value) {
                 $list = explode('-', $value, 2);
@@ -265,11 +238,9 @@ class Engine {
             if (!defined('ROLE_NAME')) {
                 define('ROLE_NAME', '');
             }
-
             if (!defined('LAYER_NAME')) {
                 define('LAYER_NAME', '');
             }
-
             if (!defined('APP_NAME')) {
                 define('APP_NAME', '');
             }
@@ -288,19 +259,16 @@ class Engine {
      */
     public function run() {
         if (IS_CLI && (!APP_NAME || !LAYER_NAME || !MODULE_NAME || !ACTION_NAME)) {
-            echo 'dux cli start';
-            return;
+            exit('dux cli start');
         }
-
         $class = '\app\\' . APP_NAME . '\\' . LAYER_NAME . '\\' . MODULE_NAME . ucfirst(LAYER_NAME);
         $action = ACTION_NAME;
         if (!class_exists($class)) {
             \dux\Dux::notFound();
         }
-        $obj = new $class();
         if (!method_exists($class, $action) && !method_exists($class, '__call')) {
             \dux\Dux::notFound();
         }
-        $obj->$action();
+        (new $class())->$action();
     }
 }

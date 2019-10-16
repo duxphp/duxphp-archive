@@ -66,6 +66,14 @@ function isApi() {
 }
 
 /**
+ * 依赖注入
+ * @return bool
+ */
+function di() {
+    return \dux\Dux::di();
+}
+
+/**
  * 获取钩子类
  * @param $layer
  * @param $name

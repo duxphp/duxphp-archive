@@ -41,7 +41,6 @@ class Start {
         self::loadFunCom();
         self::loadClass();
         self::registerCom();
-        self::route();
         self::start();
     }
 
@@ -50,8 +49,7 @@ class Start {
      */
     protected static function definitions() {
         if (!defined('ROOT_PATH')) {
-            echo 'Please define ROOT_PATH constants';
-            exit;
+            exit('Please define ROOT_PATH constants');
         }
         if (!defined('VERSION')) define('VERSION', '1.2.0 dev');
         if (!defined('VERSION_DATE')) define('VERSION_DATE', '20191015');
@@ -65,11 +63,8 @@ class Start {
         if (!defined('PACK_PATH')) define('PACK_PATH', CORE_PATH . 'package/');
         if (!defined('ROOT_URL')) define('ROOT_URL', str_replace('\\', '/', rtrim(dirname($_SERVER["SCRIPT_NAME"]), '\\/')));
         if (!defined('ROOT_SCRIPT')) define('ROOT_SCRIPT', str_replace('\\', '/', rtrim($_SERVER["SCRIPT_NAME"], '\\/')));
-        $urlHead = ($_SERVER['HTTPS'] <> "on") ? 'http' : 'https';
-        $urlHead .= '://' . $_SERVER["HTTP_HOST"];
-        if (!defined('DOMAIN')) define('DOMAIN', $urlHead);
-        $urlHead = 'http://' . $_SERVER["HTTP_HOST"];
-        if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', $urlHead);
+        if (!defined('DOMAIN')) define('DOMAIN', (($_SERVER['HTTPS'] <> "on") ? 'http' : 'https') . '://' . $_SERVER["HTTP_HOST"]);
+        if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', 'http://' . $_SERVER["HTTP_HOST"]);
     }
 
     /**

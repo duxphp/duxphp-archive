@@ -11,6 +11,8 @@ class Model {
     protected $config = [];
     protected $database = 'default';
     protected $prefix = '';
+    protected $table = '';
+    protected static $objArr = [];
 
     protected $options = [
         'table' => '',
@@ -26,10 +28,6 @@ class Model {
         'return' => false,
         'original' => false,
     ];
-
-    protected $table = '';
-
-    protected static $objArr = [];
 
     public function __construct($database = 'default') {
         if ($database) {
@@ -272,9 +270,9 @@ class Model {
         } else {
             $filedSql = [];
             foreach ($fields as $key => $vo) {
-                if(is_string($key)) {
+                if (is_string($key)) {
                     $filedSql[] = $vo . ' AS ' . $this->columnQuote($key);
-                }else {
+                } else {
                     preg_match('/([a-zA-Z0-9_\-\.\(\)]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $vo, $match);
                     if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min', 'max', 'avg', 'sum', 'count'])) {
                         $filedSql[] = $match[1] . ' as ' . $this->columnQuote($match[2]);
