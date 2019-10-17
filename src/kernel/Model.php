@@ -248,16 +248,17 @@ class Model {
         return $this->getObj()->rollBack();
     }
 
-    protected function getObj() {
-        if (empty(self::$objArr[$this->database])) {
-            $dbDriver = __NAMESPACE__ . '\model\\' . ucfirst($this->config['type']) . 'PdoDriver';
-            if (!class_exists($dbDriver)) {
-                throw new \Exception($this->config['type'] . ' 数据类型不存在!', 500);
-            }
-            self::$objArr[$this->database] = new $dbDriver($this->config);
+    public function getObj() {
+        $dbDriver = __NAMESPACE__ . '\model\\' . ucfirst($this->config['type']) . 'PdoDriver';
+        if (!di()->has($this->database)) {
+            di()->set($this->database, function () use ($dbDriver) {
+                if (!class_exists($dbDriver)) {
+                    throw new \Exception($this->config['type'] . ' 数据类型不存在!', 500);
+                }
+                return new $dbDriver($configName, $this->config);
+            }, true);
         }
-        return self::$objArr[$this->database];
-
+        return di()->get($dbDriver);
     }
 
     protected function _getField() {

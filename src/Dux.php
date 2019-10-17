@@ -477,13 +477,12 @@ class Dux {
         }
         $keyName = 'log.' . $logDriver;
         $driver = null;
-
         if (!self::di()->has($keyName)) {
             self::di()->set($keyName, function () use ($logDriver) {
                 return new \dux\lib\Log($logDriver);
             }, true);
         }
-        $driver = self::di()->get($key);
+        $driver = self::di()->get($keyName);
 
         $flag = null;
         $trace = debug_backtrace();

@@ -233,7 +233,7 @@ abstract class ModelNo {
         return $limitArr;
     }
 
-    protected function getObj() {
+    public function getObj() {
         $dbDriver = __NAMESPACE__ . '\modelNo\\' . ucfirst($this->config['type']) . 'Driver';
         if (!di()->has($this->database)) {
             di()->set($this->database, function () use ($dbDriver) {
