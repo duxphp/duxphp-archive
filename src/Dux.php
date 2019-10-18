@@ -39,7 +39,7 @@ class Dux {
      * @throws \Exception
      */
     public static function cache($configName = 'default', $group = 0) {
-        return new \dux\lib\Cache($configName, $group);
+        return new \dux\com\Cache($configName, $group);
     }
 
     /**
