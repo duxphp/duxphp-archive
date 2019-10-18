@@ -26,12 +26,6 @@ class Cache {
     protected $group = 0;
 
     /**
-     * 驱动对象
-     * @var object
-     */
-    protected $object = null;
-
-    /**
      * 实例化类
      * @param string $cache
      * @param array $config
@@ -44,7 +38,7 @@ class Cache {
         $config = \dux\Config::get('dux.cache');
         $this->config = $config[$this->cache];
         $this->group = $this->config['group'];
-        if($group) {
+        if(isset($group)) {
             $this->group = $group;
         }
         unset($this->config['group']);
@@ -61,10 +55,7 @@ class Cache {
     public function set($key, $value, $expire = 0) {
         try {
             $item = $this->getObj()->getItem($this->getKey($key));
-            $obj = $item->set($value);
-            if ($expire) {
-                $obj->expiresAfter($expire);
-            }
+            $obj = $item->set($value)->addTag('cache_' . $this->group)->expiresAfter($expire);
             return $this->getObj()->save($item);
         }catch (\Exception $e) {
             dux_log($e->getMessage());
@@ -97,7 +88,7 @@ class Cache {
     }
 
     public function clear() {
-        return $this->getObj()->clear();
+        return $this->getObj()->deleteItemsByTag('cache_' . $this->group);
     }
 
     private function getKey($key) {
@@ -111,6 +102,10 @@ class Cache {
                 $config = $this->config;
                 $type = $config['type'];
                 unset($config['type']);
+                if($type == 'files') {
+                    $config['securityKey'] = 'data';
+                    $config['cacheFileExtension'] = 'cache';
+                }
                 $driver = '\\Phpfastcache\\Drivers\\' . ucfirst($type) . '\\Config';
                 return \Phpfastcache\CacheManager::getInstance($type, new $driver($config));
             }, true);

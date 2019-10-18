@@ -68,3 +68,7 @@ QQ群：131331864
 # bug反馈
 
 issues反馈
+
+# 废弃变更
+
+- Http类取消 `doGet` 和 `doPost` 之外的请求方法
