@@ -6,7 +6,7 @@
 
 namespace dux\kernel;
 
-abstract class ModelNo {
+class ModelNo {
 
     protected $config = [];
     protected $database = 'default';
@@ -22,16 +22,31 @@ abstract class ModelNo {
         'limit' => ''
     ];
 
-    public function __construct($database = 'default') {
+    public function __construct($database = 'default', $config = []) {
         if ($database) {
             $this->database = $database;
         }
-        $config = \dux\Config::get('dux.databaseNo');
-        $this->config = $config[$this->database];
+        $sysConfig = \dux\Config::get('dux.database_no');
+        $this->config = array_merge((array)$sysConfig[$this->database], (array)$this->config, $config);
         if (empty($this->config) || empty($this->config['type'])) {
             throw new \Exception($this->config['type'] . ' database config error', 500);
         }
         $this->prefix = empty($this->config['prefix']) ? '' : $this->config['prefix'];
+    }
+
+    public function setParams($params) {
+        $this->params = $params;
+        return $this;
+    }
+
+    public function setPrefix($pre) {
+        $this->prefix = $pre;
+        return $this;
+    }
+
+    public function setConfig($config) {
+        $this->config = $config;
+        return $this;
     }
 
     public function table($table) {
@@ -99,7 +114,7 @@ abstract class ModelNo {
         if (!isset($datas[0])) {
             $datas = [$datas];
         }
-        $id = $this->getObj()->insert($table, $datas, $this->params);
+        $ids = $this->getObj()->insert($table, $datas, $this->params);
         if ($ids === false) {
             return false;
         }
@@ -146,21 +161,17 @@ abstract class ModelNo {
         return ($status === false) ? false : $status;
     }
 
-    public function group($group) {
-        return $db->group($this->_getTable(), $this->_getWhere(), $group);
+    public function aggregate($group) {
+        return $this->getObj()->aggregate($this->_getTable(), $this->_getWhere(), $group);
     }
 
     public function distinct($group) {
-        return $db->distinct($this->_getTable(), $this->_getWhere(), $group);
+        return $this->getObj()->distinct($this->_getTable(), $this->_getWhere(), $group);
     }
 
     public function sum($field) {
-        $sum = $db->sum($this->_getTable(), $this->_getWhere(), $field);
+        $sum = $this->getObj()->sum($this->_getTable(), $this->_getWhere(), $field);
         return empty($sum) ? 0 : $sum;
-    }
-
-    public function query($table, $where, $options) {
-        return $this->getObj()->query($table, $where, $options);
     }
 
     public function getFields() {
@@ -234,16 +245,17 @@ abstract class ModelNo {
     }
 
     public function getObj() {
-        $dbDriver = __NAMESPACE__ . '\modelNo\\' . ucfirst($this->config['type']) . 'Driver';
-        if (!di()->has($this->database)) {
-            di()->set($this->database, function () use ($dbDriver) {
-                if (!class_exists($dbDriver)) {
-                    throw new \Exception($this->config['type'] . ' 数据类型不存在!', 500);
+        $key = 'dux.rdm.' . md5(http_build_query($this->config));
+        if (!di()->has($key)) {
+            $class = __NAMESPACE__ . '\modelNo\\' . ucfirst($this->config['type']) . 'Driver';
+            di()->set($key, function () use ($class) {
+                if (!class_exists($class)) {
+                    throw new \Exception($this->config['type'] . ' driver does not exist!', 500);
                 }
-                return new $dbDriver($configName, $this->config);
-            }, true);
+                return new $class($this->config);
+            });
         }
-        return di()->get($dbDriver);
+        return di()->get($key);
     }
 
 }

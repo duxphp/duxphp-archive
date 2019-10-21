@@ -67,7 +67,7 @@ function isApi() {
 
 /**
  * 依赖注入
- * @return bool
+ * @return \dux\com\Di|null
  */
 function di() {
     return \dux\Dux::di();

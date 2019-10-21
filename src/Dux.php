@@ -1,6 +1,8 @@
 <?php
 
 namespace dux;
+use function DI\value;
+
 /**
  * 注册框架方法
  */
@@ -58,11 +60,11 @@ class Dux {
      * @return mixed
      */
     public static function cookie($configName = 'default') {
-        $key = 'cookie.' . $configName;
+        $key = 'dux.cookie.' . $configName;
         if (!self::di()->has($key)) {
             self::di()->set($key, function () use ($configName) {
                 return new \dux\lib\Cookie($configName);
-            }, true);
+            });
         }
         return self::di()->get($key);
     }
@@ -73,11 +75,11 @@ class Dux {
      * @return mixed
      */
     public static function session($configName = 'default') {
-        $key = 'session.' . $configName;
+        $key = 'dux.session.' . $configName;
         if (!self::di()->has($key)) {
             self::di()->set($key, function () use ($configName) {
                 return new \dux\lib\Session($configName);
-            }, true);
+            });
         }
         return self::di()->get($key);
     }
@@ -268,7 +270,7 @@ class Dux {
             throw new \Exception("Class '{$class}' not found", 500);
         }
         if (!self::di()->has($class)) {
-            self::di()->set($class, $class, true);
+            self::di()->set($class, $class);
         }
         return self::di()->get($class);
     }
@@ -466,41 +468,20 @@ class Dux {
      * @throws \Exception
      */
     public static function log($msg, $type = 'INFO', $fileName = '') {
-        $types = ['INFO', 'WARN', 'DEBUG', 'ERROR'];
-        $type = strtoupper($type);
-        if (!in_array($type, $types)) {
-            $type = 'INFO';
-        }
-        $logDriver = defined('LOG_DRIVER') ? LOG_DRIVER : \dux\Config::get('dux.log_driver');
-        if (empty($logDriver)) {
-            $logDriver = 'files';
-        }
-        $keyName = 'log.' . $logDriver;
-        $driver = null;
-        if (!self::di()->has($keyName)) {
-            self::di()->set($keyName, function () use ($logDriver) {
-                return new \dux\lib\Log($logDriver);
-            }, true);
-        }
-        $driver = self::di()->get($keyName);
-
-        $flag = null;
-        $trace = debug_backtrace();
-        if ($trace[1]['file']) {
-            $curTarce = $trace[1];
-        } else {
-            $curTarce = $trace[0];
-        }
-        $queryData = \dux\Engine::parserArray($_GET);
-        $requestData = \dux\Engine::parserArray(request());
-        $file = \dux\Engine::parserFile($curTarce['file']);
-        try {
-            $flag = $driver->log($msg, $type, $fileName);
-        } catch (\Exception $e) {
-            if (!defined('LOG_DRIVER')) define('LOG_DRIVER', 'files');
-            throw new \Exception($e->getMessage(), $e->getCode());
-        }
+        $flag = self::logObj()->set($msg, $type, $fileName);
         return $flag;
+    }
+
+
+    public static function logObj() {
+        $driver = \dux\Config::get('dux.log');
+        $keyName = 'dux.log.' . $driver;
+        if (!self::di()->has($keyName)) {
+            self::di()->set($keyName, function () use ($driver) {
+                return new \dux\com\Log($driver);
+            });
+        }
+        return self::di()->get($keyName);
     }
 
 }

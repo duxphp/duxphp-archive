@@ -96,7 +96,7 @@ class Engine {
             'query' => $queryData,
             'request' => $requestData,
         ];
-        if (\dux\Config::get('dux.log')) {
+        if (\dux\Config::get('dux.debug_log')) {
             \dux\Dux::log($title . ' ' . $desc);
         }
         if (IS_CLI) {

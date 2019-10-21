@@ -108,7 +108,7 @@ class Cache {
                 }
                 $driver = '\\Phpfastcache\\Drivers\\' . ucfirst($type) . '\\Config';
                 return \Phpfastcache\CacheManager::getInstance($type, new $driver($config));
-            }, true);
+            });
         }
         $obj = di()->get($class);
         if (empty($obj)) {

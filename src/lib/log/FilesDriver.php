@@ -8,14 +8,12 @@ namespace dux\lib\log;
 
 class FilesDriver implements LogInterface {
 
-    protected $driver = NULL;
 
-    public function __construct(){
-        $this->driver = $this;
+    public function get() {
+
     }
 
-    public function log($msg, $type = 'INFO', $fileName = ''){
-
+    public function set($msg, $type = 'INFO', $fileName = ''){
         $dir = DATA_PATH . 'log/';
         if (!is_dir($dir)) {
             if (!mkdir($dir, 0777, true)) {
@@ -23,7 +21,6 @@ class FilesDriver implements LogInterface {
                 return false;
             }
         }
-
         if (empty($fileName)) {
             $file = $dir . date('Y-m-d') . '.log';
         } else {
@@ -32,11 +29,9 @@ class FilesDriver implements LogInterface {
         if (is_array($msg)) {
             $msg = json_encode($msg, JSON_UNESCAPED_UNICODE);
         }
-
         if (!error_log($type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . "\r\n", 3, $file)) {
             error_log("File '{$file}' Write failure");
         }
-
         return true;
     }
 

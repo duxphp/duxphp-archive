@@ -154,9 +154,9 @@ class Http {
      * @return mixed
      */
     static public function getObj() {
-        $class = 'guzzle';
+        $class = 'dux.guzzle';
         if (!di()->has($class)) {
-            di()->set($class, '\GuzzleHttp\Client', true);
+            di()->set($class, '\GuzzleHttp\Client');
         }
         return di()->get($class);
     }

@@ -29,18 +29,37 @@ class Model {
         'original' => false,
     ];
 
-    public function __construct($database = 'default') {
+    public function __construct($database = 'default', $config = []) {
         if ($database) {
             $this->database = $database;
         }
-        $config = \dux\Config::get('dux.database');
-        $this->config = $config[$this->database];
+        $sysConfig = \dux\Config::get('dux.database');
+        $this->config = array_merge((array)$sysConfig[$this->database], (array)$this->config, $config);
         if (empty($this->config) || empty($this->config['type'])) {
             throw new \Exception($this->config['type'] . ' database config error', 500);
         }
         $this->prefix = $this->config['prefix'];
     }
 
+    public function setParams($params) {
+        $this->params = $params;
+        return $this;
+    }
+
+    public function setPrefix($pre) {
+        $this->prefix = $pre;
+        return $this;
+    }
+
+    public function setTable($table) {
+        $this->table = $table;
+        return $this;
+    }
+
+    public function setConfig($config) {
+        $this->config = $config;
+        return $this;
+    }
     public function table($table) {
         $this->options['table'] = $table;
         return $this;
@@ -256,7 +275,7 @@ class Model {
                     throw new \Exception($this->config['type'] . ' 数据类型不存在!', 500);
                 }
                 return new $dbDriver($configName, $this->config);
-            }, true);
+            });
         }
         return di()->get($dbDriver);
     }
