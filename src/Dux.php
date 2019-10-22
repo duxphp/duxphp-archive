@@ -119,7 +119,7 @@ class Dux {
         if ($key) {
             $data = [$data[$key]];
         }
-        foreach ($data as $key => $vo) {
+        foreach ($data as $k => $vo) {
             if ($function) {
                 $vo = call_user_func($function, $vo);
             }
@@ -129,13 +129,13 @@ class Dux {
             if (is_string($vo)) {
                 $vo = trim($vo);
                 if ($vo == 'null' || $vo == 'undefined') {
-                    $data[$key] = null;
+                    $data[$k] = null;
                 }
                 if ($vo == 'true') {
-                    $data[$key] = true;
+                    $data[$k] = true;
                 }
                 if ($vo == 'false') {
-                    $data[$key] = false;
+                    $data[$k] = false;
                 }
             }
         }
@@ -217,7 +217,6 @@ class Dux {
             }
         }
 
-        $route = \dux\Config::get('dux.route');
         $routeParams = explode(',', $route['params']);
         if ($_GET['webapp']) {
             $params['webapp'] = 1;
@@ -228,6 +227,26 @@ class Dux {
                     $params[$vo] = $_GET[$vo];
                 }
             }
+        }
+        $strParams = [];
+        $routeUrl = '';
+        if (!empty($params)) {
+            $params = array_filter($params, function ($v) {
+                if ($v === "") {
+                    return false;
+                }
+                return true;
+            });
+            foreach ($params as $key => $value) {
+                if (preg_match('/^([{\x{4e00}-\x{9fa5}]|[0-9a-zA-Z])+$/u', $value) && empty($routeStr)) {
+                    $url .= '/' . $key . '-' . urlencode($value);
+                } else {
+                    $strParams[$key] = $value;
+                }
+            }
+        }
+        if ($routeUrl) {
+            $url = $routeUrl;
         }
         if (empty($strParams)) {
             $fullUrl = ROOT_URL . '/' . $url;

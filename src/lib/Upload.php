@@ -148,7 +148,17 @@ class Upload {
         return true;
     }
 
-    /**
+    public function delete($url) {
+        $info = parse_url($url);
+        if($this->uploader->delFile(trim($info['path'], '/'))) {
+            return true;
+        }else {
+            $this->errorMsg = $this->uploader->getError();
+            return false;
+        }
+    }
+
+        /**
      * 检测文件合法性
      * @param  string $file 文件名
      * @return boolean

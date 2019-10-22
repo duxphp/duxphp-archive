@@ -108,24 +108,17 @@ class UpyunDriver implements UploadInterface {
     }
 
     public function saveFile($fileData) {
-        
-        // $uploadToken = $this->uploadToken();
         $name = $fileData['savename'];
-
         $path = "/upload/". date('Y-m-d', time()). $name;
         if ($this->config['fieldname']) {
             $path = "/upload/".$this->config['fieldname']. "/" . date('Y-m-d', time())."/". $name;
         }
-        
-
         $file = @fopen($fileData['tmp_name'], 'rb');
-
         $data = $this->writeFile($path, $file, true);
         if (empty($data)) {
             $this->errorMsg = '图片服务器连接失败！';
             return false;
         }
-    
         $fileData['url'] = $this->config['domain'] . $path;
         return $fileData;
     }

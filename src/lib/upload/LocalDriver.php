@@ -8,20 +8,20 @@ namespace dux\lib\upload;
 
 use EasyWeChat\Core\Exception;
 
-class LocalDriver implements UploadInterface{
+class LocalDriver implements UploadInterface {
 
-	protected $config = array();
-	protected $errorMsg = '';
+    protected $config = [];
+    protected $errorMsg = '';
 
-    public function __construct( $config = array() ) {
-		$this->config = $config;
+    public function __construct($config = []) {
+        $this->config = $config;
     }
 
     public function rootPath($path) {
         if (!$this->mkdir($path)) {
             return false;
         }
-        if(!is_writable($path)){
+        if (!is_writable($path)) {
             $this->errorMsg = '上传根目录不存在！';
             return false;
         }
@@ -29,7 +29,7 @@ class LocalDriver implements UploadInterface{
     }
 
     public function checkPath($path) {
-    	if (!$this->mkdir($path)) {
+        if (!$this->mkdir($path)) {
             return false;
         } else {
             if (!is_writable($path)) {
@@ -42,28 +42,36 @@ class LocalDriver implements UploadInterface{
     }
 
     public function saveFile($file) {
-		if(!copy($file['tmp_name'], $file['savepath'] . $file['savename'])) {
+        if (!copy($file['tmp_name'], $file['savepath'] . $file['savename'])) {
             $this->errorMsg = '文件上传保存错误！';
             return false;
-		}
+        }
         return $file;
     }
 
-    public function mkdir($path){
+    public function delFile($name) {
+        $file = ROOT_PATH . '/' . $name;
+        if (is_file($file)) {
+            return @unlink();
+        }
+        return true;
+    }
+
+    public function mkdir($path) {
         $dir = $path;
-        if(is_dir($dir)){
+        if (is_dir($dir)) {
             return true;
         }
         try {
             mkdir($dir, 0777, true);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->errorMsg = "上传目录 '{$path}' 创建失败！";
             return false;
         }
         return true;
     }
 
-    public function getError(){
+    public function getError() {
         return $this->errorMsg;
     }
 }

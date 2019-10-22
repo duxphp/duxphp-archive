@@ -83,19 +83,6 @@ class Engine {
                 'line' => $value['line'],
             ];
         }
-        $queryData = \dux\Engine::parserArray($_GET);
-        $requestData = \dux\Engine::parserArray(request());
-        $duxDebug = [
-            'url' => URL,
-            'method' => METHOD,
-            'title' => $title,
-            'desc' => $desc,
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-            'trace' => $trace,
-            'query' => $queryData,
-            'request' => $requestData,
-        ];
         if (\dux\Config::get('dux.debug_log')) {
             \dux\Dux::log($title . ' ' . $desc);
         }
@@ -140,17 +127,6 @@ class Engine {
                 exit($html);
             });
         }
-    }
-
-    public static function parserArray($list) {
-        $data = [];
-        foreach ($list as $key => $vo) {
-            $data[] = [
-                'name' => $key,
-                'value' => $vo,
-            ];
-        }
-        return $data;
     }
 
     public static function parserFile($file) {

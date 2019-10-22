@@ -9,6 +9,8 @@ namespace dux\lib;
 
 class Http {
 
+    static $error = '';
+
     /**
      * GET数据
      * @param string $url 访问地址
@@ -44,32 +46,53 @@ class Http {
      * @param string $header 头信息
      * @return string
      */
-    static public function doPost($url, $data = [], $timeout = 5, $header = "", $type = 'form') {
+    static public function doPost($url, $data = [], $timeout = 5, $header = "", $type = 'form', $attr = []) {
         try {
             $headers = self::header($header);
             $params = [];
             switch ($type) {
                 case 'body':
                     $params['body'] = $data;
-                case 'body':
+                    break;
+                case 'json':
                     $params['json'] = $data;
+                    break;
                 case 'form':
-                default:
                     $params['form_params'] = $data;
+                    break;
             }
-            $response = self::getObj()->request('POST', $url, array_merge([
+            $data = array_merge([
                 'timeout' => $timeout,
                 'http_errors' => false,
                 'headers' => $headers
-            ], $params));
+            ], $params, $attr);
+            $response = self::getObj()->request('POST', $url, $data);
             $reason = $response->getReasonPhrase();
-            $body = '';
             if ($reason == 'OK') {
-                $body = $response->getBody()->getContents();
+                return $response->getBody()->getContents();
             }
-            return $body;
-        } catch (\Exception $e) {
-            dux_log($e->getMessage());
+            return false;
+        } catch (\GuzzleHttp\Exception\TransferException $e) {
+            self::$error = $e->getMessage();
+            return false;
+        }
+    }
+
+    static function request($url, $type = 'POST', $header = [], $params = []) {
+        try {
+            $headers = self::header($header);
+            $data = array_merge([
+                'timeout' => $timeout,
+                'headers' => $headers
+            ], $params);
+            $response = self::getObj()->request($type, $url, $data);
+            $reason = $response->getReasonPhrase();
+            if ($reason == 'OK') {
+                return $response->getBody()->getContents();
+            }
+            return false;
+        } catch (\GuzzleHttp\Exception\TransferException $e) {
+            self::$error = $e->getMessage();
             return false;
         }
     }
@@ -136,16 +159,16 @@ class Http {
         return $headers;
     }
 
+    static public function getError() {
+        return self::$error;
+    }
+
     /**
      * 默认HTTP头
      * @return string
      */
     static private function defaultHeader() {
         $header = [];
-        $header['User-Agent'] = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12';
-        $header['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
-        $header['Accept-language'] = 'zh-cn,zh;q=0.5';
-        $header['Accept-Charset'] = 'GB2312,utf-8;q=0.7,*;q=0.7';
         return $header;
     }
 

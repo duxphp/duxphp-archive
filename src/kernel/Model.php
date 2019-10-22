@@ -274,10 +274,10 @@ class Model {
                 if (!class_exists($dbDriver)) {
                     throw new \Exception($this->config['type'] . ' 数据类型不存在!', 500);
                 }
-                return new $dbDriver($configName, $this->config);
+                return new $dbDriver($this->config);
             });
         }
-        return di()->get($dbDriver);
+        return di()->get($this->database);
     }
 
     protected function _getField() {

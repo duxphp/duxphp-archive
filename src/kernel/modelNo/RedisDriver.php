@@ -60,7 +60,7 @@ class RedisDriver {
             return $this->getLink()->scard("idx:" . $table);
         }
     }
-    
+
     public function insert($table, array $datas, $params = []) {
         foreach ($datas as $data) {
             $id = $data['id'] ? $data['id'] : $this->getId($table);
