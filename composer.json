@@ -14,7 +14,9 @@
         "intervention/image": "^2.0",
         "ralouphie/mimey": "^2.0",
         "endroid/qr-code": "^3.0",
-        "phpfastcache/phpfastcache": "^7.0"
+        "phpfastcache/phpfastcache": "^7.0",
+        "guzzlehttp/guzzle": "^6.0",
+        "duxphp/dux-file": "^0.1"
     },
     "autoload": {
         "psr-4": {
