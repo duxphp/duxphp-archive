@@ -26,12 +26,11 @@ class View {
     private $template;
 
     /**
-     * 模板配置
+     * 模板缓存配置
      * @var array
      */
     protected $config = [
-        'path' => '.',
-        'cache_type' => 'files',
+
     ];
 
     /**
@@ -56,7 +55,7 @@ class View {
      */
     public function __construct($config = []) {
         $this->config = array_merge($this->config, $config);
-        $this->cache = \dux\Dux::cache($this->config['cache']);
+        $this->cache = \dux\Dux::cache('tpl', $this->config);
         $this->set('__Template', $this);
 
     }
@@ -148,9 +147,6 @@ class View {
             }
             $template = $this->templateParse($file);
         }
-        if (!headers_sent()) {
-            header("Content-Type: text/html; charset=UTF-8");
-        }
         extract($this->vars);
         eval('?>' . $template);
     }
@@ -189,11 +185,7 @@ class View {
         if ((substr($file, -5) != '.html')) {
             $file .= '.html';
         }
-        if ((substr($file, 0, 1) == '/')) {
-            return $file;
-        } else {
-            return $this->config['path'] . $file;
-        }
+        return $file;
     }
 
     /**

@@ -4,7 +4,7 @@ namespace dux\lib;
 /**
  * 分页类
  *
- * @author  Mr.L <349865361@qq.com>
+ * @author  Mr.L <admin@duxphp.com>
  */
 
 class Pagination {

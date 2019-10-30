@@ -45,29 +45,6 @@ class Start {
     }
 
     /**
-     * 定义常量
-     */
-    protected static function definitions() {
-        if (!defined('ROOT_PATH')) {
-            exit('Please define ROOT_PATH constants');
-        }
-        if (!defined('VERSION')) define('VERSION', '1.2.0 dev');
-        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20191015');
-        if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
-        if (!defined('METHOD')) define('METHOD', $_SERVER['REQUEST_METHOD']);
-        if (!defined('START_TIME')) define('START_TIME', microtime());
-        if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-        if (!defined('CORE_PATH')) define('CORE_PATH', __DIR__ . '/');
-        if (!defined('DATA_PATH')) define('DATA_PATH', ROOT_PATH . 'data/');
-        if (!defined('APP_PATH')) define('APP_PATH', ROOT_PATH . 'app/');
-        if (!defined('PACK_PATH')) define('PACK_PATH', CORE_PATH . 'package/');
-        if (!defined('ROOT_URL')) define('ROOT_URL', str_replace('\\', '/', rtrim(dirname($_SERVER["SCRIPT_NAME"]), '\\/')));
-        if (!defined('ROOT_SCRIPT')) define('ROOT_SCRIPT', str_replace('\\', '/', rtrim($_SERVER["SCRIPT_NAME"], '\\/')));
-        if (!defined('DOMAIN')) define('DOMAIN', (($_SERVER['HTTPS'] <> "on") ? 'http' : 'https') . '://' . $_SERVER["HTTP_HOST"]);
-        if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', 'http://' . $_SERVER["HTTP_HOST"]);
-    }
-
-    /**
      * 设置环境
      */
     protected static function environment() {
@@ -110,6 +87,29 @@ class Start {
     }
 
     /**
+     * 定义常量
+     */
+    protected static function definitions() {
+        if (!defined('ROOT_PATH')) {
+            exit('Please define ROOT_PATH constants');
+        }
+        if (!defined('VERSION')) define('VERSION', '2.0.0 dev');
+        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20191015');
+        if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
+        if (!defined('METHOD')) define('METHOD', $_SERVER['REQUEST_METHOD']);
+        if (!defined('START_TIME')) define('START_TIME', microtime());
+        if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
+        if (!defined('CORE_PATH')) define('CORE_PATH', __DIR__ . '/');
+        if (!defined('DATA_PATH')) define('DATA_PATH', ROOT_PATH . 'data/');
+        if (!defined('APP_PATH')) define('APP_PATH', ROOT_PATH . 'app/');
+        if (!defined('PACK_PATH')) define('PACK_PATH', CORE_PATH . 'package/');
+        if (!defined('ROOT_URL')) define('ROOT_URL', str_replace('\\', '/', rtrim(dirname($_SERVER["SCRIPT_NAME"]), '\\/')));
+        if (!defined('ROOT_SCRIPT')) define('ROOT_SCRIPT', str_replace('\\', '/', rtrim($_SERVER["SCRIPT_NAME"], '\\/')));
+        if (!defined('DOMAIN')) define('DOMAIN', (($_SERVER['HTTPS'] <> "on") ? 'http' : 'https') . '://' . $_SERVER["HTTP_HOST"]);
+        if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', 'http://' . $_SERVER["HTTP_HOST"]);
+    }
+
+    /**
      * 加载核心文件
      */
     protected static function loadFile() {
@@ -126,8 +126,11 @@ class Start {
      * 加载配置
      */
     protected static function loadConfig() {
-        $config = require(DATA_PATH . 'config/global.php');
-        \dux\Config::set($config);
+        $file = DATA_PATH . 'config/global.php';
+        if (is_file($file)) {
+            $config = require(DATA_PATH . 'config/global.php');
+            \dux\Config::set($config);
+        }
     }
 
     /**

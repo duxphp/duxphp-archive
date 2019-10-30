@@ -4,7 +4,7 @@ namespace dux\lib;
 
 /**
  * 字符串处理类
- * @author Mr.L <349865361@qq.com>
+ * @author Mr.L <admin@duxphp.com>
  */
 class Str {
 
@@ -214,35 +214,7 @@ class Str {
         if (empty($str)) {
             return $str = 0;
         }
-
         return @number_format($str, 2, ".", "");
     }
-
-
-    public static function priceCalculate($n1, $symbol, $n2, $scale = '2') {
-        switch ($symbol) {
-            case "+"://加法
-                $res = bcadd($n1, $n2, $scale);
-                break;
-            case "-"://减法
-                $res = bcsub($n1, $n2, $scale);
-                break;
-            case "*"://乘法
-                $res = bcmul($n1, $n2, $scale);
-                break;
-            case "/"://除法
-                $res = bcdiv($n1, $n2, $scale);
-                break;
-            case "%"://求余、取模
-                $res = bcmod($n1, $n2, $scale);
-                break;
-            default:
-                $res = 0;
-                break;
-        }
-
-        return $res;
-    }
-
 
 }

@@ -7,169 +7,130 @@
 namespace dux\lib;
 
 
+use Symfony\Component\Cache\Adapter\TraceableAdapter;
+
 class Http {
 
-    static $error = '';
-
     /**
-     * GET数据
-     * @param string $url 访问地址
-     * @param integer $timeout 超时秒
-     * @param string $header 头信息
-     * @return string
+     * GET请求
+     * @param string $url
+     * @param float $timeout
+     * @param array $header
+     * @param array $attr
+     * @return mixed
      */
-    static public function doGet($url, $timeout = 5, $header = "") {
-        try {
-            $headers = self::header($header);
-            $response = self::getObj()->request('GET', $url, [
-                'timeout' => $timeout,
-                'http_errors' => false,
-                'headers' => $headers
-            ]);
-            $reason = $response->getReasonPhrase();
-            $body = '';
-            if ($reason == 'OK') {
-                $body = $response->getBody()->getContents();
-            }
-            return $body;
-        } catch (\Exception $e) {
-            dux_log($e->getMessage());
-            return false;
-        }
+    static public function get(string $url, float $timeout = 5, array $header = [], array $attr = []) {
+        return self::_request('GET', $url, [], $timeout, '', $header, $attr);
     }
 
     /**
      * POST数据
-     * @param string $url 发送地址
-     * @param array $data 发送数组
-     * @param integer $timeout 超时秒
-     * @param string $header 头信息
-     * @return string
+     * @param string $url
+     * @param string $data
+     * @param int $timeout
+     * @param string $type
+     * @param array $header
+     * @param array $attr
+     * @return mixed
      */
-    static public function doPost($url, $data = [], $timeout = 5, $header = "", $type = 'form', $attr = []) {
-        try {
-            $headers = self::header($header);
-            $params = [];
-            switch ($type) {
-                case 'body':
-                    $params['body'] = $data;
-                    break;
-                case 'json':
-                    $params['json'] = $data;
-                    break;
-                case 'form':
-                    $params['form_params'] = $data;
-                    break;
-            }
-            $data = array_merge([
-                'timeout' => $timeout,
-                'http_errors' => false,
-                'headers' => $headers
-            ], $params, $attr);
-            $response = self::getObj()->request('POST', $url, $data);
-            $reason = $response->getReasonPhrase();
-            if ($reason == 'OK') {
-                return $response->getBody()->getContents();
-            }
-            return false;
-        } catch (\GuzzleHttp\Exception\TransferException $e) {
-            self::$error = $e->getMessage();
-            return false;
-        }
+    static public function post(string $url, $data = '', int $timeout = 5, string $type = 'form', array $header = [], array $attr = []) {
+        return self::_request('POST', $url, $data, $timeout, $type, $header, $attr);
     }
 
-    static function request($url, $type = 'POST', $header = [], $params = []) {
-        try {
-            $headers = self::header($header);
-            $data = array_merge([
-                'timeout' => $timeout,
-                'headers' => $headers
-            ], $params);
-            $response = self::getObj()->request($type, $url, $data);
-            $reason = $response->getReasonPhrase();
-            if ($reason == 'OK') {
-                return $response->getBody()->getContents();
-            }
-            return false;
-        } catch (\GuzzleHttp\Exception\TransferException $e) {
-            self::$error = $e->getMessage();
-            return false;
+    /**
+     * PUT请求
+     * @param string $url
+     * @param string $data
+     * @param int $timeout
+     * @param string $type
+     * @param array $header
+     * @param array $attr
+     * @return mixed
+     */
+    static public function put(string $url, $data = '', int $timeout = 5, string $type = 'form', array $header = [], array $attr = []) {
+        return self::_request('PUT', $url, $data, $timeout, $type, $header, $attr);
+    }
+
+    /**
+     * DELETE请求
+     * @param string $url
+     * @param float $timeout
+     * @param array $header
+     * @param array $attr
+     * @return mixed
+     */
+    static public function delete(string $url, float $timeout = 5, array $header = [], array $attr = []) {
+        return self::_request('DELETE', $url, [], $timeout, '', $header, $attr);
+    }
+
+    /**
+     * 请求封装
+     * @param string $method
+     * @param string $url
+     * @param string $data
+     * @param int $timeout
+     * @param string $type
+     * @param array $header
+     * @param array $attr
+     * @return mixed
+     */
+    static private function _request(string $method = 'POST', string $url, $data = '', int $timeout = 5, string $type = 'form', array $header = [], array $attr = []) {
+        $params = [];
+        switch ($type) {
+            case 'body':
+                $params['body'] = $data;
+                break;
+            case 'json':
+                $params['json'] = $data;
+                break;
+            case 'form':
+                $params['form_params'] = $data;
+                break;
         }
+        $attr = array_merge([
+            'timeout' => $timeout,
+        ], $params, $attr);
+        return self::request($url, $method, $header, $attr);
+    }
+
+    /**
+     * 通用请求
+     * @param string $url
+     * @param string $type
+     * @param array $header
+     * @param array $params
+     * @return mixed
+     */
+    static function request(string $url, string $type = 'POST', array $header = [], array $params = []) {
+        $data = array_merge([
+            'headers' => $header
+        ], $params);
+        $response = self::getObj()->request($type, $url, $data);
+        return $response->getBody()->getContents();
     }
 
     /**
      * 下载文件
-     * @param string $filename 文件名
+     * @param mixed $filename 文件名
      * @param string $showname 显示文件名
      * @param integer $expire 缓存时间
      * @return boolean
      */
-    static public function download($filename, $showname = '', $expire = 1800) {
-        if (file_exists($filename) && is_file($filename)) {
-            $length = filesize($filename);
-        } else {
-            die('下载文件不存在！');
+    static public function download($file, string $showname = '', int $expire = 1800) {
+        if (is_string($file)) {
+            $file = fopen($file, 'rb');
         }
-        $finfo = new \finfo(FILEINFO_MIME);
-        $type = $finfo->file($filename);
-        //发送Http Header信息 开始下载
-        header("Pragma: public");
+        if (empty($file)) {
+            throw new \Exception('File does not exist', 500);
+        }
+        header('Content-type:application/octet-stream; charset=utf-8');
+        header("Content-Transfer-Encoding: binary");
+        header("Accept-Ranges: bytes");
         header("Cache-control: max-age=" . $expire);
-        //header('Cache-Control: no-appstore, no-cache, must-revalidate');
         header("Expires: " . gmdate("D, d M Y H:i:s", time() + $expire) . "GMT");
         header("Last-Modified: " . gmdate("D, d M Y H:i:s", time()) . "GMT");
-        header("Content-Disposition: attachment; filename=" . $showname);
-        header("Content-Length: " . $length);
-        header("Content-type: " . $type);
-        header('Content-Encoding: none');
-        header("Content-Transfer-Encoding: binary");
-        readfile($filename);
-        return true;
-    }
-
-    /**
-     * 请求参数转换
-     * @param $header
-     * @return array
-     */
-    static private function header($header) {
-        $headers = [];
-        if (!empty($header)) {
-            if (!is_array($header)) {
-                $tmp = explode(':', $header, 2);
-                $tmp = array_map(function ($str) {
-                    return trim($str);
-                }, $tmp);
-                $headers[$tmp[0]] = $tmp[1];
-            } else {
-                foreach ($header as $key => $vo) {
-                    if (is_int($key)) {
-                        $vo = explode(':', $header, 2);
-                        $tmp = array_map(function ($str) {
-                            return trim($str);
-                        }, $tmp);
-                        $headers[$tmp[0]] = $tmp[1];
-                    } else {
-                        $headers[$key] = $vo;
-                    }
-                }
-            }
-        }
-        $headers = $headers ? $headers : self::defaultHeader();
-        return $headers;
-    }
-
-    static public function getError() {
-        return self::$error;
-    }
-
-    /**
-     * 默认HTTP头
-     * @return string
-     */
-    static private function defaultHeader() {
-        $header = [];
-        return $header;
+        header('Content-Disposition:attachment;filename="'.urlencode($showname).'"');
+        fpassthru($file);
     }
 
     /**

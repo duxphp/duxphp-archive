@@ -44,8 +44,8 @@ class Controller {
             $this->assign('layout', $this->_getView()->fetch($tpl));
             $tpl = $this->layout;
         }
-        
-        return $this->_getView()->render($tpl);
+        header("Content-Type: text/html; charset=UTF-8");
+        $this->_getView()->render($tpl);
     }
 
     /**
@@ -80,18 +80,16 @@ class Controller {
         if ($callback) {
             $info = ['data' => $data, 'callback' => $callback];
             \dux\Dux::header($code, function() use ($info) {
-                if(!headers_sent()) {
-                    header('Content-Type: application/javascript;charset=utf-8;');
-                }
                 echo $info['callback'] . '(' . json_encode($info['data']) . ');';
-            });
+            }, [
+                'Content-Type' => 'application/javascript;charset=utf-8;'
+            ]);
         } else {
             \dux\Dux::header($code, function() use ($data) {
-                if(!headers_sent()) {
-                    header('Content-Type: application/json;charset=utf-8;');
-                }
                 echo json_encode($data);
-            });
+            }, [
+                'Content-Type' => 'application/json;charset=utf-8;'
+            ]);
         }
     }
 
@@ -158,18 +156,17 @@ class Controller {
      * @return void
      */
     public function alert($msg, $url = NULL, $charset = 'utf-8') {
-
-        \dux\Dux::header(200, function () use ($msg, $url, $charset) {
-            header("Content-type: text/html; charset={$charset}");
+        \dux\Dux::header(200, function () use ($msg, $url) {
             $alert_msg = "alert('$msg');";
             if (empty($url)) {
                 $go_url = 'history.go(-1);';
             } else {
                 $go_url = "window.location.href = '{$url}';";
             }
-
             echo "<script>$alert_msg $go_url window.postMessage('{\"event\": \"close\"}');</script>";
-        });
+        }, [
+            'Content-type' => "text/html; charset={$charset}"
+        ]);
     }
 
 

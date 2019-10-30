@@ -4,8 +4,7 @@ namespace dux\lib;
 
 /**
  * Session会话类
- *
- * @author Mr.L <349865361@qq.com>
+ * @author Mr.L <admin@duxphp.com>
  */
 
 class Session {
@@ -14,7 +13,7 @@ class Session {
      * 配置
      * @var array
      */
-    protected $config = array();
+    protected $config = [];
 
     /**
      * 驱动配置
@@ -26,90 +25,45 @@ class Session {
      * 缓存对象
      * @var null
      */
-    protected $cache = null;
+    protected $object = null;
+
+    /**
+     * 缓存前缀
+     * @var string
+     */
+    protected $pre = '';
+
+    /**
+     * 过期时间
+     * @var int
+     */
+    protected $time = 30;
 
     /**
      * 实例化类
-     * @param $config
+     * Session constructor.
+     * @param string $pre
+     * @param array $config
      * @throws \Exception
      */
-    public function __construct($session = 'default') {
-        if (!empty($session)) {
-            $this->session = $session;
-        }
-        $config = \dux\Config::get('dux.session');
-        $this->config = $config[$this->session];
-
+    public function __construct(array $config, string $pre = '') {
+        $this->config = array_merge($this->config, $config);
+        $this->pre = $pre;
+        $this->time = ini_get('session.gc_maxlifetime');
         if (empty($this->config)) {
-            throw new \Exception($this->session . ' session config error', 500);
+            throw new \Exception('Session config error', 500);
         }
-
-        if (!isset($this->config['time']) || $this->config['time'] <= 0) {
-            $this->config['time'] = ini_get('session.gc_maxlifetime');
-        }
-
-        if ($this->config['cache']) {
-            session_set_save_handler(
-                array($this, '_open'),
-                array($this, '_close'),
-                array($this, '_read'),
-                array($this, '_write'),
-                array($this, '_destory'),
-                array($this, '_clean')
-            );
-        }
-
-
+        session_set_save_handler(
+            [$this, '_open'],
+            [$this, '_close'],
+            [$this, '_read'],
+            [$this, '_write'],
+            [$this, '_destory'],
+            [$this, '_clean']
+        );
         if (!isset($_SESSION)) {
             session_start();
         }
-
-    }
-
-    /**
-     * 设置配置
-     * @param $config
-     * @return $this
-     */
-    public function setConfig($config) {
-        $this->config = array_merge($this->config, $config);
-        return $this;
-    }
-
-    /**
-     * 读取配置
-     * @param $key
-     * @return mixed
-     */
-    public function get($key) {
-        return $_SESSION[$this->config['pre'] . $key];
-    }
-
-
-    /**
-     * 设置会话
-     * @param $key
-     * @param $value
-     * @return mixed
-     */
-    public function set($key, $value) {
-        return $_SESSION[$this->config['pre'] . $key] = $value;
-    }
-
-    /**
-     * 删除会话内容
-     * @param $key
-     */
-    public function del($key) {
-        unset($_SESSION[$this->config['pre'] . $key]);
-    }
-
-    /**
-     * 清空会话内容
-     */
-    public function clear() {
-        session_unset();
-        session_destroy();
     }
 
     /**
@@ -119,10 +73,10 @@ class Session {
      * @return bool
      */
     public function _open($savePath, $sessionName) {
-        if ($this->cache) {
+        if ($this->object) {
             return true;
         }
-        $this->cache = \dux\Dux::cache($this->config['cache']);
+        $this->getObj();
         return true;
     }
 
@@ -131,8 +85,8 @@ class Session {
      * @return mixed
      */
     public function _close() {
-        $this->cache = null;
-        unset($this->cache);
+        $this->object = null;
+        unset($this->object);
         return true;
     }
 
@@ -142,11 +96,16 @@ class Session {
      * @return mixed
      */
     public function _read($sessionId) {
-        $data = json_decode($this->cache->get($this->config['pre'] . $sessionId), true);
-        if(is_array($data)) {
-            $data = json_encode($data);
+        try {
+            $data = json_decode($this->getObj()->get($this->pre . $sessionId), true);
+            if (is_array($data)) {
+                $data = json_encode($data);
+            }
+            return (string)$data;
+        } catch (\Exception $e) {
+            dux_log($e->getMessage());
+            return '';
         }
-        return (string)$data;
     }
 
     /**
@@ -156,7 +115,13 @@ class Session {
      * @return mixed
      */
     public function _write($sessionId, $sessionData) {
-        return $this->cache->set($this->config['pre'] . $sessionId, json_encode($sessionData), $this->config['time']) ? true : false;
+        try {
+            $this->getObj()->set($this->pre . $sessionId, json_encode($sessionData), $this->time);
+            return true;
+        } catch (\Exception $e) {
+            dux_log($e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -165,7 +130,13 @@ class Session {
      * @return bool
      */
     public function _destory($sessionId) {
-        return $this->cache->del($this->config['pre'] . $sessionId) >= 1 ? true : false;
+        try {
+            $this->getObj()->del($this->pre . $sessionId);
+            return true;
+        } catch (\Exception $e) {
+            dux_log($e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -174,7 +145,19 @@ class Session {
      * @return bool
      */
     public function _clean($time) {
-        $this->cache->get('*');
         return true;
+    }
+
+    /**
+     * 获取缓存对象
+     * @return \dux\com\Cache
+     * @throws \Exception
+     */
+    public function getObj() {
+        if ($this->object) {
+            return $this->object;
+        }
+        $this->object = \dux\Dux::cache('session', $this->config);
+        return $this->object;
     }
 }

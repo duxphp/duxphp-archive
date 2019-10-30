@@ -5,7 +5,7 @@ namespace dux\com;
 /**
  * 缓存类
  *
- * @author Mr.L <349865361@qq.com>
+ * @author Mr.L <admin@duxphp.com>
  */
 class Cache {
 
@@ -16,93 +16,120 @@ class Cache {
     protected $config = [];
 
     /**
-     * 驱动配置
+     * 缓存分组
      */
-    protected $cache = 'default';
-
-    /**
-     * 分组前缀
-     */
-    protected $group = 0;
+    protected $group = 'default';
 
     /**
      * 实例化类
-     * @param string $cache
      * @param array $config
+     * @param $cache
      * @throws \Exception
      */
-    public function __construct($cache = 'default', $group = 0) {
-        if ($cache) {
-            $this->cache = $cache;
-        }
-        $config = \dux\Config::get('dux.cache');
-        $this->config = $config[$this->cache];
+    public function __construct(array $config, $group = 'default') {
+        $this->config = array_merge($this->config, $config);
         $this->group = $this->config['group'];
-        if(isset($group)) {
+        if (isset($group)) {
             $this->group = $group;
         }
         unset($this->config['group']);
         if (empty($this->config) || empty($this->config['type'])) {
-            throw new \Exception($this->cache . ' cache config error', 500);
+            throw new \Exception('Cache config error', 500);
         }
         asort($this->config);
     }
 
-    public function get($key) {
+    /**
+     * 获取缓存
+     * @param string $key
+     * @return mixed
+     * @throws \Exception
+     */
+    public function get(string $key) {
         return $this->getObj()->getItem($this->getKey($key))->get();
     }
 
-    public function set($key, $value, $expire = 0) {
-        try {
-            $item = $this->getObj()->getItem($this->getKey($key));
-            $obj = $item->set($value)->addTag('cache_' . $this->group)->expiresAfter($expire);
-            return $this->getObj()->save($item);
-        }catch (\Exception $e) {
-            dux_log($e->getMessage());
-            return false;
-        }
+    /**
+     * 设置缓存
+     * @param string $key
+     * @param $value
+     * @param int $expire
+     * @return mixed
+     * @throws \Exception
+     */
+    public function set(string $key, $value, int $expire = 0) {
+        $item = $this->getObj()->getItem($this->getKey($key));
+        $obj = $item->set($value)->addTag('cache_' . $this->group)->expiresAfter($expire);
+        return $this->getObj()->save($item);
     }
 
-    public function inc($key, $value = 1) {
-        try {
-            $item = $this->getObj()->getItem($this->getKey($key));
-            $item->increment($value);
-            return $this->getObj()->save($item);
-        }catch (\Exception $e) {
-            dux_log($e->getMessage());
-            return false;
-        }
+    /**
+     * 递增数字
+     * @param string $key
+     * @param $value
+     * @param int $expire
+     * @return bool
+     */
+    public function inc(string $key, int $value = 1) {
+        $item = $this->getObj()->getItem($this->getKey($key));
+        $item->increment($value);
+        return $this->getObj()->save($item);
     }
 
-    public function dec($key, $value = 1) {
-        try {
-            return $this->getObj()->getItem($this->getKey($key))->decrement($value)->get();
-        }catch (\Exception $e) {
-            dux_log($e->getMessage());
-            return false;
-        }
+    /**
+     * 递减数字
+     * @param string $key
+     * @param $value
+     * @param int $expire
+     * @return bool
+     */
+    public function dec(string $key, int $value = 1) {
+        $item = $this->getObj()->getItem($this->getKey($key));
+        $item->decrement($value);
+        return $this->getObj()->save($item);
     }
 
-    public function del($key) {
+    /**
+     * 删除缓存
+     * @param string $key
+     * @return mixed
+     * @throws \Exception
+     */
+    public function del(string $key) {
         return $this->getObj()->deleteItem($this->getKey($key));
     }
 
+    /**
+     * 清空缓存
+     * @return mixed
+     * @throws \Exception
+     */
     public function clear() {
         return $this->getObj()->deleteItemsByTag('cache_' . $this->group);
     }
 
-    private function getKey($key) {
+    /**
+     * 获取键
+     * @param string $key
+     * @return string
+     */
+    private function getKey(string $key) {
         return $this->group . '_' . $key;
     }
 
+    /**
+     * 获取缓存对象
+     * @return mixed|null
+     * @throws \Exception
+     */
     public function getObj() {
-        $class = 'cache.' . $this->cache;
+        $class = 'cache.' . http_build_query($this->config);
         if (!di()->has($class)) {
             di()->set($class, function () {
                 $config = $this->config;
                 $type = $config['type'];
                 unset($config['type']);
-                if($type == 'files') {
+                if ($type == 'files') {
                     $config['securityKey'] = 'data';
                     $config['cacheFileExtension'] = 'cache';
                 }
@@ -112,7 +139,7 @@ class Cache {
         }
         $obj = di()->get($class);
         if (empty($obj)) {
-            throw new \Exception($this->cache . ' cache drive does not exist', 500);
+            throw new \Exception('Cache drive does not exist', 500);
         }
         return $obj;
     }
