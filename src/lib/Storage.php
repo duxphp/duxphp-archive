@@ -59,14 +59,15 @@ class Storage {
      * @throws \Exception
      */
     public function __call($method, $args) {
-        if( !isset(self::$objArr[$this->storage]) ){
+        $key = md5($this->storage . $this->group);
+        if( !isset(self::$objArr[$key]) ){
             $driver = __NAMESPACE__ . '\storage\\' . ucfirst($this->config['type']) . 'Driver';
             if (!class_exists($driver)) {
                 throw new \Exception("Cache Driver '{$driver}' not found'", 500);
             }
-            self::$objArr[$this->storage] = new $driver($this->config, $this->group);
+            self::$objArr[$key] = new $driver($this->config, $this->group);
         }
-        return call_user_func_array(array(self::$objArr[$this->storage], $method), $args);
+        return call_user_func_array(array(self::$objArr[$key], $method), $args);
     }
 
 }

@@ -8,72 +8,58 @@
 
 namespace dux\kernel\model;
 
+use PDO;
+
 class MysqlPdoDriver implements DbInterface {
 
     protected $config = [];
-    protected $link = NULL;
-    protected $sqlMeta = array('sql' => '', 'params' => [], 'link' => NULL);
+    protected $link = null;
+    /**
+     * 连接超时 重连次数
+     * @var int
+     */
+    protected $linkNum = 3;
+    /**
+     * 当前连接次数
+     * @var int
+     */
+    protected $linkCurrentNum = 0;
+
+    protected $sqlMeta = ['sql' => '', 'params' => [], 'link' => null];
     protected $transaction = false;
+
+    protected $errorCode = [
+        //连接失败
+        'gone_away' => [
+            2006,
+            2013,
+        ],
+    ];
 
     public function __construct($config = []) {
         $this->config = $config;
     }
 
-    public function select($table, $condition = '', $params = [], $field = '*', $lock = false, $order = NULL, $limit = NULL, $group = NULL, $return = false) {
+    public function select($table, $condition = '', $params = [], $field = '*', $append = '', $return = false) {
         $field = !empty($field) ? $field : '*';
-        $order = !empty($order) ? ' ORDER BY ' . $order : '';
-        $limit = !empty($limit) ? ' LIMIT ' . $limit : '';
-        $group = !empty($group) ? ' GROUP BY ' . $group : '';
-        $lock = $lock ? 'for update' : '';
+        $condition = !empty($condition) ? ' WHERE ' . $condition : '';
         $table = $this->_table($table);
-        return $this->query("SELECT {$field} FROM {$table} {$condition} {$group} {$order} {$limit} {$lock}", $params, $return);
+        return $this->query("SELECT {$field} FROM {$table} {$condition} {$append}", $params, $return);
     }
 
-    public function count($table, $condition = '', $params = [], $group = NULL, $return = false) {
+    public function aggregate($type, $table, $condition = '', $params = [], $field = '*', $append = '', $return = false) {
         $table = $this->_table($table);
-        $group = !empty($group) ? ' GROUP BY ' . $group : '';
-        $count = $this->query("SELECT COUNT(*) AS __total FROM {$table} {$condition} {$group}" , $params, $return);
+        $condition = !empty($condition) ? ' WHERE ' . $condition : '';
+        if ($type == 'COUNT') {
+            $field = '*';
+        }
+        $count = $this->query("SELECT {$type}({$field}) AS __total FROM {$table} {$condition} {$append}", $params, $return);
         return isset($count[0]['__total']) && $count[0]['__total'] ? $count[0]['__total'] : 0;
     }
 
-    public function query($sql, array $params = [], $return = false) {
-        $sth = $this->_bindParams($sql, $params, $this->getLink());
-        if($return) {
-            return $this->getSql();
-        }
-        $result = $sth->execute();
-        if ($result) {
-            $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
-            return $data;
-        }
-        $err = $sth->errorInfo();
-        throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
-    }
-
-    public function execute($sql, array $params = [], $return = false) {
-        $sth = $this->_bindParams($sql, $params, $this->getLink());
-        if($return) {
-            return $this->getSql();
-        }
-        $result = $sth->execute();
-        if ($result) {
-            $affectedRows = $sth->rowCount();
-            return $affectedRows;
-        }
-        $err = $sth->errorInfo();
-        throw new \Exception('Database SQL: "' . $this->getSql() . '". ErrorInfo: ' . $err[2], 500);
-    }
-
-    public function insert($table, array $data = [], array $params = [], $return = false) {
+    public function insert($table, array $columns = [], array $values = [], array $params = [], $return = false) {
         $table = $this->_table($table);
-        $values = [];
-        $keys = [];
-        $data = $data['data'];
-        foreach ($data as $k => $v) {
-            $keys[] = "`{$k}`";
-            $values[":{$k}"] = $v;
-        }
-        $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ")", $params, $return);
+        $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $columns) . ") VALUES " . implode(', ', $values), $params, $return);
         $id = $this->getLink()->lastInsertId();
         if ($id) {
             return $id;
@@ -82,38 +68,21 @@ class MysqlPdoDriver implements DbInterface {
         }
     }
 
-    public function update($table, $condition = '', $whereParams = [], array $data = [], array $dataParams = [], $return = false) {
+    public function update($table, $condition = '', array $columns = [], array $values = [], array $params = [], $return = false) {
         if (empty($condition)) return false;
         $table = $this->_table($table);
-        $sql = $data['sql'];
-        return $this->execute("UPDATE {$table} SET " . implode(', ', $sql) . $condition, $whereParams + $dataParams, $return);
-    }
-
-    public function sum($table, $condition = '', $params = [], $field, $return = false) {
-        $table = $this->_table($table);
-
-        $sum = $this->query("SELECT SUM(`{$field}`) as __sum FROM {$table} {$condition} ", $params, $return);
-        return isset($sum[0]['__sum']) && $sum[0]['__sum'] ? $sum[0]['__sum'] : 0;
-    }
-
-    public function increment($table, $condition = '', $params = [], $field, $num = 1, $return = false) {
-        if (empty($condition) || empty($field)) return false;
-        $table = $this->_table($table);
-
-        return $this->execute("UPDATE {$table} SET {$field} = {$field} + {$num} " . $condition, $params, $return = false);
-    }
-
-    public function decrease($table, $condition = '',$params = [], $field, $num = 1, $return = false) {
-        if (empty($condition) || empty($field)) return false;
-        $table = $this->_table($table);
-
-        return $this->execute("UPDATE {$table} SET {$field} = {$field} - {$num} " . $condition, $params, $return);
+        $condition = !empty($condition) ? ' WHERE ' . $condition : '';
+        $stock = [];
+        foreach ($columns as $key => $vo) {
+            $stock[] = $vo . ' = ' . $values[$key];
+        }
+        return $this->execute("UPDATE {$table} SET " . implode(', ', $stock) . $condition, $params, $return);
     }
 
     public function delete($table, $condition = '', $params = [], $return = false) {
         if (empty($condition)) return false;
         $table = $this->_table($table);
-
+        $condition = !empty($condition) ? ' WHERE ' . $condition : '';
         return $this->execute("DELETE FROM {$table} {$condition}", $params, $return);
     }
 
@@ -121,7 +90,9 @@ class MysqlPdoDriver implements DbInterface {
         $table = $this->_table($table);
         $obj = $this->getLink()->prepare("DESCRIBE {$table}");
         $obj->execute();
-        return $obj->fetchAll(\PDO::FETCH_COLUMN);
+        $data = $obj->fetchAll(\PDO::FETCH_COLUMN);
+        $obj->closeCursor();
+        return $data;
     }
 
     public function getSql() {
@@ -136,8 +107,52 @@ class MysqlPdoDriver implements DbInterface {
         return $sql;
     }
 
+    public function query($sql, array $params = [], $return = false) {
+        return $this->exec($sql, $params, $return, 1);
+    }
+
+    public function execute($sql, array $params = [], $return = false) {
+        return $this->exec($sql, $params, $return, 0);
+    }
+
+    private function exec($sql, $params, $return, $type) {
+        $sth = $this->_bindParams($sql, $params, $this->getLink());
+        $sqlStr = $this->getSql();
+        if ($return) {
+            return $sqlStr;
+        }
+        $time = microtime();
+        $result = $sth->execute();
+        $endTime = microtime();
+        if (!IS_CLI && \dux\Config::get('dux.debug_sql')) {
+            \dux\Engine::$sqls[] = [
+                'sql' => $sqlStr,
+                'time' => round($endTime - $time, 2),
+            ];
+        }
+        if ($result) {
+            $this->linkCurrentNum = 0;
+            if($type) {
+                $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
+                $sth->closeCursor();
+                return $data;
+            }else {
+                $data = $sth->rowCount();
+                $sth->closeCursor();
+                return $data;
+            }
+        }
+        $err = $sth->errorInfo();
+        if (in_array($sth->errorCode(), $this->errorCode['gone_away']) && $this->linkCurrentNum < $this->linkNum) {
+            $this->linkCurrentNum++;
+            $this->link = null;
+            return $this->exec($sql, $params, $return, $type);
+        }
+        throw new \PDOException('Database SQL: "' . $sqlStr . '". ErrorInfo: ' . $err[2], 500);
+    }
+
     public function beginTransaction() {
-        if($this->transaction) {
+        if ($this->transaction) {
             return true;
         }
         $this->transaction = true;
@@ -146,7 +161,7 @@ class MysqlPdoDriver implements DbInterface {
     }
 
     public function commit() {
-        if(!$this->transaction) {
+        if (!$this->transaction) {
             return false;
         }
         $this->transaction = false;
@@ -155,7 +170,7 @@ class MysqlPdoDriver implements DbInterface {
     }
 
     public function rollBack() {
-        if(!$this->transaction) {
+        if (!$this->transaction) {
             return false;
         }
         $this->transaction = false;
@@ -164,7 +179,7 @@ class MysqlPdoDriver implements DbInterface {
     }
 
     protected function _bindParams($sql, array $params, $link = null) {
-        $this->sqlMeta = array('sql' => $sql, 'params' => $params, 'link' => $link);
+        $this->sqlMeta = ['sql' => $sql, 'params' => $params, 'link' => $link];
         $sth = $link->prepare($sql);
         foreach ($params as $k => $v) {
             $sth->bindValue($k, $v);
@@ -200,7 +215,7 @@ class MysqlPdoDriver implements DbInterface {
             }
         }
         if (!$pdo) {
-            throw new \Exception('connect database error :' . $error, 500);
+            throw new \PDOException('connect database error :' . $error, 500);
         }
         $pdo->exec("set names {$db['charset']}");
         return $pdo;
@@ -215,21 +230,21 @@ class MysqlPdoDriver implements DbInterface {
 
     public function __destruct() {
         if ($this->link) {
-            $this->link = NULL;
+            $this->link = null;
         }
     }
 
-    public function checkTransSql($sql){
+    public function checkTransSql($sql) {
         if ((strtoupper(substr($sql, 0, 6)) !== 'SELECT' && strtoupper(substr($sql, 0, 3)) !== 'SET' && strtoupper(substr($sql, 0, 5)) !== 'FLUSH')
             || strtoupper(substr($sql, -10)) === 'FOR UPDATE') {
             $this->beginTransaction();
         }
     }
 
-    public function checkTransCommit(){
-        if($this->transaction){
+    public function checkTransCommit() {
+        if ($this->transaction) {
             return $this->commit();
-        }else{
+        } else {
             return true;
         }
     }

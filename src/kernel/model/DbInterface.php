@@ -9,7 +9,7 @@
 namespace dux\kernel\model;
 
 interface DbInterface {
-	
+
 	/**
 	 * 构建函数
 	 * @param array $config 数据库配置
@@ -47,22 +47,25 @@ interface DbInterface {
     /**
      * 插入数据
      * @param $table
-     * @param array $data
+     * @param array $columns
+     * @param array $values
      * @param array $params
+     * @param bool $return
      * @return mixed
      */
-	public function insert($table, array $data, array $params = []);
+	public function insert($table, array $columns = [], array $values = [], array $params = [], $return = false);
 
     /**
      * 更新数据
      * @param $table
-     * @param $condition
-     * @param array $whereParams
-     * @param array $data
-     * @param array $dataParams
+     * @param string $condition
+     * @param array $columns
+     * @param array $values
+     * @param array $params
+     * @param bool $return
      * @return mixed
      */
-	public function update($table, $condition, $whereParams = [], array $data, array $dataParams = []);
+	public function update($table, $condition = '', array $columns = [], array $values = [], array $params = [], $return = false);
 
     /**
      * 删除数据
@@ -80,30 +83,7 @@ interface DbInterface {
      * @param array $params
      * @return mixed
      */
-	public function count($table, $condition, $params = []);
-
-
-    /**
-     * 递增字段
-     * @param $table
-     * @param $condition
-     * @param array $params
-     * @param $field
-     * @param $num
-     * @return mixed
-     */
-	public function increment($table, $condition, $params = [], $field, $num);
-
-    /**
-     * 递减字段
-     * @param $table
-     * @param $condition
-     * @param array $params
-     * @param $field
-     * @param $num
-     * @return mixed
-     */
-	public function decrease($table, $condition, $params = [], $field, $num);
+	public function aggregate($table, $condition, $params = []);
 
     /**
      * 获取表字段
@@ -111,25 +91,25 @@ interface DbInterface {
      * @return mixed
      */
 	public function getFields($table);
-	
+
 	/**
 	 * 获取最后执行sql
 	 * @return string
 	 */
 	public function getSql();
-	
+
 	/**
 	 * 事务开始
 	 * @return boolean
 	 */
 	public function beginTransaction();
-	
+
 	/**
 	 * 事务提交
 	 * @return boolean
 	 */
 	public function commit();
-	
+
 	/**
 	 * 事务回滚
 	 * @return boolean

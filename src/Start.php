@@ -21,15 +21,18 @@ class Start {
     private function __clone() {
     }
 
-    public static $_routes = [];
-
-
     /**
      * 运行框架
      */
     public static function run() {
+        if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
+            header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
+            echo 'Can only run in PHP is greater than 7.1';
+            exit;
+        }
         if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
-        if(!IS_CLI) {
+        date_default_timezone_set('PRC');
+        if (!IS_CLI) {
             self::environment();
         }
         self::definitions();
@@ -38,7 +41,6 @@ class Start {
         self::loadFunCom();
         self::loadClass();
         self::registerCom();
-        self::route();
         self::start();
     }
 
@@ -47,12 +49,12 @@ class Start {
      */
     protected static function definitions() {
         if (!defined('ROOT_PATH')) {
-            echo 'Please define ROOT_PATH constants';
-            exit;
+            exit('Please define ROOT_PATH constants');
         }
-        if (!defined('VERSION')) define('VERSION', '1.1.15');
-        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20190413');
+        if (!defined('VERSION')) define('VERSION', '1.2.0 dev');
+        if (!defined('VERSION_DATE')) define('VERSION_DATE', '20191015');
         if (!defined('URL')) define('URL', $_SERVER['REQUEST_URI']);
+        if (!defined('METHOD')) define('METHOD', $_SERVER['REQUEST_METHOD']);
         if (!defined('START_TIME')) define('START_TIME', microtime());
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
         if (!defined('CORE_PATH')) define('CORE_PATH', __DIR__ . '/');
@@ -61,11 +63,8 @@ class Start {
         if (!defined('PACK_PATH')) define('PACK_PATH', CORE_PATH . 'package/');
         if (!defined('ROOT_URL')) define('ROOT_URL', str_replace('\\', '/', rtrim(dirname($_SERVER["SCRIPT_NAME"]), '\\/')));
         if (!defined('ROOT_SCRIPT')) define('ROOT_SCRIPT', str_replace('\\', '/', rtrim($_SERVER["SCRIPT_NAME"], '\\/')));
-        $urlHead = ($_SERVER['HTTPS'] <> "on") ? 'http' : 'https';
-        $urlHead .= '://' . $_SERVER["HTTP_HOST"];
-        if (!defined('DOMAIN')) define('DOMAIN', $urlHead);
-        $urlHead = 'http://' . $_SERVER["HTTP_HOST"];
-        if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', $urlHead);
+        if (!defined('DOMAIN')) define('DOMAIN', (($_SERVER['HTTPS'] <> "on") ? 'http' : 'https') . '://' . $_SERVER["HTTP_HOST"]);
+        if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', 'http://' . $_SERVER["HTTP_HOST"]);
     }
 
     /**
@@ -75,14 +74,7 @@ class Start {
         //设置跨域
         header('Access-Control-Allow-Origin:' . $_SERVER["HTTP_ORIGIN"]);
         header('Access-Control-Allow-Headers:' . $_SERVER["HTTP_ACCESS_CONTROL_REQUEST_HEADERS"]);
-        //判断PHP版本
-        if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
-            header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
-            echo 'Can only run in PHP is greater than 7.1';
-            exit;
-        }
         //兼容环境信息
-        date_default_timezone_set('PRC');
         if (!isset($_SERVER['HTTP_REFERER'])) {
             $_SERVER['HTTP_REFERER'] = '';
         }
@@ -121,10 +113,10 @@ class Start {
      * 加载核心文件
      */
     protected static function loadFile() {
-        if(IS_CLI) {
+        if (IS_CLI) {
             $params = getopt('u:m:');
             $_SERVER['REQUEST_URI'] = $params['u'];
-            if($params['m']) {
+            if ($params['m']) {
                 if (!defined('SYSTEM_MODEL')) define('SYSTEM_MODEL', $params['m']);
             }
         }
@@ -148,7 +140,6 @@ class Start {
      * 注册核心方法
      */
     protected static function registerCom() {
-
     }
 
     /**
@@ -159,20 +150,13 @@ class Start {
     }
 
     /**
-     * 注册路由
-     */
-    protected static function route() {
-    }
-
-    /**
      * 启动框架
      */
     protected static function start() {
         if (strtolower($_SERVER['REQUEST_METHOD']) == 'options') {
             Dux::header(204);
         }
-        $dux = new \dux\Engine();
-        $dux->run();
+        (new \dux\Engine())->run();
     }
 
 }

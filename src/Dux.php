@@ -1,14 +1,26 @@
 <?php
 
 namespace dux;
+use function DI\value;
+
 /**
  * 注册框架方法
  */
 class Dux {
 
-    private static $objArr = [];
-
     private static $fileList = [];
+    private static $di = null;
+
+    /**
+     * 依赖注入
+     * @return com\Di|null
+     */
+    public static function di() {
+        if (!isset(self::$di)) {
+            self::$di = new \dux\com\Di();
+        }
+        return self::$di;
+    }
 
     /**
      * 注册模板引擎类
@@ -18,7 +30,6 @@ class Dux {
     public static function view($config = []) {
         $sysConfig = \dux\Config::get('dux.tpl');
         $config = array_merge((array)$sysConfig, (array)$config);
-
         return new \dux\kernel\View($config);
     }
 
@@ -30,7 +41,7 @@ class Dux {
      * @throws \Exception
      */
     public static function cache($configName = 'default', $group = 0) {
-        return new \dux\lib\Cache($configName, $group);
+        return new \dux\com\Cache($configName, $group);
     }
 
     /**
@@ -49,12 +60,13 @@ class Dux {
      * @return mixed
      */
     public static function cookie($configName = 'default') {
-        $key = 'cookie.' . $configName;
-        if (!isset(self::$objArr[$key])) {
-            self::$objArr[$key] = new \dux\lib\Cookie($configName);
+        $key = 'dux.cookie.' . $configName;
+        if (!self::di()->has($key)) {
+            self::di()->set($key, function () use ($configName) {
+                return new \dux\lib\Cookie($configName);
+            });
         }
-
-        return self::$objArr[$key];
+        return self::di()->get($key);
     }
 
     /**
@@ -63,14 +75,14 @@ class Dux {
      * @return mixed
      */
     public static function session($configName = 'default') {
-        $key = 'session.' . $configName;
-        if (!isset(self::$objArr[$key])) {
-            self::$objArr[$key] = new \dux\lib\Session($configName);
+        $key = 'dux.session.' . $configName;
+        if (!self::di()->has($key)) {
+            self::di()->set($key, function () use ($configName) {
+                return new \dux\lib\Session($configName);
+            });
         }
-
-        return self::$objArr[$key];
+        return self::di()->get($key);
     }
-
 
     /**
      * 获取请求数据
@@ -105,42 +117,33 @@ class Dux {
                 $data = array_merge($_GET, $_POST, $input);
         }
         if ($key) {
-            $data = $data[$key];
+            $data = [$data[$key]];
+        }
+        foreach ($data as $k => $vo) {
             if ($function) {
-                $data = call_user_func($function, $data);
+                $vo = call_user_func($function, $vo);
             }
-            if (!empty($default) && empty($data)) {
-                $data = $default;
+            if (!empty($default) && empty($vo)) {
+                $vo = $default;
             }
-            if (is_string($data)) {
-                $data = trim($data);
-                if ($data == 'null' || $data == 'undefined') {
-                    $data = null;
+            if (is_string($vo)) {
+                $vo = trim($vo);
+                if ($vo == 'null' || $vo == 'undefined') {
+                    $data[$k] = null;
                 }
-                if ($data == 'true') {
-                    $data = true;
+                if ($vo == 'true') {
+                    $data[$k] = true;
                 }
-                if ($data == 'false') {
-                    $data = false;
-                }
-            }
-        } else {
-            foreach ($data as $key => $vo) {
-                if (is_string($vo)) {
-                    $vo = trim($vo);
-                    if ($vo == 'null' || $vo == 'undefined') {
-                        $data[$key] = null;
-                    }
-                    if ($vo == 'true') {
-                        $data[$key] = true;
-                    }
-                    if ($vo == 'false') {
-                        $data[$key] = false;
-                    }
+                if ($vo == 'false') {
+                    $data[$k] = false;
                 }
             }
         }
-        return $data;
+        if ($key) {
+            return reset($data);
+        } else {
+            return $data;
+        }
     }
 
     /**
@@ -198,7 +201,6 @@ class Dux {
                 break;
         }
 
-
         $longUrl = $module[$layer] . '/' . $app . '/' . $controller . '/' . $action;
         if ($layer <> \dux\Config::get('dux.module_default')) {
             $url = $longUrl;
@@ -215,7 +217,6 @@ class Dux {
             }
         }
 
-        $route = \dux\Config::get('dux.route');
         $routeParams = explode(',', $route['params']);
         if ($_GET['webapp']) {
             $params['webapp'] = 1;
@@ -237,10 +238,6 @@ class Dux {
                 return true;
             });
             foreach ($params as $key => $value) {
-                if ($routeStr && strstr($routeStr, '<' . $key . '>') !== false) {
-                    $routeUrl = str_replace('<' . $key . '>', $value, $routeStr);
-                    continue;
-                }
                 if (preg_match('/^([{\x{4e00}-\x{9fa5}]|[0-9a-zA-Z])+$/u', $value) && empty($routeStr)) {
                     $url .= '/' . $key . '-' . urlencode($value);
                 } else {
@@ -251,8 +248,6 @@ class Dux {
         if ($routeUrl) {
             $url = $routeUrl;
         }
-
-
         if (empty($strParams)) {
             $fullUrl = ROOT_URL . '/' . $url;
         } else {
@@ -290,16 +285,13 @@ class Dux {
         $app = strtolower($app);
         $module = ucfirst($module);
         $class = "\\app\\{$app}\\{$layer}\\{$module}" . ucfirst($layer);
-        if (isset(self::$objArr[$class])) {
-            return self::$objArr[$class];
-        }
         if (!class_exists($class)) {
             throw new \Exception("Class '{$class}' not found", 500);
         }
-        $obj = new \ReflectionClass($class);
-        $fuc = $obj->newInstance();
-        self::$objArr[$class] = $fuc;
-        return $fuc;
+        if (!self::di()->has($class)) {
+            self::di()->set($class, $class);
+        }
+        return self::di()->get($class);
     }
 
     /**
@@ -315,10 +307,8 @@ class Dux {
             if ($enforce) {
                 throw new \Exception("File '{$file}' not found", 500);
             }
-
             return [];
         }
-
         return require($file);
     }
 
@@ -344,22 +334,6 @@ class Dux {
         } else {
             return false;
         }
-    }
-
-    /**
-     * 载入类库
-     * @param string $file
-     * @return bool
-     */
-    public static function import($file = '') {
-        if (self::$fileList[$file]) {
-            return true;
-        }
-        $dir = str_replace('\\', '/', $file);
-        self::$fileList[$file] = $dir;
-        require_once ROOT_PATH . $dir . '.php';
-
-        return true;
     }
 
     /**
@@ -434,7 +408,7 @@ class Dux {
         508 => 'Loop Detected',
 
         510 => 'Not Extended',
-        511 => 'Network Authentication Required'
+        511 => 'Network Authentication Required',
     ];
 
     /**
@@ -467,7 +441,6 @@ class Dux {
         }
     }
 
-
     /**
      * 错误页面
      * @param $title
@@ -486,7 +459,7 @@ class Dux {
                 $html = str_replace('{$msg}', $msg, $html);
                 exit($html);
             });
-        }else {
+        } else {
             echo $msg;
             return;
         }
@@ -502,7 +475,6 @@ class Dux {
         }
         $stime = explode(" ", START_TIME);
         $etime = explode(" ", microtime());
-
         return sprintf("%0.4f", round($etime[0] + $etime[1] - $stime[0] - $stime[1], 4));
     }
 
@@ -512,68 +484,23 @@ class Dux {
      * @param string $type
      * @param string $fileName
      * @return bool
+     * @throws \Exception
      */
     public static function log($msg, $type = 'INFO', $fileName = '') {
-        $types = ['INFO', 'WARN', 'DEBUG', 'ERROR'];
-        $type = strtoupper($type);
-        if (!in_array($type, $types)) {
-            $type = 'INFO';
-        }
-        $dir = DATA_PATH . 'log/';
-        if (!is_dir($dir)) {
-            if (!mkdir($dir, 0777, true)) {
-                error_log("Dir '{$dir}' Creation Failed");
-                return false;
-            }
-        }
-        if (empty($fileName)) {
-            $file = $dir . date('Y-m-d') . '.log';
-        } else {
-            $file = $dir . $fileName . '.log';
-        }
-        if (is_array($msg)) {
-            $msg = json_encode($msg, JSON_UNESCAPED_UNICODE);
-        }
-        if (!error_log($type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . "\r\n", 3, $file)) {
-            error_log("File '{$file}' Write failure");
-        }
-        return true;
+        $flag = self::logObj()->set($msg, $type, $fileName);
+        return $flag;
     }
 
 
-    /**
-     * 浏览器log
-     * @param $msg
-     * @return bool
-     */
-    public static function browserLog($msg) {
-        if (!\dux\Config::get('dux.debug_browser')) {
-            return false;
+    public static function logObj() {
+        $driver = \dux\Config::get('dux.log');
+        $keyName = 'dux.log.' . $driver;
+        if (!self::di()->has($keyName)) {
+            self::di()->set($keyName, function () use ($driver) {
+                return new \dux\com\Log($driver);
+            });
         }
-        //浏览器调试
-        return true;
+        return self::di()->get($keyName);
     }
-
-    /**
-     * 浏览器跟踪
-     * @param string $msg
-     * @param string $type
-     * @return bool
-     */
-    public static function browserTrace($msg = 'trace end') {
-        return true;
-    }
-
-    /**
-     * 获取输出
-     * @return bool|string
-     */
-    public static function browserDebug() {
-        if (!\dux\Config::get('dux.debug_browser')) {
-            return false;
-        }
-        return true;
-    }
-
 
 }

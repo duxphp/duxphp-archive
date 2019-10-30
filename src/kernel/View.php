@@ -148,6 +148,9 @@ class View {
             }
             $template = $this->templateParse($file);
         }
+        if (!headers_sent()) {
+            header("Content-Type: text/html; charset=UTF-8");
+        }
         extract($this->vars);
         eval('?>' . $template);
     }

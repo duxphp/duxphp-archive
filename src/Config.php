@@ -19,7 +19,6 @@ class Config {
             }else {
                 self::$config[$name] = $value;
             }
-
         }
     }
 
