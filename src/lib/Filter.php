@@ -7,6 +7,7 @@ namespace dux\lib;
  *
  * @author  Mr.L <admin@duxphp.com>
  */
+
 class Filter {
 
     protected $data = [];

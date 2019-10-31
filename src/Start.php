@@ -128,8 +128,7 @@ class Start {
     protected static function loadConfig() {
         $file = DATA_PATH . 'config/global.php';
         if (is_file($file)) {
-            $config = require(DATA_PATH . 'config/global.php');
-            \dux\Config::set($config);
+            \dux\Config::set(\dux\Config::load($file));
         }
     }
 

@@ -5,7 +5,6 @@ namespace dux;
 /**
  * 注册框架方法
  */
-
 class Dux {
 
     /**
@@ -44,10 +43,9 @@ class Dux {
      * @param array $config
      * @return object
      */
-    public static function view(array $config = []) {
-        $sysConfig = \dux\Config::get('dux.tpl');
-        $config = array_merge((array)$sysConfig, (array)$config);
-        $key = 'dux.tpl.' . http_build_query($config);
+    public static function view() {
+        $config = \dux\Config::get('dux.tpl');
+        $key = 'dux.tpl' . http_build_query($config);
         if (!self::di()->has($key)) {
             self::di()->set($key, function () use ($config) {
                 return new \dux\kernel\View($config);
@@ -166,13 +164,13 @@ class Dux {
      */
     public static function url(string $str = '', array $params = [], bool $domain = false, bool $ssl = true) {
         $urlParams = explode(' ', $str, 2);
-        $urlParams[0] = strtoupper(trim($urlParams[0]));
-        $urlParams[1] = strtolower(trim($urlParams[1]));
-
-        if (!in_array($urlParams[0], self::route()->method())) {
+        $urlParams = array_map(function ($vo) {
+            return trim($vo);
+        }, $urlParams);
+        if (!in_array(strtoupper($urlParams[0]), self::route()->method())) {
             $urlParams = ['ALL', $urlParams[0]];
         }
-        $pathUrl = self::route()->get($urlParams[0], $urlParams[1]);
+        $pathUrl = self::route()->get($urlParams[0], $urlParams[1], $params);
         if ($domain) {
             return ($ssl ? DOMAIN : DOMAIN_HTTP) . $pathUrl;
         } else {

@@ -1,10 +1,9 @@
 <?php
+
 namespace dux\lib;
 
 /**
  * 分页类
- *
- * @author  Mr.L <admin@duxphp.com>
  */
 
 class Pagination {
@@ -26,7 +25,6 @@ class Pagination {
 
     /**
      * 初始化分页类
-     * Pagination constructor.
      * @param $totalItems
      * @param $currentPage
      * @param $perPage
@@ -51,10 +49,10 @@ class Pagination {
      * @return array
      */
     public function build() {
-        $output = array();
+        $output = [];
         $current = max(intval($this->currentPage), 1);
-        $totalPage = ceil( $this->totalItems / $this->perPage );
-        if(!$totalPage) {
+        $totalPage = ceil($this->totalItems / $this->perPage);
+        if (!$totalPage) {
             $totalPage = 1;
         }
         $tagOffset = ($current - 1) * $this->perPage;
@@ -65,22 +63,19 @@ class Pagination {
         $output[$this->totalCount] = $this->totalItems;
         $output[$this->tagFirst] = $this->basePage;
         $output[$this->tagLast] = $totalPage;
-
-        $output[$this->tagPrev] = ( ( $current <= 1  ) ? 1 : ($current - 1) );
-        $output[$this->tagNext] = ( ( $current == $totalPage ) ? $totalPage : ($current + 1));
-
+        $output[$this->tagPrev] = (($current <= 1) ? 1 : ($current - 1));
+        $output[$this->tagNext] = (($current == $totalPage) ? $totalPage : ($current + 1));
         $output[$this->tagOffset] = $tagOffset;
 
-
-        if($totalPage <= $this->neighbours ){
+        if ($totalPage <= $this->neighbours) {
             $output[$this->tagPageList] = range(1, $totalPage);
-        }elseif( $current <= $this->neighbours/2) {
+        } elseif ($current <= $this->neighbours / 2) {
             $output[$this->tagPageList] = range(1, $this->neighbours);
-        }elseif( $current <= $totalPage - $this->neighbours/2 ){
-            $right = $current + (int)($this->neighbours/2);
-            $output[$this->tagPageList] = range($right-$this->neighbours+1, $right);
-        }else{
-            $output[$this->tagPageList] = range($totalPage-$this->neighbours+1, $totalPage);
+        } elseif ($current <= $totalPage - $this->neighbours / 2) {
+            $right = $current + (int)($this->neighbours / 2);
+            $output[$this->tagPageList] = range($right - $this->neighbours + 1, $right);
+        } else {
+            $output[$this->tagPageList] = range($totalPage - $this->neighbours + 1, $totalPage);
         }
 
         return $output;

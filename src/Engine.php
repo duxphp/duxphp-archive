@@ -80,9 +80,21 @@ class Engine {
      * 解析路由
      */
     public function route() {
-        \dux\Dux::route()->add('GET', "/{aaa:\d+}/{bbb:\d+}@{bbb:\d+}", "s/index/index/test");
-        \dux\Dux::route()->add('GET', "/{aaa:\d+}/{bbb:\d+}-{ccc:\d+}.html", "s/index/index/test");
-        \dux\Dux::route()->add('GET', "/{aaa:\d+}/{bbb:\d+}/[/{title}]", "s/index/index/test");
+        $routes = \dux\Config::get('dux.route');
+        foreach ($routes as $module => $rule) {
+            if (empty($module)) {
+                continue;
+            }
+            $rule = explode(" ", $rule, 2);
+            array_map(function ($vo) {
+                return trim($vo);
+            }, $rule);
+            list($method, $url) = $rule;
+            if (empty($method) || empty($url)) {
+                continue;
+            }
+            \dux\Dux::route()->add($method, $url, $module);
+        }
         if (IS_CLI) {
             $params = getopt('u:');
             $url = $params['u'];

@@ -25,8 +25,9 @@ class Model {
         'append' => [],
         'order' => '',
         'limit' => '',
+        'page' => [],
         'return' => false,
-        'original' => false,
+        'raw' => false,
     ];
 
     public function __construct($database = 'default', $config = []) {
@@ -60,6 +61,7 @@ class Model {
         $this->config = $config;
         return $this;
     }
+
     public function table($table) {
         $this->options['table'] = $table;
         return $this;
@@ -101,8 +103,13 @@ class Model {
         return $this;
     }
 
-    public function original($original = true) {
-        $this->options['original'] = $original;
+    public function page($page, $num) {
+        $this->options['page'] = [$page, $num];
+        return $this;
+    }
+
+    public function raw($raw = true) {
+        $this->options['raw'] = $raw;
         return $this;
     }
 
@@ -178,7 +185,7 @@ class Model {
         $stack = $dataParams['stack'];
         $columns = array_unique($dataParams['fields']);
         $status = $this->getObj()->update($table, $where, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
-        if ($this->_getOriginal()) {
+        if ($this->_getRaw()) {
             return $status;
         }
         return ($status === false) ? false : true;
@@ -189,7 +196,7 @@ class Model {
             return false;
         }
         $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getBindParams(), $this->_getFetchSql());
-        if ($this->_getOriginal()) {
+        if ($this->_getRaw()) {
             return $status;
         }
         return ($status === false) ? false : true;
@@ -374,9 +381,9 @@ class Model {
         return $lock;
     }
 
-    protected function _getOriginal() {
-        $return = $this->options['original'];
-        $this->options['original'] = false;
+    protected function _getRaw() {
+        $return = $this->options['raw'];
+        $this->options['raw'] = false;
         return $return;
     }
 

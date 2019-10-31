@@ -25,6 +25,11 @@ class Config {
                 'path' => ROOT_PATH . 'cache/tpl/',
                 'group' => 'tmp',
             ],
+            'session' => [
+                'type' => 'files',
+                'path' => DATA_PATH . 'cache/session/',
+                'group' => 'tmp',
+            ],
         ]
     ];
 

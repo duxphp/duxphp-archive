@@ -407,7 +407,7 @@ function del_dir($dir) {
  */
 function hide_str($string, $start = 0, $length = 0, $re = '*') {
     if (empty($string)) return false;
-    $strarr = array();
+    $strarr = [];
     $mb_strlen = mb_strlen($string);
     while ($mb_strlen) {//循环把字符串变为数组
         $strarr[] = mb_substr($string, 0, 1, 'utf8');
@@ -415,14 +415,14 @@ function hide_str($string, $start = 0, $length = 0, $re = '*') {
         $mb_strlen = mb_strlen($string);
     }
     $strlen = count($strarr);
-    $begin  = $start >= 0 ? $start : ($strlen - abs($start));
-    $end    = $last   = $strlen - 1;
+    $begin = $start >= 0 ? $start : ($strlen - abs($start));
+    $end = $last = $strlen - 1;
     if ($length > 0) {
-        $end  = $begin + $length - 1;
+        $end = $begin + $length - 1;
     } elseif ($length < 0) {
         $end -= abs($length);
     }
-    for ($i=$begin; $i<=$end; $i++) {
+    for ($i = $begin; $i <= $end; $i++) {
         $strarr[$i] = $re;
     }
     if ($begin >= $end || $begin >= $last || $end > $last) return false;
@@ -608,6 +608,57 @@ function log_no($pre = '') {
 }
 
 /**
+ * 对象转list
+ * @param $objList
+ * @param array $keyList
+ * @return array
+ */
+function object_to_array($objList, $keyList = ['key', 'text']) {
+    $list = [];
+    if (!$objList) {
+        return [];
+    }
+    foreach ((array)$objList as $k => $v) {
+        $list[] = [
+            $keyList[0] => $k,
+            $keyList[1] => $v,
+        ];
+    }
+    return $list;
+}
+
+/**
+ * MD转Html
+ * @param $text
+ * @param bool $line
+ * @return string
+ */
+function markdown_html($text, $line = false) {
+    if ($line) {
+        return (new \Parsedown())->line($text);
+
+    } else {
+        return (new \Parsedown())->text($text);
+    }
+}
+
+/**
+ * 压缩js
+ * @param $str
+ */
+function pack_js($str) {
+    new (\GK\JavascriptPacker($str, 'Normal', true, false))->pack();
+}
+
+/**
+ * 编译scss
+ * @param $str
+ */
+function build_scss($str) {
+    new (new \Leafo\ScssPhp\Compiler())->compile($str);
+}
+
+/**
  * 基础UI库
  * @return string
  */
@@ -638,24 +689,4 @@ function load_js($name = 'jquery') {
         $returnData[] = '<script type="text/javascript" src="' . $data[$vo] . '"></script>' . "\r\n";
     }
     return join("", $returnData);
-}
-
-/**
- * 对象转list
- * @param $objList
- * @param array $keyList
- * @return array
- */
-function object_to_array($objList, $keyList = ['key', 'text']) {
-    $list = [];
-    if (!$objList) {
-        return [];
-    }
-    foreach ($objList as $k => $v) {
-        $list[] = [
-            $keyList[0] => $k,
-            $keyList[1] => $v,
-        ];
-    }
-    return $list;
 }

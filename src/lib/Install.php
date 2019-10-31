@@ -1,10 +1,10 @@
 <?php
 
+namespace dux\lib;
+
 /**
  * 数据库安装
  */
-
-namespace dux\lib;
 
 class Install{
 

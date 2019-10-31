@@ -76,7 +76,7 @@ class Session {
         if ($this->object) {
             return true;
         }
-        $this->getObj();
+        $this->cache();
         return true;
     }
 
@@ -97,7 +97,7 @@ class Session {
      */
     public function _read($sessionId) {
         try {
-            $data = json_decode($this->getObj()->get($this->pre . $sessionId), true);
+            $data = json_decode($this->cache()->get($this->pre . $sessionId), true);
             if (is_array($data)) {
                 $data = json_encode($data);
             }
@@ -116,7 +116,7 @@ class Session {
      */
     public function _write($sessionId, $sessionData) {
         try {
-            $this->getObj()->set($this->pre . $sessionId, json_encode($sessionData), $this->time);
+            $this->cache()->set($this->pre . $sessionId, json_encode($sessionData), $this->time);
             return true;
         } catch (\Exception $e) {
             dux_log($e->getMessage());
@@ -131,7 +131,7 @@ class Session {
      */
     public function _destory($sessionId) {
         try {
-            $this->getObj()->del($this->pre . $sessionId);
+            $this->cache()->del($this->pre . $sessionId);
             return true;
         } catch (\Exception $e) {
             dux_log($e->getMessage());
@@ -153,7 +153,7 @@ class Session {
      * @return \dux\com\Cache
      * @throws \Exception
      */
-    public function getObj() {
+    public function cache() {
         if ($this->object) {
             return $this->object;
         }

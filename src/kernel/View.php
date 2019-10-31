@@ -330,14 +330,11 @@ class View {
     }
 
     private function parseScss($var) {
-        $scss = new \Leafo\ScssPhp\Compiler();
-        return $scss->compile($var[1]);
+        return build_scss($var[1]);
     }
-
-
+    
     private function parseJs($var) {
-        $packer = new \dux\vendor\Packer($var[1], 'Normal', true, false, true);
-        return $packer->pack();
+        return pack_js($var[1]);
     }
 
     /**
