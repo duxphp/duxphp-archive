@@ -1,14 +1,16 @@
 <?php
 
 namespace dux;
-use function DI\value;
 
 /**
  * 注册框架方法
  */
 class Dux {
 
-    private static $fileList = [];
+    /**
+     * 注入对象
+     * @var null
+     */
     private static $di = null;
 
     /**
@@ -23,47 +25,49 @@ class Dux {
     }
 
     /**
+     * 获取路由对象
+     * @return object
+     */
+    public static function route() {
+        $key = 'dux.route';
+        if (!self::di()->has($key)) {
+            self::di()->set($key, function () {
+                return new \dux\com\Rotue();
+            });
+        }
+        return self::di()->get($key);
+    }
+
+    /**
      * 注册模板引擎类
      * @param array $config
-     * @return \dux\kernel\View
+     * @return object
      */
-    public static function view($config = []) {
-        $sysConfig = \dux\Config::get('dux.tpl');
-        $config = array_merge((array)$sysConfig, (array)$config);
-        return new \dux\kernel\View($config);
+    public static function view() {
+        $config = \dux\Config::get('dux.tpl');
+        $key = 'dux.tpl' . http_build_query($config);
+        if (!self::di()->has($key)) {
+            self::di()->set($key, function () use ($config) {
+                return new \dux\kernel\View($config);
+            });
+        }
+        return self::di()->get($key);
     }
 
     /**
      * 注册缓存类
-     * @param string $configName
-     * @param int $group
-     * @return lib\Cache
-     * @throws \Exception
+     * @param string $group
+     * @param array $config
+     * @return object
      */
-    public static function cache($configName = 'default', $group = 0) {
-        return new \dux\com\Cache($configName, $group);
-    }
-
-    /**
-     * 注册存储类
-     * @param string $configName
-     * @param int $group
-     * @return \dux\lib\Storage
-     */
-    public static function storage($configName = 'default', $group = 0) {
-        return new \dux\lib\Storage($configName, $group);
-    }
-
-    /**
-     * 注册COOKIE类
-     * @param string $configName
-     * @return mixed
-     */
-    public static function cookie($configName = 'default') {
-        $key = 'dux.cookie.' . $configName;
+    public static function cache(string $group = 'default', array $config = []) {
+        if (empty($config)) {
+            $config = \dux\Config::get('dux.cache');
+        }
+        $key = 'dux.cache.' . $group . '.' . http_build_query($config);
         if (!self::di()->has($key)) {
-            self::di()->set($key, function () use ($configName) {
-                return new \dux\lib\Cookie($configName);
+            self::di()->set($key, function () use ($config, $group) {
+                return new \dux\com\Cache($config, $group);
             });
         }
         return self::di()->get($key);
@@ -71,28 +75,32 @@ class Dux {
 
     /**
      * 注册会话类
-     * @param string $configName
-     * @return mixed
+     * @param string $pre
+     * @param array $config
+     * @return object
      */
-    public static function session($configName = 'default') {
-        $key = 'dux.session.' . $configName;
+    public static function session(string $pre = '', array $config = []) {
+        if (empty($config)) {
+            $config = \dux\Config::get('dux.session');
+        }
+        $key = 'dux.session.' . $pre . http_build_query($config);
         if (!self::di()->has($key)) {
-            self::di()->set($key, function () use ($configName) {
-                return new \dux\lib\Session($configName);
+            self::di()->set($key, function () use ($config, $pre) {
+                return new \dux\lib\Session($config, $pre);
             });
         }
         return self::di()->get($key);
     }
 
     /**
-     * 获取请求数据
+     *  获取请求数据
      * @param string $method
      * @param string $key
      * @param string $default
      * @param string $function
-     * @return array|mixed|string
+     * @return array|false|mixed|string
      */
-    public static function request($method = '', $key = '', $default = '', $function = '') {
+    public static function request(string $method = '', string $key = '', string $default = '', string $function = '') {
         $method = strtolower($method);
         switch ($method) {
             case 'get':
@@ -147,127 +155,37 @@ class Dux {
     }
 
     /**
-     * URL生成方法
+     * URL生成
      * @param string $str
      * @param array $params
      * @param bool $domain
      * @param bool $ssl
-     * @param bool $get
      * @return string
      */
-    public static function url($str = '', $params = [], $domain = false, $ssl = true, $get = true) {
-        $str = trim($str);
-        $str = trim($str, '/');
-        $str = trim($str, '\\');
-        $param = explode('/', $str, 4);
-        $param = array_filter($param);
-        $paramCount = count($param);
-        $module = \dux\Config::get('dux.module');
-        switch ($paramCount) {
-            case 1:
-                $layer = LAYER_NAME;
-                $app = APP_NAME;
-                $controller = MODULE_NAME;
-                $action = lcfirst($param[0]);
-                break;
-            case 2:
-                $layer = LAYER_NAME;
-                $app = APP_NAME;
-                $controller = ucfirst($param[0]);
-                $action = lcfirst($param[1]);
-                break;
-            case 3:
-                $layer = LAYER_NAME;
-                $app = strtolower($param[0]);
-                $controller = ucfirst($param[1]);
-                $action = lcfirst($param[2]);
-                break;
-            case 4:
-                if ($param[0] == 'default') {
-                    $layer = \dux\Config::get('dux.module_default');
-                } else {
-                    $layer = $param[0];
-                }
-                $app = strtolower($param[1]);
-                $controller = ucfirst($param[2]);
-                $action = lcfirst($param[3]);
-                break;
-            case 0:
-            default:
-                $layer = LAYER_NAME;
-                $app = APP_NAME;
-                $controller = MODULE_NAME;
-                $action = ACTION_NAME;
-                break;
+    public static function url(string $str = '', array $params = [], bool $domain = false, bool $ssl = true) {
+        $urlParams = explode(' ', $str, 2);
+        $urlParams = array_map(function ($vo) {
+            return trim($vo);
+        }, $urlParams);
+        if (!in_array(strtoupper($urlParams[0]), self::route()->method())) {
+            $urlParams = ['ALL', $urlParams[0]];
         }
-
-        $longUrl = $module[$layer] . '/' . $app . '/' . $controller . '/' . $action;
-        if ($layer <> \dux\Config::get('dux.module_default')) {
-            $url = $longUrl;
-        } else {
-            $url = $app . '/' . $controller . '/' . $action;
-        }
-
-        $routeStr = '';
-        $routes = \dux\Config::get('dux.routes');
-        foreach ($routes as $key => $vo) {
-            if ($longUrl == $vo) {
-                $routeStr = $key;
-                break;
-            }
-        }
-
-        $routeParams = explode(',', $route['params']);
-        if ($_GET['webapp']) {
-            $params['webapp'] = 1;
-        }
-        if (!empty($routeParams) && $get) {
-            foreach ($routeParams as $vo) {
-                if (isset($_GET[$vo]) && !isset($params[$vo])) {
-                    $params[$vo] = $_GET[$vo];
-                }
-            }
-        }
-        $strParams = [];
-        $routeUrl = '';
-        if (!empty($params)) {
-            $params = array_filter($params, function ($v) {
-                if ($v === "") {
-                    return false;
-                }
-                return true;
-            });
-            foreach ($params as $key => $value) {
-                if (preg_match('/^([{\x{4e00}-\x{9fa5}]|[0-9a-zA-Z])+$/u', $value) && empty($routeStr)) {
-                    $url .= '/' . $key . '-' . urlencode($value);
-                } else {
-                    $strParams[$key] = $value;
-                }
-            }
-        }
-        if ($routeUrl) {
-            $url = $routeUrl;
-        }
-        if (empty($strParams)) {
-            $fullUrl = ROOT_URL . '/' . $url;
-        } else {
-            $fullUrl = ROOT_URL . '/' . $url . '?' . http_build_query($strParams);
-        }
+        $pathUrl = self::route()->get($urlParams[0], $urlParams[1], $params);
         if ($domain) {
-            return ($ssl ? DOMAIN : DOMAIN_HTTP) . $fullUrl;
+            return ($ssl ? DOMAIN : DOMAIN_HTTP) . $pathUrl;
         } else {
-            return $fullUrl;
+            return $pathUrl;
         }
     }
 
     /**
-     * 类调用方法
-     * @param $class
+     * 模块调用
+     * @param string $class
      * @param string $layer
-     * @return mixed|object
-     * @throws object
+     * @return object
+     * @throws \Exception
      */
-    public static function target($class, $layer = 'model') {
+    public static function target(string $class, string $layer = 'model') {
         $param = explode('/', $class, 2);
         $paramCount = count($param);
         $app = '';
@@ -296,44 +214,34 @@ class Dux {
 
     /**
      * 加载配置文件
-     * @param $file
+     * @param string $file
      * @param bool $enforce
-     * @return array|mixed
-     * @throws Exception
+     * @return mixed
+     * @throws exception\Exception
      */
-    public static function loadConfig($file, $enforce = true) {
+    public static function loadConfig(string $file, bool $enforce = true) {
         $file = ROOT_PATH . $file . '.php';
-        if (!is_file($file)) {
+        try {
+            $data = \dux\Config::load($file);
+        } catch (\dux\exception\Exception $e) {
             if ($enforce) {
-                throw new \Exception("File '{$file}' not found", 500);
+                throw new \dux\exception\Exception($e->getMessage());
             }
-            return [];
         }
-        return require($file);
+        return $data;
+
     }
 
     /**
-     * 保存配置
-     * @param $file
-     * @param $config
-     * @return array|bool
+     * 保存配置到文件
+     * @param string $file
+     * @param array $config
+     * @return bool
+     * @throws exception\Exception
      */
-    public static function saveConfig($file, $config) {
-        if (empty($config) || !is_array($config)) {
-            return [];
-        }
-        $conf = load_config($file);
-        $config = array_merge($conf, $config);
-        $confString = var_export($config, true);
-        $find = ["'true'", "'false'", "'1'", "'0'"];
-        $replace = ["true", "false", "1", "0"];
-        $confString = str_replace($find, $replace, $confString);
-        $confString = "<?php \n return " . $confString . ';';
-        if (file_put_contents(ROOT_PATH . $file . '.php', $confString)) {
-            return true;
-        } else {
-            return false;
-        }
+    public static function saveConfig(string $file, array $config) {
+        $file = ROOT_PATH . $file . '.php';
+        return \dux\Config::save($file, $config);
     }
 
     /**
@@ -413,13 +321,15 @@ class Dux {
 
     /**
      * 发送HTTP头
-     * @param $code
-     * @param callable $callback
+     * @param int $code
+     * @param callable|null $callback
+     * @param array $hander
      */
-    public static function header($code, callable $callback = null) {
-        if (!headers_sent()) {
-            $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
-            header(implode(' ', [$protocol, $code, self::$codes[$code]]));
+    public static function header(int $code, callable $callback = null, array $hander = []) {
+        $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+        header(implode(' ', [$protocol, $code, self::$codes[$code]]));
+        foreach ($hander as $key => $vo) {
+            header($key . ' : ' . $vo);
         }
         exit($callback());
     }
@@ -429,39 +339,22 @@ class Dux {
      */
     public static function notFound() {
         if (!IS_CLI) {
-            static::header(404, function () {
-                if (!headers_sent()) {
-                    header("Content-Type: text/html; charset=UTF-8");
-                }
-                echo file_get_contents(CORE_PATH . 'tpl/404.html');
-            });
+            new \dux\exception\Error('404 Not Found', 404);
         } else {
-            echo 'The request does not exist';
-            return;
+            exit('The request does not exist');
         }
     }
 
     /**
      * 错误页面
-     * @param $title
-     * @param $msg
+     * @param string $title
      * @param int $code
      */
-    public static function errorPage($title, $msg, $code = 503) {
+    public static function errorPage(string $title, int $code = 503) {
         if (!IS_CLI) {
-            static::header($code, function () use ($title, $msg, $code) {
-                if (!headers_sent()) {
-                    header("Content-Type: text/html; charset=UTF-8");
-                }
-                $html = file_get_contents(CORE_PATH . 'tpl/error.html');
-                $html = str_replace('{$title}', $title, $html);
-                $html = str_replace('{$code}', $code, $html);
-                $html = str_replace('{$msg}', $msg, $html);
-                exit($html);
-            });
+            new \dux\exception\Error($title, $code);
         } else {
-            echo $msg;
-            return;
+            exit($title);
         }
     }
 
@@ -480,18 +373,19 @@ class Dux {
 
     /**
      * 日志写入
-     * @param $msg
+     * @param string $msg
      * @param string $type
      * @param string $fileName
-     * @return bool
-     * @throws \Exception
+     * @return mixed
      */
-    public static function log($msg, $type = 'INFO', $fileName = '') {
-        $flag = self::logObj()->set($msg, $type, $fileName);
-        return $flag;
+    public static function log(string $msg, string $type = 'INFO', string $fileName = '') {
+        return self::logObj()->set($msg, $type, $fileName);
     }
 
-
+    /**
+     * 日志对象
+     * @return object
+     */
     public static function logObj() {
         $driver = \dux\Config::get('dux.log');
         $keyName = 'dux.log.' . $driver;

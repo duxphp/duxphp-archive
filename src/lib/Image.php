@@ -23,7 +23,7 @@ class Image {
 
     /**
      * 图像对象
-     * @var string
+     * @var object
      */
     protected $imgObj;
 
@@ -32,27 +32,30 @@ class Image {
      * @var array
      */
     protected $config = [
-        'type' => 'gd',
+        'type' => 'imagick',
         'font' => ''
     ];
 
     /**
      * 构建函数
-     * @param string $img 图片路径
-     * @param string $driver 图片驱动
+     * @param null $img
+     * @param array $config
      */
-    public function __construct($img, $config = []) {
-        $this->config = $config;
-        $this->imgObj = $this->getObj()->make($img);
+    public function __construct($img = null, array $config = []) {
+        $this->config = array_merge($this->config, $config);
+        if ($img) {
+            $this->imgObj = $this->getObj()->make($img);
+        }
     }
 
     /**
      * 图片缩放
-     * @param $width
-     * @param $height
+     * @param int $width
+     * @param int $height
      * @param string $type
+     * @return $this
      */
-    public function thumb($width, $height, $type = 'scale') {
+    public function thumb(int $width, int $height, string $type = 'scale') {
         switch ($type) {
             // 居中裁剪缩放
             case 'center':
@@ -81,17 +84,18 @@ class Image {
                 }
             default:
         }
+        return $this;
     }
 
     /**
      * 图片裁剪
-     * @param $width
-     * @param $height
+     * @param int $width
+     * @param int $height
      * @param int $x
      * @param int $y
      * @return $this
      */
-    public function crop($width, $height, $x = 0, $y = 0) {
+    public function crop(int $width, int $height, int $x = 0, int $y = 0) {
         $this->imgObj->crop($width, $height, $x, $y);
         return $this;
     }
@@ -103,18 +107,35 @@ class Image {
     public function circle() {
         $width = $this->imgObj->width();
         $height = $this->imgObj->height();
+        $mask = $this->circleMask($width, $height);
+        $this->imgObj->mask($mask);
+        return $this;
+    }
+
+    /**
+     * 圆形遮罩
+     * @param int $width
+     * @param int $height
+     * @return \Intervention\Image\Image
+     */
+    private function circleMask(int $width, int $height) {
         $bigWidth = $width * 2;
         $bigHeight = $height * 2;
         $circle = $this->getObj()->canvas($bigWidth, $bigHeight, '#000000');
         $circle = $circle->circle($bigWidth - 1, $bigWidth / 2, $bigHeight / 2, function ($draw) {
             $draw->background('#ffffff');
         });
-        $mask = $circle->resize($width, $height);
-        $this->imgObj->mask($mask);
-        return $this;
+        return $circle->resize($width, $height);
     }
 
-    public function water($source, $locate = 0, $alpha = 80) {
+    /**
+     * 图片水印
+     * @param $source
+     * @param int $locate
+     * @param int $alpha
+     * @return $this
+     */
+    public function water($source, int $locate = 0, int $alpha = 80) {
         $position = 'center';
         switch ($locate) {
             //左上角水印
@@ -155,133 +176,261 @@ class Image {
                 $position = 'bottom-right';
                 break;
         }
-        $watermark = Image::make($source)->opacity($alpha);
+        $watermark = $this->getObj()->make($source)->opacity($alpha);
         $this->imgObj->insert($watermark, $position, 10, 10);
         return $this;
     }
 
-    public function text($text, $size, $locate, $x = 0, $y = 0) {
+    /**
+     * 文字水印
+     * @param string $text
+     * @param int $size
+     * @param string $color
+     * @param int $locate
+     * @param int $padding
+     * @return $this
+     */
+    public function text(string $text, int $size = 16, string $color = '#000000', int $locate = 9, int $padding = 10) {
         switch ($locate) {
             //左上角水印
             case 1:
+                $x = $padding;
+                $y = $padding;
                 $align = 'left';
                 $valign = 'top';
                 break;
             //上居中水印
             case 2:
+                $x = round($this->imgObj->width() / 2);
+                $y = $padding;
                 $align = 'center';
                 $valign = 'top';
                 break;
-            //右上角水印
             case 3:
+                //右上角水印
+                $x = $this->imgObj->width() - $padding;
+                $y = $padding;
                 $align = 'right';
                 $valign = 'top';
                 break;
             //左居中水印
             case 4:
+                $x = $padding;
+                $y = round($this->imgObj->height() / 2);
                 $align = 'left';
                 $valign = 'center';
                 break;
             //居中水印
-            default:
             case 5:
+                $x = round($this->imgObj->width() / 2);
+                $y = round($this->imgObj->height() / 2);
                 $align = 'center';
                 $valign = 'center';
                 break;
             //右居中水印
             case 6:
+                $x = $this->imgObj->width() - $padding;
+                $y = round($this->imgObj->height() / 2);
                 $align = 'right';
                 $valign = 'center';
                 break;
             //左下角水印
             case 7:
+                $x = $padding;
+                $y = $this->imgObj->height() - $padding;
                 $align = 'left';
                 $valign = 'bottom';
                 break;
             //下居中水印
             case 8:
-                $align = 'bottom';
-                $valign = 'center';
+                $x = round($this->imgObj->width() / 2);
+                $y = $this->imgObj->height() - $padding;
+                $align = 'center';
+                $valign = 'bottom';
                 break;
             //右下角水印
+            default:
             case 9:
+                $x = $this->imgObj->width() - $padding;
+                $y = $this->imgObj->height() - $padding;
                 $align = 'right';
                 $valign = 'bottom';
                 break;
         }
-
-        $this->imgObj->text($text, $x, $y, function ($font) {
+        $this->imgObj->text($text, $x, $y, function ($font) use ($size, $color, $align, $valign) {
             $font->file($this->config['font']);
-            $font->size(50);
-            $font->color('#000000');
+            $font->size($size);
+            $font->color($color);
             $font->align($align);
             $font->valign($valign);
         });
+        return $this;
     }
 
-    public function save($filename, $quality = null, $type = null) {
-        $this->imgObj->save($filename, $quality, $type);
-        return true;
-    }
 
-    public function output($type = null, $quality = 90) {
-        echo $this->imgObj->response($type, $quality);
-    }
-
-    public function generate($data = []) {
-        $data = [
+    /**
+     * 图片合成
+     * @param array $data
+     * @return $this
+     */
+    public function generate(array $data) {
+        /*$data = [
             [
                 'type' => 'image',
+                'file' => '',
                 'width' => 0,
                 'height' => 0,
                 'round' => false,
-                'file' => '',
                 'x' => 0,
                 'y' => 0
             ],
             [
                 'type' => 'text',
+                'text' => '',
                 'width' => 0,
+                'height' => 0,
                 'size' => '14',
                 'color' => '#000000',
-                'text' => '',
                 'align' => 'center',
+                'valign' => 'center',
                 'x' => 0,
                 'y' => 0
             ]
-        ];
-
+        ];*/
         foreach ($data as $vo) {
-            if($vo['type'] == 'text') {
-                $this->text($this->aut, );
+            if ($vo['type'] == 'text') {
+                if ($vo['align'] == 'left') {
+                    $x = $vo['x'];
+                }
+                if ($vo['align'] == 'center') {
+                    $x = round($vo['width'] / 2) + $vo['x'];
+                }
+                if ($vo['align'] == 'right') {
+                    $x = $vo['width'] + $vo['x'];
+                }
+                if ($vo['valign'] == 'top') {
+                    $y = $vo['y'];
+                }
+                if ($vo['valign'] == 'center') {
+                    $y = round($vo['height'] / 2) + $vo['y'];
+                }
+                if ($vo['valign'] == 'bottom') {
+                    $y = $vo['height'] + $vo['y'];
+                }
+                $this->imgObj->text($this->autoWrap($vo['text'], $vo['size'], $vo['width']), $x, $y, function ($font) use ($vo) {
+                    $font->file($this->config['font']);
+                    $font->size($vo['size']);
+                    $font->color($vo['color']);
+                    $font->align($vo['align']);
+                });
+            }
+            if ($vo['type'] == 'image') {
+                $image = $this->getObj()->make($vo['file']);
+                if ($vo['round']) {
+                    //设置圆角
+                    $mask = $this->circleMask($image->width(), $image->height());
+                    $image->mask($mask);
+                }
+                //缩放图标
+                $image->resize($vo['width'], $vo['height'], function ($constraint) {
+                    $constraint->upsize();
+                });
+                $this->imgObj->insert($image, 'top-left', $vo['x'], $vo['y']);
             }
         }
-
-
-
+        return $this;
     }
 
-    private function autoWrap($str, $size, $width, $fontangle = 0) {
-        $txt = "";
-        $lineWidth = 0;
-        preg_match_all("/[\x01-\x7f]|[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xff][\x80-\xbf]{3}/", $str, $temp);
-        foreach ($temp[0] as $v) {
-            $box = @imagettfbbox($size, $fontangle, $this->config['font'], $v);
-            $w = max($box[2], $box[4]) - min($box[0], $box[6]);
-            $lineWidth += intval($w);
-            if (($lineWidth > $width) && ($v !== "")) {
-                $txt .= PHP_EOL;
-                $lineWidth = 0;
-            }
-            $txt .= $v;
+    /**
+     * 自动换行
+     * @param string $text
+     * @param int $size
+     * @param int $width
+     * @return string
+     */
+    private function autoWrap(string $text, int $size, int $width) {
+        $fontsize = round($size / 96 * 72, 1);
+        $str = "";
+        for ($i = 0; $i < mb_strlen($text); $i++) {
+            $letter[] = mb_substr($text, $i, 1);
         }
-        return $txt;
+        foreach ($letter as $l) {
+            $teststr = $str . " " . $l;
+            $testbox = imagettfbbox($fontsize, 0, $this->config['font'], $teststr);
+            if (($testbox[2] > $width) && ($str !== "")) {
+                $str .= "\n";
+            }
+            $str .= $l;
+        }
+        return $str;
     }
 
+    /**
+     * 生成二维码
+     * @param string $text
+     * @param int $size
+     * @param array $label
+     * @param array $logo
+     * @return $this
+     * @throws \Endroid\QrCode\Exception\InvalidPathException
+     */
+    public function qrcode(string $text, int $size = 300, array $label = [], array $logo = []) {
+        $qrCode = new \Endroid\QrCode\QrCode($text);
+        if ($logo) {
+            $qrCode->setLogoPath($logo['url']);
+            $qrCode->setLogoSize($logo['width'] ? $logo['width'] : 80, $logo['height'] ? $logo['height'] : 80);
+        }
+        if ($label) {
+            $qrCode->setLabel($label['text'], $label['size'] ? $label['size'] : 16, $this->config['font'], \Endroid\QrCode\LabelAlignment::CENTER);
+        }
+        $this->imgObj = $this->getObj()->make($qrCode->writeString());
+        return $this;
+    }
+
+    /**
+     * 获取图片内容
+     * @param string|null $type
+     * @param int $quality
+     * @return mixed
+     */
+    public function get(string $type = null, int $quality = 90) {
+        return $this->imgObj->response($type, $quality)->getContent();
+    }
+
+    /**
+     * 保存图片
+     * @param string $filename
+     * @param int|null $quality
+     * @param int|null $type
+     * @return bool
+     */
+    public function save(string $filename, int $quality = null, int $type = null) {
+        $this->imgObj->save($filename, $quality, $type);
+        return true;
+    }
+
+    /**
+     * 输出到浏览器
+     * @param string|null $type
+     * @param int $quality
+     */
+    public function output(string $type = null, int $quality = 90) {
+        header('Content-Type: ' . $this->imgObj->mime());
+        echo $this->imgObj->response($type, $quality)->getContent();
+    }
+
+    /**
+     * 获取图片对象
+     * @return \Intervention\Image\Image|object
+     */
     public function getImg() {
         return $this->imgObj;
     }
 
+    /**
+     * 获取类库对象
+     * @return \Intervention\Image\ImageManager|string
+     */
     public function getObj() {
         if ($this->object) {
             return $this->object;

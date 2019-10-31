@@ -10,7 +10,12 @@ class Di {
     private $registry = [];
     private $injections = [];
 
-    public function set($name, $class) {
+    /**
+     * 设置依赖
+     * @param string $name
+     * @param string|closure $class
+     */
+    public function set(string $name, $class) {
         $this->del($name);
         if (!($class instanceof \Closure) && is_object($class)) {
             $this->injections[$name] = $class;
@@ -19,7 +24,12 @@ class Di {
         }
     }
 
-    public function get($name) {
+    /**
+     * 获取依赖
+     * @param string $name
+     * @return object
+     */
+    public function get(string $name) {
         if (isset($this->injections[$name])) {
             return $this->injections[$name];
         }
@@ -39,7 +49,14 @@ class Di {
         return $obj;
     }
 
-    public function make($name, $params = []) {
+    /**
+     * 重载依赖
+     * @param string $name
+     * @param array $params
+     * @return object
+     * @throws \ReflectionException
+     */
+    public function make(string $name, array $params = []) {
         if (!isset($this->registry[$name])) {
             return null;
         }
@@ -57,11 +74,20 @@ class Di {
         return $obj;
     }
 
-    public function has($name) {
-        return isset($this->registry[$name]) or isset($this->injections[$name]);
+    /**
+     * 判断依赖
+     * @param string $name
+     * @return bool
+     */
+    public function has(string $name) {
+        return isset($this->registry[$name]) || isset($this->injections[$name]);
     }
 
-    public function del($name) {
+    /**
+     * 删除依赖
+     * @param string $name
+     */
+    public function del(string $name) {
         unset($this->registry[$name], $this->injections[$name]);
     }
 

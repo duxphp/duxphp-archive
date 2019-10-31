@@ -4,7 +4,7 @@
  * 判断AJAX
  */
 function isAjax() {
-    if ((isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') && !isset($_GET['ajax'])) {
+    if ((isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') && $_SERVER['HTTP_X_DUX_AJAX']) {
         return true;
     } else {
         return false;
@@ -311,7 +311,7 @@ function data_sign_has($data, $sign = '') {
  */
 function url_base64_encode($string) {
     $data = base64_encode($string);
-    $data = str_replace(array('+', '/', '='), array('-', '_', ''), $data);
+    $data = str_replace(['+', '/', '='], ['-', '_', ''], $data);
     return $data;
 }
 
@@ -321,7 +321,7 @@ function url_base64_encode($string) {
  * @return bool|string
  */
 function url_base64_decode($string) {
-    $data = str_replace(array('-', '_'), array('+', '/'), $string);
+    $data = str_replace(['-', '_'], ['+', '/'], $string);
     $mod4 = strlen($data) % 4;
     if ($mod4) {
         $data .= substr('====', $mod4);
@@ -343,7 +343,6 @@ function list_dir($dir) {
             $dirInfo = array_merge($dirInfo, list_dir($v));
         }
     }
-
     return $dirInfo;
 }
 
@@ -374,7 +373,6 @@ function copy_dir($sourceDir, $aimDir) {
         }
     }
     closedir($objDir);
-
     return $succeed;
 }
 
@@ -401,130 +399,74 @@ function del_dir($dir) {
 
 /**
  * 隐藏字符串
- * @param $string
- * @param int $bengin
- * @param int $len
- * @param int $type
- * @param string $glue
+ * @param $string 字符串
+ * @param int $start 开始位置
+ * @param int $length 长度
+ * @param string $re 替换符
  * @return bool|string
  */
-function hide_str($string = '', $bengin = 0, $len = 4, $type = 0, $glue = "@", $split = 0) {
-    if (empty($string)) {
-        return false;
+function hide_str($string, $start = 0, $length = 0, $re = '*') {
+    if (empty($string)) return false;
+    $strarr = [];
+    $mb_strlen = mb_strlen($string);
+    while ($mb_strlen) {//循环把字符串变为数组
+        $strarr[] = mb_substr($string, 0, 1, 'utf8');
+        $string = mb_substr($string, 1, $mb_strlen, 'utf8');
+        $mb_strlen = mb_strlen($string);
     }
-
-    $array = [];
-    if ($type == 0 || $type == 1 || $type == 4) {
-        $strlen = $length = mb_strlen($string);
-        while ($strlen) {
-            $array[] = mb_substr($string, 0, 1, "utf8");
-            $string = mb_substr($string, 1, $strlen, "utf8");
-            $strlen = mb_strlen($string);
-        }
+    $strlen = count($strarr);
+    $begin = $start >= 0 ? $start : ($strlen - abs($start));
+    $end = $last = $strlen - 1;
+    if ($length > 0) {
+        $end = $begin + $length - 1;
+    } elseif ($length < 0) {
+        $end -= abs($length);
     }
-    if ($type == 0) {
-        for ($i = $bengin; $i < ($bengin + $len); $i++) {
-            if (isset($array[$i])) {
-                $array[$i] = "*";
-            }
-
-        }
-        $string = implode("", $array);
-    } else if ($type == 1) {
-        $array = array_reverse($array);
-        for ($i = $bengin; $i < ($bengin + $len); $i++) {
-            if (isset($array[$i])) {
-                $array[$i] = "*";
-            }
-
-        }
-        $string = implode("", array_reverse($array));
-    } else if ($type == 2) {
-        $array = explode($glue, $string);
-        $array[0] = hide_str($array[0], $bengin, $len, 1);
-        $string = implode($glue, $array);
-    } else if ($type == 3) {
-        $array = explode($glue, $string);
-        $array[1] = hide_str($array[1], $bengin, $len, 0);
-        $string = implode($glue, $array);
-    } else if ($type == 4) {
-        $left = $bengin;
-        $right = $len;
-        $tem = [];
-        for ($i = 0; $i < ($length - $right); $i++) {
-            if (isset($array[$i])) {
-                $tem[] = $i >= $left ? "*" : $array[$i];
-            }
-
-        }
-        $array = array_chunk(array_reverse($array), $right);
-        $array = array_reverse($array[0]);
-        for ($i = 0; $i < $right; $i++) {
-            $tem[] = $array[$i];
-        }
-        $string = implode("", $tem);
+    for ($i = $begin; $i <= $end; $i++) {
+        $strarr[$i] = $re;
     }
-    if ($split) {
-        $array = str_split($string, $split);
-        $string = implode($glue, $array);
-    }
-    return $string;
+    if ($begin >= $end || $begin >= $last || $end > $last) return false;
+    return implode('', $strarr);
 }
 
 /**
  * 日志写入
- * @param $msg
+ * @param string $msg
  * @param string $type
+ * @param string $fileName
  * @return bool
+ * @throws Exception
  */
-function dux_log($msg = '', $type = 'INFO') {
-    return \dux\Dux::log($msg, $type);
+function dux_log($msg = '', $type = 'INFO', $fileName = '') {
+    return \dux\Dux::log($msg, $type, $fileName);
 }
 
 /**
- * 浏览器日志
- * @param $msg
- * @param string $type
- * @param string $color
- * @return bool
- */
-function browser_log($msg = '') {
-    return \dux\Dux::browserLog($msg);
-}
-
-/**
- * 时间格式化
+ * 人性化时间
  * @param $time
  * @return string
  */
 function date_tran($time) {
-    $agoTime = (int) $time;
-
-    // 计算出当前日期时间到之前的日期时间的毫秒数，以便进行下一步的计算
+    $agoTime = (int)$time;
     $time = time() - $agoTime;
-
-    if ($time >= 31104000) { // N年前
+    if ($time >= 31104000) {
         return date('Y年m月', $time);
     }
-    if ($time >= 2592000) { // N月前
+    if ($time >= 2592000) {
         return date('m月d日', $time);
     }
-    if ($time >= 86400) { // N天前
-        $num = (int) ($time / 86400);
-
+    if ($time >= 86400) {
+        $num = (int)($time / 86400);
         return $num . '天前';
     }
-    if ($time >= 3600) { // N小时前
-        $num = (int) ($time / 3600);
-
+    if ($time >= 3600) {
+        $num = (int)($time / 3600);
         return $num . '小时前';
     }
-    if ($time > 60) { // N分钟前
-        $num = (int) ($time / 60);
-
+    if ($time > 60) {
+        $num = (int)($time / 60);
         return $num . '分钟前';
     }
-
     return '刚刚';
 }
 
@@ -534,7 +476,7 @@ function date_tran($time) {
  * @return string
  */
 function html_in($html = '') {
-    return \dux\lib\Str::htmlIn($html);
+    return \dux\lib\Filter::filter()->htmlIn($html);
 
 }
 
@@ -544,7 +486,7 @@ function html_in($html = '') {
  * @return string
  */
 function html_out($str = '') {
-    return \dux\lib\Str::htmlOut($str);
+    return \dux\lib\Filter::filter()->htmlOut($str);
 }
 
 /**
@@ -553,7 +495,7 @@ function html_out($str = '') {
  * @return string
  */
 function html_clear($str = '') {
-    return strip_tags(\dux\lib\Str::htmlClear($str));
+    return \dux\lib\Filter::filter()->html($str);
 }
 
 /**
@@ -567,23 +509,51 @@ function str_html($str = '') {
 }
 
 /**
- * 字符串截取
+ * 等宽度截取
  * @param $str
  * @param int $len
  * @param bool $suffix
  * @return string
  */
 function str_len($str, $len = 20, $suffix = true) {
-    return \dux\lib\Str::strLen($str, $len, $suffix);
+    if ($charset != 'utf-8') {
+        $str = mb_convert_encoding($str, 'utf8', $charset);
+    }
+    $osLen = mb_strlen($str);
+    if ($osLen <= $length) {
+        return $str;
+    }
+    $string = mb_substr($str, 0, $length, 'utf8');
+    $sLen = mb_strlen($string, 'utf8');
+    $bLen = strlen($string);
+    $sCharCount = (3 * $sLen - $bLen) / 2;
+    if ($osLen <= $sCharCount + $length) {
+        $arr = preg_split('/(?<!^)(?!$)/u', mb_substr($str, $length + 1, $osLen, 'utf8'));
+    } else {
+        $arr = preg_split('/(?<!^)(?!$)/u', mb_substr($str, $length + 1, $sCharCount, 'utf8'));
+    }
+    foreach ($arr as $value) {
+        if (ord($value) < 128 && ord($value) > 0) {
+            $sCharCount = $sCharCount - 1;
+        } else {
+            $sCharCount = $sCharCount - 2;
+        }
+        if ($sCharCount <= 0) {
+            break;
+        }
+        $string .= $value;
+    }
+    if ($suffix) return $string . '…';
+    return $string;
 }
 
 /**
- * 格式化为数字(忽略限制)
+ * 格式化为数字
  * @param $str
  * @return int|mixed
  */
 function int_format($str = 0) {
-    return \dux\lib\Str::intFormat($str);
+    return \dux\lib\Filter::filter()->number($str);
 }
 
 /**
@@ -592,11 +562,11 @@ function int_format($str = 0) {
  * @return string
  */
 function price_format($money = 0) {
-    return \dux\lib\Str::priceFormat($money);
+    return \dux\lib\Filter::filter()->price($money);
 }
 
 /**
- * 价格计算
+ * 精准计算
  * @param $n1
  * @param $symbol
  * @param $n2
@@ -604,27 +574,27 @@ function price_format($money = 0) {
  * @return int|string
  */
 function price_calculate($n1, $symbol, $n2, $scale = '2') {
-    return \dux\lib\Str::priceCalculate($n1, $symbol, $n2, $scale);
-}
-
-/**
- * 指定位置插入字符串
- * @param $str
- * @param $i
- * @param $substr
- * @return string
- */
-function str_insert($str = 0, $i, $substr = 0) {
-    $startstr = '';
-    for ($j = 0; $j < $i; $j++) {
-        $startstr .= $str[$j];
+    switch ($symbol) {
+        case "+"://加法
+            $res = bcadd($n1, $n2, $scale);
+            break;
+        case "-"://减法
+            $res = bcsub($n1, $n2, $scale);
+            break;
+        case "*"://乘法
+            $res = bcmul($n1, $n2, $scale);
+            break;
+        case "/"://除法
+            $res = bcdiv($n1, $n2, $scale);
+            break;
+        case "%"://求余、取模
+            $res = bcmod($n1, $n2, $scale);
+            break;
+        default:
+            $res = 0;
+            break;
     }
-    $laststr = '';
-    for ($j = $i; $j < strlen($str); $j++) {
-        $laststr .= $str[$j];
-    }
-    $str = ($startstr . $substr . $laststr);
-    return $str;
+    return $res;
 }
 
 /**
@@ -633,8 +603,59 @@ function str_insert($str = 0, $i, $substr = 0) {
  * @return string
  */
 function log_no($pre = '') {
-    mt_srand((double) microtime() * 1000000);
+    mt_srand((double)microtime() * 1000000);
     return $pre . date('Ymd') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+}
+
+/**
+ * 对象转list
+ * @param $objList
+ * @param array $keyList
+ * @return array
+ */
+function object_to_array($objList, $keyList = ['key', 'text']) {
+    $list = [];
+    if (!$objList) {
+        return [];
+    }
+    foreach ((array)$objList as $k => $v) {
+        $list[] = [
+            $keyList[0] => $k,
+            $keyList[1] => $v,
+        ];
+    }
+    return $list;
+}
+
+/**
+ * MD转Html
+ * @param $text
+ * @param bool $line
+ * @return string
+ */
+function markdown_html($text, $line = false) {
+    if ($line) {
+        return (new \Parsedown())->line($text);
+
+    } else {
+        return (new \Parsedown())->text($text);
+    }
+}
+
+/**
+ * 压缩js
+ * @param $str
+ */
+function pack_js($str) {
+    new (\GK\JavascriptPacker($str, 'Normal', true, false))->pack();
+}
+
+/**
+ * 编译scss
+ * @param $str
+ */
+function build_scss($str) {
+    new (new \Leafo\ScssPhp\Compiler())->compile($str);
 }
 
 /**
@@ -668,24 +689,4 @@ function load_js($name = 'jquery') {
         $returnData[] = '<script type="text/javascript" src="' . $data[$vo] . '"></script>' . "\r\n";
     }
     return join("", $returnData);
-}
-
-/**
- * 对象转list
- * @param $objList
- * @param array $keyList
- * @return array
- */
-function objectToList($objList, $keyList = ['key', 'text']) {
-    $list = [];
-    if(!$objList) {
-        return [];
-    }
-    foreach ($objList as $k => $v) {
-        $list[] = [
-            $keyList[0] => $k,
-            $keyList[1] => $v,
-        ];
-    }
-    return $list;
 }
