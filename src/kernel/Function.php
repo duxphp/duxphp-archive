@@ -647,7 +647,7 @@ function markdown_html($text, $line = false) {
  * @param $str
  */
 function pack_js($str) {
-    new (\GK\JavascriptPacker($str, 'Normal', true, false))->pack();
+    return (new \GK\JavascriptPacker($str, 'Normal', true, false))->pack();
 }
 
 /**
@@ -655,7 +655,7 @@ function pack_js($str) {
  * @param $str
  */
 function build_scss($str) {
-    new (new \Leafo\ScssPhp\Compiler())->compile($str);
+    return (new \Leafo\ScssPhp\Compiler())->compile($str);
 }
 
 /**

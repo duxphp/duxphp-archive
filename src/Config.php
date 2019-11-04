@@ -12,6 +12,7 @@ class Config {
             'module_default' => 'controller',
             'module' => [
                 'controller' => 'c',
+                'cli' => 'x',
             ],
             'debug' => true,
             'debug_log' => true,

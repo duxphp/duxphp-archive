@@ -101,7 +101,8 @@ class Engine {
         } else {
             $url = URL;
         }
-        $data = \dux\Dux::route()->dispatch($_SERVER['REQUEST_METHOD'], $url);
+        $data = \dux\Dux::route()->dispatch(METHOD ?: 'GET', $url ?: '');
+
         if (!defined('DEFAULT_LAYER_NAME')) {
             define('DEFAULT_LAYER_NAME', $data['default_layer']);
         }
@@ -127,9 +128,6 @@ class Engine {
      * @throws \Exception
      */
     public function run() {
-        if (IS_CLI && (!APP_NAME || !LAYER_NAME || !MODULE_NAME || !ACTION_NAME)) {
-            exit('dux cli start');
-        }
         $class = '\app\\' . APP_NAME . '\\' . LAYER_NAME . '\\' . MODULE_NAME . ucfirst(LAYER_NAME);
         $action = ACTION_NAME;
         if (!class_exists($class)) {

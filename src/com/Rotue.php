@@ -146,7 +146,12 @@ class Rotue {
         $urlData['app'] = strtolower($urlData['app'] ?: 'index');
         $urlData['module'] = ucfirst($urlData['module'] ?: 'Index');
         $urlData['action'] = $urlData['action'] ?: 'index';
-        //$this->cache()->set($cacheKey, $urlData);
+        if (IS_CLI) {
+            $urlData['default_layer'] = 'cli';
+            $urlData['role'] = 'x';
+            $urlData['layer'] = 'cli';
+        }
+        $this->cache()->set($cacheKey, $urlData);
         return $urlData;
     }
 
