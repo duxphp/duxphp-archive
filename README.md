@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  为快速站点开发而生
+  为快速开发而生
 </p>
 
 <p align="center">
