@@ -8,7 +8,7 @@ ini_set('display_errors', '1');
 /**
  * 最低PHP版本要求
  */
-const PHP_REQUIRED = '7.1.0';
+const PHP_REQUIRED = '7.2.0';
 
 class Start {
 
@@ -27,7 +27,7 @@ class Start {
     public static function run() {
         if (version_compare(PHP_VERSION, PHP_REQUIRED, '<')) {
             header($_SERVER['SERVER_PROTOCOL'] . ' 500 PHP_VERSION');
-            echo 'Can only run in PHP is greater than 7.1';
+            echo 'Can only run in PHP is greater than ' . PHP_REQUIRED;
             exit;
         }
         if (!defined('IS_CLI')) define('IS_CLI', preg_match("/cli/i", php_sapi_name()) ? true : false);
