@@ -9,10 +9,15 @@ namespace dux\com\log;
 class MongoDriver implements LogInterface {
 
     protected $obj = null;
+    protected $config = [
+        'host' => '127.0.0.1',
+        'port' => 27017,
+        'dbname' => 'dux',
+        'prefix' => 'dux_'
+    ];
 
-    public function __construct($config) {
-        $config['type'] = 'mongo';
-        $this->config = $config;
+    public function __construct(array $config = []) {
+        $this->config = array_merge($this->config, $config);
     }
 
     public function items($group = '') {
@@ -68,7 +73,7 @@ class MongoDriver implements LogInterface {
     }
 
     public function getObj() {
-        return (new \dux\kernel\modelNo('default', $this->config))->setParams([
+        return (new \dux\kernel\modelNo(\dux\kernel\modelNo\MongoDriver::class, $this->config))->setParams([
             'time' => [
                 'type' => 'string',
             ],

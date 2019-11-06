@@ -38,9 +38,9 @@ class Task {
      * @param int $limit
      */
     public function list($type = 0, $offet = 0, $limit = 10) {
-        if(!type) {
+        if (!type) {
             $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [$offet, $offet + $limit - 1]]);
-        }else {
+        } else {
             $taskList = $this->obj()->lRange($this->tasKey, $offet, $offet + $limit - 1);
         }
         return $taskList;
@@ -54,9 +54,9 @@ class Task {
      * @return int
      */
     public function count($type, $startTime = 0, $stopTime = 0) {
-        if(!type) {
+        if (!type) {
             return intval($this->obj()->zCount($this->tasKey, $startTime, $stopTime));
-        }else{
+        } else {
             return intval($this->obj()->lLen($this->key));
         }
     }
@@ -91,13 +91,16 @@ class Task {
      * @return int
      */
     public function thread(callable $callback, int $concurrent = 10, int $timeout = 30, int $retry = 3) {
+        if(!function_exists('pcntl_fork')) {
+            return  $this->single($callback, $timeout, $retry);
+        }
         if ($this->hasLock()) {
             return -1;
         }
         $this->lock($timeout);
-        $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['withscores' => true, 'limit' => [0, $concurrent]]);
+        $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [0, $concurrent]]);
         $concurrent = intval($this->obj()->lLen($this->key));
-        foreach ($taskList as $data => $time) {
+        foreach ($taskList as $data) {
             if ($this->obj()->zRem($this->key, $data)) {
                 if ($this->obj()->rPush($this->tasKey, $data)) {
                     $concurrent++;
@@ -131,6 +134,31 @@ class Task {
                 }
             }
         }
+        $this->unLock();
+        return 1;
+    }
+
+    public function single(callable $callback, int $timeout = 30, int $retry = 3) {
+        if ($this->hasLock()) {
+            return -1;
+        }
+        $this->lock($timeout);
+        $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [0, 1]]);
+        $data = $taskList[0];
+        if (!$data) {
+            $this->unLock();
+            return 0;
+        }
+        if ($this->obj()->zRem($this->key, $data)) {
+            if (!$this->obj()->rPush($this->tasKey, $data)) {
+                $this->unLock();
+                return 0;
+            }
+        } else {
+            $this->unLock();
+            return 0;
+        }
+        $this->execute($callback, $retry);
         $this->unLock();
         return 1;
     }

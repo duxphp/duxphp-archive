@@ -3,6 +3,7 @@
 /**
  * 无限分类
  */
+
 namespace dux\lib;
 
 class Category {
@@ -11,31 +12,31 @@ class Category {
      * 原始数据
      * @var array
      */
-    private $rawList = array();
+    private $rawList = [];
 
     /**
      * 格式化数据
      * @var array
      */
-    private $formatList = array();
+    private $formatList = [];
 
     /**
      * 分类样式
      * @var array
      */
-    private $icon = array('│', '├', '└');
+    private $icon = ['│', '├', '└'];
 
     /**
      * 映射字段
      * @var array
      */
-    private $field = array();
+    private $field = [];
 
     /**
-     * 构建函数
-     * @param array $field 字段映射
+     * Category constructor.
+     * @param array $field
      */
-    public function __construct($field = array()) {
+    public function __construct(array $field = []) {
         $this->field['id'] = isset($field['0']) ? $field['0'] : 'id';
         $this->field['pid'] = isset($field['1']) ? $field['1'] : 'pid';
         $this->field['title'] = isset($field['2']) ? $field['2'] : 'title';
@@ -44,12 +45,12 @@ class Category {
 
     /**
      * 获取同级分类
-     * @param  integer $pid 上级分类
-     * @param  array $data 分类数组
+     * @param int $pid
+     * @param array $data
      * @return array
      */
-    public function getChild($pid, $data = array()) {
-        $childs = array();
+    public function getChild(int $pid, array $data = []) {
+        $childs = [];
         if (empty($data)) {
             $data = $this->rawList;
         }
@@ -62,17 +63,17 @@ class Category {
 
     /**
      * 获取树形分类
-     * @param  array $data 分类数组
-     * @param  integer $id 起始上级分类
+     * @param array $data
+     * @param int $id
      * @return array
      */
-    public function getTree($data, $id = 0) {
+    public function getTree(array $data, int $id = 0) {
         //数据为空，则返回
         if (empty($data))
             return [];
 
-        $this->rawList = array();
-        $this->formatList = array();
+        $this->rawList = [];
+        $this->formatList = [];
         $this->rawList = $data;
         $this->_searchList($id);
         return $this->formatList;
@@ -80,11 +81,11 @@ class Category {
 
     /**
      * 获取分类路径
-     * @param  array $data 分类数组
-     * @param  integer $id 当前分类
+     * @param array $data
+     * @param int $id
      * @return array
      */
-    public function getPath($data, $id) {
+    public function getPath(array $data, int $id) {
 
         $this->rawList = $data;
         while (1) {
@@ -98,11 +99,10 @@ class Category {
 
     /**
      * 递归分类
-     * @param  integer $id 上级分类ID
-     * @param  string $space 空格
-     * @return void
+     * @param int $id
+     * @param string $space
      */
-    private function _searchList($id = 0, $space = "") {
+    private function _searchList(int $id = 0, string $space = "") {
         //下级分类的数组
         $childs = $this->getChild($id);
         //如果没下级分类，结束递归
@@ -129,10 +129,10 @@ class Category {
 
     /**
      * 获取PID
-     * @param  integer $id 当前ID
-     * @return integer
+     * @param int $id
+     * @return int
      */
-    private function _getPid($id) {
+    private function _getPid(int $id) {
         foreach ($this->rawList as $key => $value) {
             if ($this->rawList[$key][$this->field['id']] == $id) {
                 $this->formatList[] = $this->rawList[$key];

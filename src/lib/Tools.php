@@ -13,7 +13,7 @@ class Tools {
      * @param string $dir
      * @throws \Exception
      */
-    public function zipCompress(string $file, string $dir = '') {
+    static public function zipCompress(string $file, string $dir = '') {
         $zippy = \Alchemy\Zippy\Zippy::load();
         $zippy->create($file, [
             'folder' => $dir
@@ -26,7 +26,7 @@ class Tools {
      * @param string $dir
      * @throws \Exception
      */
-    public function zipExtract(string $file, string $dir = '') {
+    static public function zipExtract(string $file, string $dir = '') {
         $zippy = \Alchemy\Zippy\Zippy::load();
         $zippy->open($file)->extract($dir);
     }
@@ -40,7 +40,7 @@ class Tools {
      * @return array
      * @throws \Exception
      */
-    public function page(int $totalItems, int $currentPage, int $perPage, int $neighbours = 4) {
+    static public function page(int $totalItems, int $currentPage, int $perPage, int $neighbours = 4) {
         if ($perPage <= 0) {
             throw new \Exception('每页数量不能小于1', 500);
         }
@@ -84,7 +84,7 @@ class Tools {
      * @param int $mode 模式
      * @return mixed
      */
-    public function pinyin(string $str, int $type = 0, bool $attr = false, int $mode = 0) {
+    static public function pinyin(string $str, int $type = 0, bool $attr = false, int $mode = 0) {
         if ($mode == 1) {
             $class = 'Overtrue\Pinyin\MemoryFileDictLoader';
         }
@@ -140,7 +140,7 @@ class Tools {
      * @param int $mode
      * @return array
      */
-    public function words(string $str, int $mode = 0) {
+    static public function words(string $str, int $mode = 0) {
         \Fukuball\Jieba\Jieba::init();
         \Fukuball\Jieba\Finalseg::init();
         if ($mode == 1) {
@@ -153,5 +153,52 @@ class Tools {
             //精确模式
             return \Fukuball\Jieba\Jieba::cut($str);
         }
+    }
+
+    /**
+     * Sql转数组
+     * @param $sql
+     * @param string $oldPre
+     * @param string $newPre
+     * @param string $separator
+     * @return array|bool
+     */
+    static public function sqlArray(string $sql, string $oldPre = "", string $newPre = "", string $separator = ";\n") {
+        $commenter = ['#', '--'];
+        if (!empty($sql)) {
+            return false;
+        }
+        $content = str_replace([$oldPre, "\r"], [$newPre, "\n"], $sql);
+        $segment = explode($separator, trim($content));
+        $data = [];
+        foreach ($segment as $statement) {
+            $sentence = explode("\n", $statement);
+            $newStatement = [];
+            foreach ($sentence as $subSentence) {
+                if ('' != trim($subSentence)) {
+                    $isComment = false;
+                    foreach ($commenter as $comer) {
+                        if (preg_match("/^(" . $comer . ")/is", trim($subSentence))) {
+                            $isComment = true;
+                            break;
+                        }
+                    }
+                    if (!$isComment) {
+                        $newStatement[] = $subSentence;
+                    }
+                }
+            }
+            $data[] = $newStatement;
+        }
+        foreach ($data as $statement) {
+            $newStmt = '';
+            foreach ($statement as $sentence) {
+                $newStmt = $newStmt . trim($sentence) . "\n";
+            }
+            if (!empty($newStmt)) {
+                $result[] = $newStmt;
+            }
+        }
+        return $result;
     }
 }

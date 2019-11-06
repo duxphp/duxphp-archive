@@ -8,15 +8,16 @@ namespace dux\kernel;
 
 class Model {
 
+    protected $driver = null;
+    protected $object = null;
     protected $config = [];
-    protected $database = 'default';
+
     protected $prefix = '';
     protected $table = '';
-    protected static $objArr = [];
 
     protected $options = [
         'table' => '',
-        'field' => null,
+        'field' => [],
         'lock' => false,
         'join' => [],
         'where' => [],
@@ -30,121 +31,226 @@ class Model {
         'raw' => false,
     ];
 
-    public function __construct($database = 'default', $config = []) {
-        if ($database) {
-            $this->database = $database;
+    /**
+     * 模型初始化
+     * @param string $driver
+     * @param array $config
+     * @throws \Exception
+     */
+    public function __construct(string $driver = '', array $config = []) {
+        $this->driver = $driver ?: $this->driver;
+        if (!class_exists($this->driver)) {
+            throw new \Exception('The database driver class does not exist', 500);
         }
-        $sysConfig = \dux\Config::get('dux.database');
-        $this->config = array_merge((array)$sysConfig[$this->database], (array)$this->config, $config);
-        if (empty($this->config) || empty($this->config['type'])) {
-            throw new \Exception($this->config['type'] . ' database config error', 500);
-        }
+        $this->config = $config ?: $this->config;
         $this->prefix = $this->config['prefix'];
+        if (empty($this->config)) {
+            throw new \Exception($this->driver . ' database config error', 500);
+        }
     }
 
-    public function setParams($params) {
-        $this->params = $params;
+    /**
+     * 设置参数
+     * @param array $params
+     * @return $this
+     */
+    public function setParams(array $params) {
+        $this->options = $params;
         return $this;
     }
 
-    public function setPrefix($pre) {
+    /**
+     * 设置前缀
+     * @param string $pre
+     * @return $this
+     */
+    public function setPrefix(string $pre) {
         $this->prefix = $pre;
         return $this;
     }
 
-    public function setTable($table) {
+    /**
+     * 设置表
+     * @param string $table
+     * @return $this
+     */
+    public function setTable(string $table) {
         $this->table = $table;
         return $this;
     }
 
-    public function setConfig($config) {
+    /**
+     * 设置配置
+     * @param array $config
+     * @return $this
+     */
+    public function setConfig(array $config) {
         $this->config = $config;
         return $this;
     }
 
-    public function table($table) {
+    /**
+     * 设置表
+     * @param string $table
+     * @return $this
+     */
+    public function table(string $table) {
         $this->options['table'] = $table;
         return $this;
     }
 
-    public function join($table, $relation, $way = '><') {
+    /**
+     * 关联表
+     * @param string $table
+     * @param array $relation
+     * @param string $way
+     * @return $this
+     */
+    public function join(string $table, array $relation, string $way = '><') {
         $this->options['join'][] = [$table, $relation, $way];
         return $this;
     }
 
-    public function field($field) {
+    /**
+     * 设置字段
+     * @param array $field
+     * @return $this
+     */
+    public function field(array $field) {
         $this->options['field'] = $field;
         return $this;
     }
 
-    public function data(array $data = [], $bindParams = []) {
+    /**
+     * 设置数据
+     * @param array $data
+     * @param array $bindParams
+     * @return $this
+     */
+    public function data(array $data = [], array $bindParams = []) {
         $this->options['data'] = $data;
         $this->options['bind_params'] = $bindParams;
         return $this;
     }
 
-    public function lock($lock = true) {
+    /**
+     * 设置行锁
+     * @param bool $lock
+     * @return $this
+     */
+    public function lock(bool $lock = true) {
         $this->options['append']['lock'] = $lock;
         return $this;
     }
 
-    public function order($order) {
+    /**
+     * 排序
+     * @param string $order
+     * @return $this
+     */
+    public function order(string $order) {
         $this->options['append']['order'] = $order;
         return $this;
     }
 
-    public function group($group) {
+    /**
+     * 分组
+     * @param string $group
+     * @return $this
+     */
+    public function group(string $group) {
         $this->options['append']['group'] = $group;
         return $this;
     }
 
+    /**
+     * 设置数量
+     * @param $limit
+     * @return $this
+     */
     public function limit($limit) {
         $this->options['append']['limit'] = $limit;
         return $this;
     }
 
-    public function page($page, $num) {
-        $this->options['page'] = [$page, $num];
-        return $this;
-    }
-
-    public function raw($raw = true) {
+    /**
+     * 返回原数据
+     * @param bool $raw
+     * @return $this
+     */
+    public function raw(bool $raw = true) {
         $this->options['raw'] = $raw;
         return $this;
     }
 
-    public function fetchSql($status = true) {
+    /**
+     * 预执行Sql
+     * @param bool $status
+     * @return $this
+     */
+    public function fetchSql(bool $status = true) {
         $this->options['return'] = $status;
         return $this;
     }
 
-    public function where(array $where = [], $bindParams = []) {
+    /**
+     * 设置条件
+     * @param array $where
+     * @param array $bindParams
+     * @return $this
+     */
+    public function where(array $where = [], array $bindParams = []) {
         $this->options['where'] = $where;
         $this->options['bind_params'] = $bindParams;
         return $this;
     }
 
+    /**
+     * 查询多条数据
+     * @return array|mixed
+     * @throws \Exception
+     */
     public function select() {
         $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
         return empty($data) ? [] : $data;
     }
 
+    /**
+     * 统计数量
+     * @return mixed
+     * @throws \Exception
+     */
     public function count() {
         return $this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
+    /**
+     * 查询单条
+     * @return array
+     * @throws \Exception
+     */
     public function find() {
         $data = $this->limit(1)->select();
         return isset($data[0]) ? $data[0] : [];
     }
 
-    protected function columnQuote($string) {
+    /**
+     * 拼接字段
+     * @param string $string
+     * @return string
+     */
+    protected function columnQuote(string $string) {
         if (strpos($string, '.') !== false) {
             return '`' . $this->prefix . str_replace('.', '".`', $string) . '`';
         }
         return '`' . $string . '`';
     }
 
+    /**
+     * 插入数据
+     * @return bool|mixed
+     * @throws \Exception
+     */
     public function insert() {
         if (empty($this->options['data']) || !is_array($this->options['data'])) {
             return false;
@@ -168,6 +274,11 @@ class Model {
         return $this->getObj()->insert($table, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
     }
 
+    /**
+     * 更新数据
+     * @return bool|mixed
+     * @throws \Exception
+     */
     public function update() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
@@ -191,6 +302,11 @@ class Model {
         return ($status === false) ? false : true;
     }
 
+    /**
+     * 删除数据
+     * @return bool|mixed
+     * @throws \Exception
+     */
     public function delete() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
@@ -202,43 +318,93 @@ class Model {
         return ($status === false) ? false : true;
     }
 
-    public function setInc($field, $num = 1) {
+    /**
+     * 递增数据
+     * @param string $field
+     * @param int $num
+     * @return bool|mixed
+     * @throws \Exception
+     */
+    public function setInc(string $field, int $num = 1) {
         return $this->data([
             $field . '[+]' => $num,
         ])->update();
     }
 
-    public function setDec($field, $num = 1) {
+    /**
+     * 递减数据
+     * @param string $field
+     * @param int $num
+     * @return bool|mixed
+     * @throws \Exception
+     */
+    public function setDec(string $field, int $num = 1) {
         return $this->data([
             $field . '[-]' => $num,
         ])->update();
     }
 
-    public function sum($field = '') {
+    /**
+     * 求和
+     * @param string $field
+     * @return mixed
+     * @throws \Exception
+     */
+    public function sum(string $field = '') {
         $this->field($field);
         return $this->getObj()->aggregate('SUM', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
-    public function avg($field = '') {
+    /**
+     * 平均值
+     * @param string $field
+     * @return mixed
+     * @throws \Exception
+     */
+    public function avg(string $field = '') {
         $this->field($field);
         return $this->getObj()->aggregate('AVG', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
-    public function max($field = '') {
+    /**
+     * 最大值
+     * @param string $field
+     * @return mixed
+     * @throws \Exception
+     */
+    public function max(string $field = '') {
         $this->field($field);
         return $this->getObj()->aggregate('MAX', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
-    public function min($field = '') {
+    /**
+     * 最小值
+     * @param string $field
+     * @return mixed
+     * @throws \Exception
+     */
+    public function min(string $field = '') {
         $this->field($field);
         return $this->getObj()->aggregate('MIN', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
+    /**
+     * 获取字段
+     * @return mixed
+     * @throws \Exception
+     */
     public function getFields() {
         return $this->getObj()->getFields($this->_getTable());
     }
 
-    public function query($sql, $params = []) {
+    /**
+     * 原生查询
+     * @param string $sql
+     * @param array $params
+     * @return array|mixed
+     * @throws \Exception
+     */
+    public function query(string $sql, array $params = []) {
         $sql = trim($sql);
         if (empty($sql)) {
             return [];
@@ -248,7 +414,14 @@ class Model {
         return $this->getObj()->query($sql, $params, $this->_getFetchSql());
     }
 
-    public function execute($sql, $params = []) {
+    /**
+     * 原生执行
+     * @param string $sql
+     * @param array $params
+     * @return bool|mixed
+     * @throws \Exception
+     */
+    public function execute(string $sql, array $params = []) {
         $sql = trim($sql);
         if (empty($sql)) {
             return false;
@@ -258,33 +431,56 @@ class Model {
         return $this->getObj()->execute($sql, $params, $this->_getFetchSql());
     }
 
+    /**
+     * 获取最后一次Sql
+     * @return string
+     * @throws \Exception
+     */
     public function getSql() {
         return $this->getObj()->getSql();
     }
 
+    /**
+     * 开启事务
+     * @return bool
+     * @throws \Exception
+     */
     public function beginTransaction() {
         return $this->getObj()->beginTransaction();
     }
 
+    /**
+     * 提交事务
+     * @return bool
+     * @throws \Exception
+     */
     public function commit() {
         return $this->getObj()->commit();
     }
 
+    /**
+     * 回滚事务
+     * @return bool
+     * @throws \Exception
+     */
     public function rollBack() {
         return $this->getObj()->rollBack();
     }
 
+    /**
+     * 获取驱动对象
+     * @return model\DbInterface|null
+     * @throws \Exception
+     */
     public function getObj() {
-        $dbDriver = __NAMESPACE__ . '\model\\' . ucfirst($this->config['type']) . 'PdoDriver';
-        if (!di()->has($this->database)) {
-            di()->set($this->database, function () use ($dbDriver) {
-                if (!class_exists($dbDriver)) {
-                    throw new \Exception($this->config['type'] . ' 数据类型不存在!', 500);
-                }
-                return new $dbDriver($this->config);
-            });
+        if ($this->object) {
+            return $this->object;
         }
-        return di()->get($this->database);
+        $this->object = new $this->driver($this->config);
+        if (!$this->object instanceof \dux\kernel\model\DbInterface) {
+            throw new \Exception('The database class must interface class inheritance', 500);
+        }
+        return $this->object;
     }
 
     protected function _getField() {

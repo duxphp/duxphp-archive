@@ -23,10 +23,10 @@ class Api {
 
     /**
      * 返回成功数据
-     * @param string $msg
+     * @param $msg
      * @param array $data
      */
-    public function success($msg = '', $data = []) {
+    public function success($msg = '', array $data = []) {
         if (empty($msg)) {
             $msg = \dux\Dux::$codes[200];
         }
@@ -42,11 +42,11 @@ class Api {
 
     /**
      * 返回错误数据
-     * @param int $code
      * @param string $msg
+     * @param int $code
      * @param string $url
      */
-    public function error($msg = '', $code = 500, $url = '') {
+    public function error($msg = '', int $code = 500, string $url = '') {
         if (empty($msg)) {
             $msg = \dux\Dux::$codes[$code];
         }
@@ -64,7 +64,7 @@ class Api {
      * 数据不存在
      * @param string $msg
      */
-    public function error404($msg = '记录不存在') {
+    public function error404(string $msg = '记录不存在') {
         $this->error($msg, 404);
     }
 
@@ -73,7 +73,7 @@ class Api {
      * @param $data
      * @param string $type
      */
-    public function returnData($data, $type = 'json') {
+    public function returnData($data, string $type = 'json') {
         $format = request('', 'format');
         if (empty($format)) {
             $format = $type;
@@ -97,7 +97,7 @@ class Api {
      * @param array $data
      * @param string $charset
      */
-    public function returnJson($data = [], $charset = "utf-8") {
+    public function returnJson(array $data = [], string $charset = "utf-8") {
         header("Content-Type: application/json; charset={$charset};");
         echo json_encode($data);
     }
@@ -107,7 +107,7 @@ class Api {
      * @param array $data
      * @param string $callback
      */
-    public function returnJsonp($data = [], $callback = 'q', $charset = "utf-8") {
+    public function returnJsonp(array $data = [], string $callback = 'q', string $charset = "utf-8") {
         header("Content-Type: application/javascript; charset={$charset};");
         echo $callback . '(' . json_encode($data) . ');';
     }

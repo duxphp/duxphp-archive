@@ -4,18 +4,25 @@
     "authors": [
         {
             "name": "DuxPHP",
-            "email": "349865361@qq.com"
+            "email": "admin@duxphp.com"
         }
     ],
     "require": {
         "php": ">=7.0",
-        "leafo/scssphp": "^0.1",
-        "nelexa/zip": "^3.0",
         "intervention/image": "^2.0",
         "ralouphie/mimey": "^2.0",
         "endroid/qr-code": "^3.0",
         "phpfastcache/phpfastcache": "^7.0",
-        "guzzlehttp/guzzle": "^6.0"
+        "guzzlehttp/guzzle": "^6.0",
+        "gregwar/captcha": "^1.0",
+        "scrivo/highlight.php": "^9.0",
+        "jenssegers/agent": "^2.0",
+        "erusev/parsedown": "^1.0",
+        "leafo/scssphp": "^0.1",
+        "gkralik/php-uglifyjs": "^1.0",
+        "overtrue/pinyin": "^4.0",
+        "alchemy/zippy": "^0.4.9",
+        "fukuball/jieba-php": "dev-master"
     },
     "autoload": {
         "psr-4": {

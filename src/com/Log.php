@@ -2,27 +2,24 @@
 
 namespace dux\com;
 
+use dux\com\log\LogInterface;
+
 /**
  * 日志类
  */
 class Log {
 
     protected $config = [];
-
-    protected $driver = 'default';
-
+    protected $driver = null;
     protected $object = null;
 
-
-    /**
-     * 实例化类
-     * @param string $log
-     */
-    public function __construct($driver = 'default') {
+    public function __construct(string $driver, array $config = []) {
         $this->driver = $driver;
-        $config = \dux\Config::get('dux.log_driver');
-        $this->config = $config[$this->driver];
-        if (empty($this->config) || empty($this->driver)) {
+        if (!class_exists($this->driver)) {
+            throw new \Exception('The log driver class does not exist', 500);
+        }
+        $this->config = $config;
+        if (empty($this->config)) {
             throw new \Exception($this->driver . ' log config error', 500);
         }
     }
@@ -59,17 +56,14 @@ class Log {
     }
 
     public function getObj() {
-        $key = 'dux.log_driver.' . $this->driver;
-        if (!di()->has($key)) {
-            $class = __NAMESPACE__ . '\log\\' . ucfirst($this->config['type']) . 'Driver';
-            di()->set($key, function () use ($class) {
-                if (!class_exists($class)) {
-                    throw new \Exception($this->config['type'] . ' driver does not exist', 500);
-                }
-                return new $class($this->config);
-            });
+        if ($this->object) {
+            return $this->object;
         }
-        return di()->get($key);
+        $this->object = new $this->driver($this->config);
+        if (!$this->object instanceof \dux\com\log\LogInterface) {
+            throw new \Exception('The log class must interface class inheritance', 500);
+        }
+        return $this->object;
     }
 
 }

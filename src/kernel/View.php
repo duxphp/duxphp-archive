@@ -26,12 +26,10 @@ class View {
     private $template;
 
     /**
-     * 模板缓存配置
+     * 模板配置
      * @var array
      */
-    protected $config = [
-
-    ];
+    protected $config = [];
 
     /**
      * 缓存对象
@@ -53,16 +51,16 @@ class View {
      * View constructor.
      * @param array $config
      */
-    public function __construct($config = []) {
+    public function __construct(array $config = []) {
         $this->config = array_merge($this->config, $config);
-        $this->cache = \dux\Dux::cache('tpl', $this->config);
+        $this->cache = \dux\Dux::cache('tpl');
         $this->set('__Template', $this);
 
     }
 
     /**
      * 获取模板赋值
-     * @param string $key 键名
+     * @param mixed $key 键名
      * @return mixed Value
      */
     public function get($key) {
@@ -107,12 +105,12 @@ class View {
 
     /**
      * 模板编译
-     * @param $filePath
-     * @param null $data
-     * @return string
+     * @param string $filePath
+     * @param array $data
+     * @return false|string
      */
-    public function compile($filePath, $data = null) {
-        if (is_array($data)) {
+    public function compile(string $filePath, array $data = []) {
+        if (!empty($data)) {
             $this->vars = array_merge($this->vars, $data);
         }
         $fileName = 'tpl.' . md5($filePath);
@@ -131,18 +129,18 @@ class View {
     }
 
     /**
-     * 模板输出显示
-     * @param $file
-     * @param null $data
-     * @param integer $type
+     * 模板输出
+     * @param string $file
+     * @param array $data
+     * @param bool $type
      * @throws \Exception
      */
-    public function render($file, $data = null, $type = 0) {
+    public function render(string $file, array $data = [], bool $type = false) {
         if(!$type) {
             $this->exists($file);
             $template = $this->compile($this->template, $data);
         }else {
-            if (is_array($data)) {
+            if (!empty($data)) {
                 $this->vars = array_merge($this->vars, $data);
             }
             $template = $this->templateParse($file);
@@ -152,13 +150,14 @@ class View {
     }
 
     /**
-     * 获取渲染模板内容
-     * @param string $file 模板文件名
-     * @param array $data 赋值数据
-     * @param integer $type 类型
-     * @return string 模板内容
+     * 返回渲染
+     * @param string $file
+     * @param array $data
+     * @param bool $type
+     * @return false|string
+     * @throws \Exception
      */
-    public function fetch($file, $data = null, $type = 0) {
+    public function fetch(string $file, array $data = [], bool $type = false) {
         ob_start();
         $this->render($file, $data, $type);
         return ob_get_clean();
@@ -166,10 +165,10 @@ class View {
 
     /**
      * 检查模板存在
-     * @param $file
+     * @param string $file
      * @throws \Exception
      */
-    public function exists($file) {
+    public function exists(string $file) {
         $this->template = $this->getTemplate($file);
         if (!file_exists($this->template)) {
             throw new \Exception("Template file not found: {$this->template}.");
@@ -178,10 +177,10 @@ class View {
 
     /**
      * 获取模板路径
-     * @param string $file 模板文件名
-     * @return string 完整模板路径
+     * @param string $file
+     * @return string
      */
-    public function getTemplate($file) {
+    public function getTemplate(string $file) {
         if ((substr($file, -5) != '.html')) {
             $file .= '.html';
         }
@@ -190,10 +189,9 @@ class View {
 
     /**
      * HTML还原
-     * @param string $str 字符串
-     * @return string html内容
+     * @param string $str
      */
-    public function e($str) {
+    public function e(string $str) {
         echo htmlentities($str);
     }
 
@@ -291,7 +289,7 @@ class View {
      * @param  string $template 模板内容
      * @return string
      */
-    public function templateParse($template) {
+    public function templateParse(string $template) {
         $this->setTags();
         foreach ($this->_template_preg as $key => $vo) {
             if (is_array($this->_template_replace[$key])) {
@@ -337,11 +335,6 @@ class View {
         return pack_js($var[1]);
     }
 
-    /**
-     * 解析变量
-     * @param array $var
-     * @return string
-     */
     private function parseVar($var) {
         if (empty($var[0])) {
             return;
@@ -355,11 +348,6 @@ class View {
         return $name;
     }
 
-    /**
-     * 解析循环标签
-     * @param array $var
-     * @return string
-     */
     private function parseFor($var) {
         $tpl = trim($var[2]);
         $item = trim($var[1]);

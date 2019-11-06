@@ -9,16 +9,15 @@ namespace dux\kernel;
 class Controller {
 
     private $view;
-    public $layout = NULL;
+    public $layout = null;
 
     /**
-     * 实例化公共控制器
+     * 初始化     控制器
      */
     public function __construct() {
         if (method_exists($this, 'init')) {
             $this->init();
         }
-
     }
 
     /**
@@ -27,16 +26,16 @@ class Controller {
      * @param null $value
      * @return mixed
      */
-    public function assign($name, $value = NULL) {
+    public function assign($name, $value = null) {
         return $this->_getView()->set($name, $value);
     }
 
     /**
      * 模板输出
-     * @param  string $tpl 模板名
+     * @param string $tpl 模板名
      * @return mixed
      */
-    public function display($tpl = '') {
+    public function display(string $tpl = '') {
         if (empty($tpl)) {
             $tpl = 'app/' . APP_NAME . '/view/' . LAYER_NAME . '/' . strtolower(MODULE_NAME) . '/' . strtolower(ACTION_NAME);
         }
@@ -61,11 +60,11 @@ class Controller {
 
     /**
      * 页面跳转
-     * @param  string $url 跳转地址
-     * @param  integer $code 跳转代码
+     * @param string $url 跳转地址
+     * @param integer $code 跳转代码
      * @return void
      */
-    public function redirect($url, $code = 302) {
+    public function redirect(string $url, int $code = 302) {
         header('location:' . $url, true, $code);
         exit;
     }
@@ -76,16 +75,16 @@ class Controller {
      * @param string $callback
      * @param int $code
      */
-    public function json($data = [], $callback = '', $code = 200) {
+    public function json(array $data = [], string $callback = '', int $code = 200) {
         if ($callback) {
             $info = ['data' => $data, 'callback' => $callback];
-            \dux\Dux::header($code, function() use ($info) {
+            \dux\Dux::header($code, function () use ($info) {
                 echo $info['callback'] . '(' . json_encode($info['data']) . ');';
             }, [
                 'Content-Type' => 'application/javascript;charset=utf-8;'
             ]);
         } else {
-            \dux\Dux::header($code, function() use ($data) {
+            \dux\Dux::header($code, function () use ($data) {
                 echo json_encode($data);
             }, [
                 'Content-Type' => 'application/json;charset=utf-8;'
@@ -95,10 +94,10 @@ class Controller {
 
     /**
      * 成功提示方法
-     * @param  string $msg 提示消息
-     * @param  string $url 跳转URL
+     * @param string $msg 提示消息
+     * @param string $url 跳转URL
      */
-    public function success($msg, $url = null) {
+    public function success($msg, string $url = null) {
         if (isAjax()) {
             $data = [
                 'code' => 200,
@@ -117,7 +116,7 @@ class Controller {
      * @param null $url
      * @param int $code
      */
-    public function error($msg, $url = null, $code = 500) {
+    public function error($msg, string $url = null, int $code = 500) {
         if (isAjax()) {
             $data = [
                 'code' => $code,
@@ -140,22 +139,21 @@ class Controller {
 
     /**
      * 错误页面输出
-     * @param $title
-     * @param $content
-     * @param $code
+     * @param string $title
+     * @param int $code
      */
-    protected function errorPage($title, $content, $code = 503) {
-        \dux\Dux::errorPage($title, $content, $code);
+    protected function errorPage(string $title, int $code = 503) {
+        \dux\Dux::errorPage($title, $code);
     }
 
     /**
      * JS窗口提示
-     * @param  string $msg 提示消息
-     * @param  string $url 跳转URL
-     * @param  string $charset 页面编码
+     * @param string $msg 提示消息
+     * @param string $url 跳转URL
+     * @param string $charset 页面编码
      * @return void
      */
-    public function alert($msg, $url = NULL, $charset = 'utf-8') {
+    public function alert(string $msg, string $url = null, string $charset = 'utf-8') {
         \dux\Dux::header(200, function () use ($msg, $url) {
             $alert_msg = "alert('$msg');";
             if (empty($url)) {

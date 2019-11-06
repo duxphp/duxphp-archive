@@ -9,12 +9,16 @@ namespace dux\com\log;
 class RedisDriver implements LogInterface {
 
     protected $obj = null;
-
     protected $indexKey = '';
+    protected $config = [
+        'host' => '127.0.0.1',
+        'port' => 6379,
+        'dbname' => 0,
+        'prefix' => 'dux_'
+    ];
 
     public function __construct($config) {
-        $config['type'] = 'redis';
-        $this->config = $config;
+        $this->config = array_merge($this->config, $config);
         $this->indexKey = "log_index:{$this->config['prefix']}";
     }
 
