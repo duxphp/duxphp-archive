@@ -22,7 +22,7 @@ class Filter {
      * @param array $rules
      * @throws \dux\exception\Error
      */
-    public static function verifyArray($data = [], $rules = []) {
+    public static function verifyArray(array $data = [], array $rules = []) {
         /*$data = [
             'field' => [
                 'rule' => ['params', 'desc'],
@@ -48,7 +48,7 @@ class Filter {
      * @return array
      * @throws \dux\exception\Error
      */
-    public static function filterArray($data = [], $rules = []) {
+    public static function filterArray(array $data = [], array $rules = []) {
         /*$data = [
             'field' => [
                 'rule' => 'params',

@@ -6,9 +6,6 @@
 
 namespace dux\lib;
 
-
-use Symfony\Component\Cache\Adapter\TraceableAdapter;
-
 class Http {
 
     /**

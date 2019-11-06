@@ -10,7 +10,7 @@ namespace dux\kernel\model;
 
 use PDO;
 
-class MysqlPdoDriver implements DbInterface {
+class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
 
     protected $config = [];
     protected $link = null;

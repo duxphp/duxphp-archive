@@ -39,12 +39,29 @@ class Dux {
     }
 
     /**
-     * 注册模板引擎类
+     * 模型类
      * @param array $config
      * @return object
      */
-    public static function view() {
-        $config = \dux\Config::get('dux.tpl');
+    public static function model(array $config = []) {
+        $config = $config ?: \dux\Config::get('dux.database');
+        $key = 'dux.database.' . http_build_query($config);
+        if (!self::di()->has($key)) {
+            self::di()->set($key, function () use ($type, $config) {
+                $type = $config['type'];
+                unset($config['type']);
+                return new \dux\kernel\Model($type, $config);
+            });
+        }
+        return self::di()->get($key);
+    }
+
+    /**
+     * 模板引擎类
+     * @return object
+     */
+    public static function view(array $config = []) {
+        $config = $config ?: \dux\Config::get('dux.tpl');
         $key = 'dux.tpl' . http_build_query($config);
         if (!self::di()->has($key)) {
             self::di()->set($key, function () use ($config) {
@@ -61,13 +78,13 @@ class Dux {
      * @return object
      */
     public static function cache(string $group = 'default', array $config = []) {
-        if (empty($config)) {
-            $config = \dux\Config::get('dux.cache');
-        }
-        $key = 'dux.cache.' . $group . '.' . http_build_query($config);
+        $config = $config ?: \dux\Config::get('dux.cache');
+        $key = 'dux.log.' . http_build_query($config);
         if (!self::di()->has($key)) {
-            self::di()->set($key, function () use ($config, $group) {
-                return new \dux\com\Cache($config, $group);
+            self::di()->set($key, function () use ($type, $config, $group) {
+                $type = $config['type'];
+                unset($config['type']);
+                return new \dux\com\Cache($type, $config, $group);
             });
         }
         return self::di()->get($key);
@@ -80,9 +97,7 @@ class Dux {
      * @return object
      */
     public static function session(string $pre = '', array $config = []) {
-        if (empty($config)) {
-            $config = \dux\Config::get('dux.session');
-        }
+        $config = $config ?: \dux\Config::get('dux.session');
         $key = 'dux.session.' . $pre . http_build_query($config);
         if (!self::di()->has($key)) {
             self::di()->set($key, function () use ($config, $pre) {
@@ -93,14 +108,14 @@ class Dux {
     }
 
     /**
-     *  获取请求数据
+     * 获取请求数据
      * @param string $method
      * @param string $key
      * @param string $default
-     * @param string $function
+     * @param null $function
      * @return array|false|mixed|string
      */
-    public static function request(string $method = '', string $key = '', string $default = '', string $function = '') {
+    public static function request(string $method = '', string $key = '', string $default = '', $function = null) {
         $method = strtolower($method);
         switch ($method) {
             case 'get':
@@ -144,6 +159,9 @@ class Dux {
                 }
                 if ($vo == 'false') {
                     $data[$k] = false;
+                }
+                if (filter_var($vo, \FILTER_VALIDATE_FLOAT) !== false) {
+                    $data[$k] = (float)$data[$k];
                 }
             }
         }
@@ -217,15 +235,15 @@ class Dux {
      * @param string $file
      * @param bool $enforce
      * @return mixed
-     * @throws exception\Exception
+     * @throws \Exception
      */
     public static function loadConfig(string $file, bool $enforce = true) {
         $file = ROOT_PATH . $file . '.php';
         try {
             $data = \dux\Config::load($file);
-        } catch (\dux\exception\Exception $e) {
+        } catch (\Exception $e) {
             if ($enforce) {
-                throw new \dux\exception\Exception($e->getMessage());
+                throw new \Exception($e->getMessage());
             }
         }
         return $data;
@@ -236,7 +254,7 @@ class Dux {
      * @param string $file
      * @param array $config
      * @return bool
-     * @throws exception\Exception
+     * @throws \Exception
      */
     public static function saveConfig(string $file, array $config) {
         $file = ROOT_PATH . $file . '.php';
@@ -388,11 +406,13 @@ class Dux {
      * @return object
      */
     public static function logObj() {
-        $driver = \dux\Config::get('dux.log');
-        $keyName = 'dux.log.' . $driver;
+        $config = \dux\Config::get('dux.log');
+        $keyName = 'dux.log.' . http_build_query($config);
         if (!self::di()->has($keyName)) {
-            self::di()->set($keyName, function () use ($driver) {
-                return new \dux\com\Log($driver);
+            $type = $config['type'];
+            unset($config['type']);
+            self::di()->set($keyName, function () use ($type, $config) {
+                return new \dux\com\Log($type, $config);
             });
         }
         return self::di()->get($keyName);

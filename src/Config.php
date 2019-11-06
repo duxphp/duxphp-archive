@@ -16,26 +16,45 @@ class Config {
             ],
             'debug' => true,
             'debug_log' => true,
+            'use' => [
+                'safe_key' => 'dux',
+            ],
+            'log' => [
+                'type' => \dux\com\log\FilesDriver::class,
+                'path' => DATA_PATH . 'log/',
+            ],
+            'database' => [
+                'type' => \dux\kernel\model\MysqlPdoDriver::class,
+                'host' => 'localhost',
+                'port' => '3306',
+                'dbname' => 'dux',
+                'username' => 'root',
+                'password' => 'root',
+                'prefix' => 'dux_',
+                'charset' => 'utf8mb4',
+            ],
             'cache' => [
                 'type' => 'files',
                 'path' => ROOT_PATH . 'cache/tmp/',
-                'group' => 'tmp',
-            ],
-            'tpl' => [
-                'type' => 'files',
-                'path' => ROOT_PATH . 'cache/tpl/',
-                'group' => 'tmp',
+                'securityKey' => 'data',
+                'cacheFileExtension' => 'cache'
             ],
             'session' => [
                 'type' => 'files',
                 'path' => DATA_PATH . 'cache/session/',
-                'group' => 'tmp',
+                'securityKey' => 'data',
+                'cacheFileExtension' => 'cache'
             ],
         ]
     ];
 
     protected static $cache = [];
 
+    /**
+     * 设置配置
+     * @param $name
+     * @param null $value
+     */
     public static function set($name, $value = null) {
         if (is_array($name)) {
             self::$config = array_replace_recursive(self::$config, $name);
@@ -59,6 +78,12 @@ class Config {
         }
     }
 
+    /**
+     * 获取配置
+     * @param null $name
+     * @param null $default
+     * @return array|mixed|null
+     */
     public static function get($name = null, $default = null) {
         if (empty($name)) {
             return self::$config;
@@ -88,14 +113,25 @@ class Config {
         return true;
     }
 
+    /**
+     * 清楚配置
+     * @param $name
+     */
     public static function clear($name) {
         self::set($name, null);
     }
 
+    /**
+     * 加载配置
+     * @param $config
+     * @param bool $string
+     * @return mixed
+     * @throws \Exception
+     */
     public static function load($config, $string = false) {
         if (!$string) {
             if (!is_file($config)) {
-                throw new \dux\exception\Exception("Config file '{$config}' not found");
+                throw new \Exception("Config file '{$config}' not found");
             }
             $config = file_get_contents($config);
         }
@@ -106,17 +142,24 @@ class Config {
         try {
             $data = eval($config);
         } catch (\Exception $e) {
-            throw new \dux\exception\Exception("PHP string threw an exception");
+            throw new \Exception("PHP string threw an exception");
         }
         if (is_callable($data)) {
             $data = call_user_func($data);
         }
         if (!is_array($data)) {
-            throw new \dux\exception\Exception("PHP data does not return an array");
+            throw new \Exception("PHP data does not return an array");
         }
         return $data;
     }
 
+    /**
+     * 保存配置到文件
+     * @param $file
+     * @param array $config
+     * @return bool
+     * @throws \Exception
+     */
     public static function save($file, array $config = []) {
         $export = var_export($config, true);
         $export = preg_replace("/^([ ]*)(.*)/m", '$1$1$2', $export);
@@ -130,11 +173,11 @@ class Config {
             try {
                 mkdir($path, 0777, true);
             } catch (\Exception $e) {
-                throw new \dux\exception\Exception("Directory [{$path['dirname']}] without permission");
+                throw new \Exception("Directory [{$path['dirname']}] without permission");
             }
         }
         if (!file_put_contents($file, $export)) {
-            throw new \dux\exception\Exception("Configuration file [{$file}] written to fail");
+            throw new \Exception("Configuration file [{$file}] written to fail");
         }
         return true;
     }

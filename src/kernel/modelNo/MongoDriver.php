@@ -7,7 +7,7 @@
 
 namespace dux\kernel\modelNo;
 
-class MongoDriver {
+class MongoDriver implements \dux\kernel\model\ModelNoInterface {
 
     protected $config = [];
     protected $link = null;
@@ -30,7 +30,7 @@ class MongoDriver {
         return !empty($this->primary) ? $this->primary : $this->primaryDefault;
     }
 
-    public function getFields($params = []) {
+    public function getFields(array $params = []) {
         if (!empty($this->fields)) {
             return $this->fields;
         }
@@ -40,15 +40,7 @@ class MongoDriver {
         return $this->fields;
     }
 
-    /**
-     * 查询
-     * @param $table
-     * @param $filter
-     * @param $options
-     * @return array
-     * @throws \MongoDB\Driver\Exception\Exception
-     */
-    public function query($table, $filter, $options) {
+    public function query(string $table, $filter, array $options) {
         $query = new \MongoDB\Driver\Query($filter, $options);
         $res = $this->getLink()->executeQuery($this->config['dbname'] . '.' . $table, $query);
         $data = [];
@@ -58,27 +50,12 @@ class MongoDriver {
         return $data;
     }
 
-    /**
-     * 执行命令
-     * @param array $param
-     * @return \MongoDB\Driver\Cursor
-     * @throws \MongoDB\Driver\Exception\Exception
-     */
     public function command(array $param) {
         $cmd = new \MongoDB\Driver\Command($param);
         return $this->getLink()->executeCommand($this->config['dbname'], $cmd);
     }
 
-    /**
-     * 查询数据
-     * @param $table
-     * @param $where
-     * @param array $fields
-     * @param string $order
-     * @param int $limit
-     * @return mixed
-     */
-    public function select($table, $where, $fields = [], $order = '', $limit = 0) {
+    public function select(string $table, array $where, array $fields = [], string $order = '', int $limit = 0) {
         $fields = $this->parsingField($fields);
         $order = $this->_parsingOrder($order);
         $options = [];
@@ -95,16 +72,7 @@ class MongoDriver {
         return $this->query($table, $where, $options);
     }
 
-
-    /**
-     * 聚合查询
-     * @param $table
-     * @param array $where
-     * @param $group
-     * @return mixed
-     * @throws \MongoDB\Driver\Exception\Exception
-     */
-    public function aggregate($table, array $where, $group) {
+    public function aggregate(string $table, array $where, $group) {
         $where = $this->parsingWhere($where);
         $cmd = [
             'aggregate' => $table,
@@ -126,15 +94,7 @@ class MongoDriver {
         return $returnData;
     }
 
-    /**
-     * 求和
-     * @param $table
-     * @param array $where
-     * @param $field
-     * @return mixed
-     * @throws \MongoDB\Driver\Exception\Exception
-     */
-    public function sum($table, array $where, $field) {
+    public function sum(string $table, array $where, string $field) {
         $group = [
             $this->primaryDefault => null,
             'result' => [
@@ -144,14 +104,7 @@ class MongoDriver {
         return $this->aggregate($table, $where, $group);
     }
 
-    /**
-     * 去重查询
-     * @param string $table collection名
-     * @param array $where 条件
-     * @param string $key 要进行distinct的字段名
-     * @return array
-     */
-    public function distinct($table, array $where, $key) {
+    public function distinct(string $table, array $where, string $key) {
         /**
          * Array
          * (
@@ -165,7 +118,7 @@ class MongoDriver {
             'distinct' => $table,
             'key' => $key,
         ];
-        if($where) {
+        if ($where) {
             $cmd['query'] = $where;
         }
         $arr = $this->command($cmd)->toArray();
@@ -175,14 +128,7 @@ class MongoDriver {
         return $result;
     }
 
-    /**
-     * 计算个数
-     * @param string $table
-     * @param array $where
-     * @return int
-     * @throws \MongoDB\Driver\Exception\Exception
-     */
-    public function count($table, array $where) {
+    public function count(string $table, array $where) {
         $where = $this->parsingWhere($where);
         $result = 0;
         $cmd = [
@@ -203,7 +149,7 @@ class MongoDriver {
      * @param array $params 参数
      * @return array|bool
      */
-    public function insert($table, array $data, $params = []) {
+    public function insert(string $table, array $data, $params = []) {
         $bulk = $this->getBulk();
         $write_concern = $this->getWrite();
         $ids = [];
@@ -223,30 +169,20 @@ class MongoDriver {
         return $ids;
     }
 
-    /**
-     * 更新数据
-     * @param string $collection 集合
-     * @param array $where 类似where条件
-     * @param array $data 要更新的字段
-     * @param array $params 参数
-     * @param bool $upsert 如果不存在是否插入，默认为false不插入
-     * @param bool $multi 是否更新全量，默认为false
-     * @return mixed
-     */
-    public function update($collection, $where = [], $data = [], $params = [], $upsert = false, $multi = false) {
-        return $this->_update($collection, $where, ['$set' => $data], $params, $upsert, $multi);
+    public function update(string $table, array $where = [], array $data = [], array $params = [], bool $upsert = false, bool $multi = false) {
+        return $this->_update($table, $where, ['$set' => $data], $params, $upsert, $multi);
     }
 
-    public function setInc($collection, $where = [], $field = '', $num = 1) {
-        return $this->_update($collection, $where, ['$inc' => [$field => $num]]);
+    public function setInc(string $table, array $where = [], string $field = '', int $num = 1) {
+        return $this->_update($table, $where, ['$inc' => [$field => $num]]);
     }
 
-    public function setDec($collection, $where = [], $field = '', $num = 1) {
+    public function setDec(string $table, array $where = [], string $field = '', int $num = 1) {
         $num *= -1;
-        return $this->_update($collection, $where, ['$inc' => [$field => $num]]);
+        return $this->_update($table, $where, ['$inc' => [$field => $num]]);
     }
 
-    private function _update($collection, $where = [], $data = [], $params = [], $upsert = false, $multi = false) {
+    private function _update(string $table, array $where = [], array $data = [], array $params = [], bool $upsert = false, bool $multi = false) {
         $bulk = $this->getBulk();
         $writeConcern = $this->getWrite();
         $updateOptions = [
@@ -256,7 +192,7 @@ class MongoDriver {
         $data = $this->_dataParsing($data, $params, false);
         $where = $this->parsingWhere($where);
         $bulk->update($where, $data, $updateOptions);
-        $res = $this->getLink()->executeBulkWrite($this->config['dbname'] . '.' . $collection, $bulk, $writeConcern);
+        $res = $this->getLink()->executeBulkWrite($this->config['dbname'] . '.' . $table, $bulk, $writeConcern);
         if (empty($res->getWriteErrors())) {
             return true;
         } else {
@@ -264,14 +200,7 @@ class MongoDriver {
         }
     }
 
-    /**
-     * 删除数据
-     * @param string $collection
-     * @param array $where
-     * @param array $option
-     * @return mixed
-     */
-    public function delete($table, $where = [], $option = []) {
+    public function delete(string $table, array $where = [], array $option = []) {
         $bulk = $this->getBulk();
         $where = $this->parsingWhere($where);
         $bulk->delete($where, $option);
@@ -283,14 +212,7 @@ class MongoDriver {
         }
     }
 
-    /**
-     * 处理数据内容
-     * @param array $data
-     * @param array $params
-     * @param bool $dataDefault
-     * @return array
-     */
-    private function _dataParsing($data = [], $params = [], $dataDefault = true) {
+    private function _dataParsing(array $data = [], array $params = [], bool $dataDefault = true) {
         if (empty($data)) {
             return [];
         }
@@ -331,12 +253,6 @@ class MongoDriver {
         return $data;
     }
 
-    /**
-     * 获取数据对象
-     * @param array $param
-     * @return \MongoDB\Driver\Cursor
-     * @throws \MongoDB\Driver\Exception\Exception
-     */
     public function getLink() {
         if (!$this->link) {
             $this->link = $this->_connect();

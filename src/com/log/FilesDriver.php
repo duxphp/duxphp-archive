@@ -8,10 +8,14 @@ namespace dux\com\log;
 
 class FilesDriver implements LogInterface {
 
-    protected $config = [];
+    protected $config = [
+        'path' => ''
+    ];
 
-    public function __construct($config) {
-        $this->config = $config;
+    public function __construct(array $config = []) {
+        if($config) {
+            $this->config = $config;
+        }
     }
 
     public function items($group = '') {
@@ -88,9 +92,6 @@ class FilesDriver implements LogInterface {
 
     private function getDir($group = '') {
         $dir = $this->config['path'];
-        if (empty($dir)) {
-            $dir = DATA_PATH . 'log/';
-        }
         $dir = str_replace('\\', '/', $dir);
         if (substr($dir, -1) <> '/') {
             $dir = $dir . '/';

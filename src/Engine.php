@@ -30,11 +30,11 @@ class Engine {
     }
 
     /**
-     * 加载类文件
-     * @param $class
+     * 自动加载类文件
+     * @param string $class
      * @return bool
      */
-    public function loadClass($class) {
+    public function loadClass(string $class) {
         $classFile = str_replace(['\\', '_'], '/', $class) . '.php';
         $file = ROOT_PATH . $classFile;
         if (!isset(self::$classes[$file])) {

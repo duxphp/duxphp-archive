@@ -9,31 +9,24 @@ namespace dux\com;
  */
 class Cache {
 
-    /**
-     * 配置
-     * @var array
-     */
+    protected $object = null;
+    protected $type = '';
+    protected $group = 'default';
     protected $config = [];
 
     /**
-     * 缓存分组
-     */
-    protected $group = 'default';
-
-    /**
      * 实例化类
+     * @param string $type
      * @param array $config
-     * @param $cache
+     * @param string $group
      * @throws \Exception
      */
-    public function __construct(array $config, $group = 'default') {
+    public function __construct(string $type, array $config, $group = 'default') {
         $this->config = array_merge($this->config, $config);
-        $this->group = $this->config['group'];
-        if (isset($group)) {
-            $this->group = $group;
-        }
+        $this->type = $type;
+        $this->group = $group;
         unset($this->config['group']);
-        if (empty($this->config) || empty($this->config['type'])) {
+        if (empty($this->config) || empty($type)) {
             throw new \Exception('Cache config error', 500);
         }
         asort($this->config);
@@ -119,29 +112,16 @@ class Cache {
 
     /**
      * 获取缓存对象
-     * @return mixed|null
+     * @return mixed
      * @throws \Exception
      */
     public function getObj() {
-        $class = 'cache.' . http_build_query($this->config);
-        if (!di()->has($class)) {
-            di()->set($class, function () {
-                $config = $this->config;
-                $type = $config['type'];
-                unset($config['type']);
-                if ($type == 'files') {
-                    $config['securityKey'] = 'data';
-                    $config['cacheFileExtension'] = 'cache';
-                }
-                $driver = '\\Phpfastcache\\Drivers\\' . ucfirst($type) . '\\Config';
-                return \Phpfastcache\CacheManager::getInstance($type, new $driver($config));
-            });
+        if ($this->object) {
+            return $this->object;
         }
-        $obj = di()->get($class);
-        if (empty($obj)) {
-            throw new \Exception('Cache drive does not exist', 500);
-        }
-        return $obj;
+        $driver = '\\Phpfastcache\\Drivers\\' . ucfirst($this->type) . '\\Config';
+        $this->object = \Phpfastcache\CacheManager::getInstance($this->type, new $driver($this->config));
+        return $this->object;
     }
 
 }

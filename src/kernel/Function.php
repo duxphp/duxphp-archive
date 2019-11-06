@@ -74,22 +74,19 @@ function di() {
 }
 
 /**
- * 获取钩子类
- * @param $layer
- * @param $name
- * @param $method
+ * 获取钩子数据
+ * @param string $layer
+ * @param string $name
+ * @param string $method
  * @param array $vars
  * @return array|null
  */
-function hook($layer, $name, $method, $vars = []) {
+function hook(string $layer, string $name, string $method, array $vars = []) {
     if (empty($name)) {
         return null;
     }
-
     $apiPath = APP_PATH . '*/' . $layer . '/' . ucfirst($name) . ucfirst($layer) . '.php';
-
     $apiList = glob($apiPath);
-
     if (empty($apiList)) {
         return [];
     }
@@ -115,32 +112,28 @@ function hook($layer, $name, $method, $vars = []) {
             $data[$appName] = call_user_func_array([$class, $method], $vars);
         }
     }
-
     return $data;
 }
 
 /**
- * @param $layer
- * @param $name
- * @param $method
+ * 执行钩子
+ * @param string $layer
+ * @param string $name
+ * @param string $method
  * @param array $vars
  * @param bool $error
  * @return array|null
  */
-function run($layer, $name, $method, $vars = [], $error = false) {
+function run(string $layer, string $name, string $method, array $vars = [], $error = false) {
     if (empty($name)) {
         return null;
     }
-
     $apiPath = APP_PATH . '*/' . $layer . '/' . ucfirst($name) . ucfirst($layer) . '.php';
-
     $apiList = glob($apiPath);
-
     if (empty($apiList)) {
         return [];
     }
     $appPathStr = strlen(APP_PATH);
-
     $data = [];
     foreach ($apiList as $value) {
         $path = substr($value, $appPathStr, -4);
@@ -161,32 +154,7 @@ function run($layer, $name, $method, $vars = [], $error = false) {
             $data[$appName] = call_user_func_array([$class, $method], $vars);
         }
     }
-
     return $data;
-}
-
-/**
- * 卸载请求数据
- * @param array $data
- */
-function unRequest($data = []) {
-    foreach ($data as $vo) {
-        unset($_POST[$vo]);
-        unset($_GET[$vo]);
-    }
-}
-
-/**
- * 允许请求数据
- * @param array $data
- */
-function inRequest($data = []) {
-    foreach ($data as $vo) {
-        if (!in_array($vo, $_POST) && !in_array($vo, $_GET)) {
-            unset($_POST[$vo]);
-            unset($_GET[$vo]);
-        }
-    }
 }
 
 /**
@@ -194,61 +162,65 @@ function inRequest($data = []) {
  * @param string $method
  * @param string $key
  * @param string $default
- * @param string $function
- * @return array|mixed|string
+ * @param null $function
+ * @return array|false|mixed|string
  */
-function request($method = '', $key = '', $default = '', $function = '') {
+function request(string $method = '', string $key = '', string $default = '', $function = null) {
     return \dux\Dux::request($method, $key, $default, $function);
 }
 
 /**
- * string简化URL方法
+ * 生成Url
  * @param string $str
  * @param array $params
  * @param bool $domain
  * @param bool $ssl
- * @param bool $global
  * @return string
  */
-function url($str = '', $params = [], $domain = false, $ssl = true, $global = true) {
-    return \dux\Dux::url($str, $params, $domain, $ssl, $global);
+function url(string $str = '', array $params = [], bool $domain = false, bool $ssl = true) {
+    return \dux\Dux::url($str, $params, $domain, $ssl);
 }
 
 /**
- * 简化类调用
+ * 模块调用
  * @param $class
  * @param string $layer
  * @return mixed
  */
-function target($class, $layer = 'model') {
+function target(string $class, string $layer = 'model') {
     return \dux\Dux::target($class, $layer);
 }
 
 /**
- * 简化类配置加载
+ * 加载配置文件
+ * @param string $file
+ * @param bool $enforce
+ * @return mixed
+ * @throws Exception
  */
-function load_config($file, $enforce = true) {
+function load_config(string $file, $enforce = true) {
     return \dux\Dux::loadConfig($file, $enforce);
 }
 
 /**
  * 配置保存
- * @param $file
- * @param $config
- * @return array|bool
+ * @param string $file
+ * @param array $config
+ * @return bool
+ * @throws Exception
  */
-function save_config($file, $config) {
+function save_config(string $file, array $config) {
     return \dux\Dux::saveConfig($file, $config);
 }
 
 /**
  * 二维数组排序
- * @param $data
+ * @param array $data
  * @param $key
  * @param string $type
- * @return mixed
+ * @return array
  */
-function array_sort($data, $key, $type = 'asc') {
+function array_sort(array $data, $key, string $type = 'asc') {
     if (empty($data)) {
         return $data;
     }
@@ -269,17 +241,16 @@ function array_sort($data, $key, $type = 'asc') {
 /**
  * 数据签名
  * @param $data
- * @return mixed
+ * @return mixed|string
  */
 function data_sign($data) {
-    $config = \dux\Config::get('dux.use');
     if (!is_array($data)) {
         $data = [
             'data' => $data,
         ];
     }
     ksort($data);
-    return url_base64_encode(hash_hmac('sha1', http_build_query($data), $config['safe_key'], true));
+    return url_base64_encode(hash_hmac('sha1', http_build_query($data), \dux\Config::get('dux.use.safe_key'), true));
 }
 
 /**
@@ -288,7 +259,7 @@ function data_sign($data) {
  * @param string $sign
  * @return bool
  */
-function data_sign_has($data, $sign = '') {
+function data_sign_has($data, string $sign = '') {
     if (empty($sign)) {
         return false;
     }
@@ -300,7 +271,7 @@ function data_sign_has($data, $sign = '') {
     $sign = url_base64_decode($sign);
     ksort($data);
     $config = \dux\Config::get('dux.use');
-    $valToken = hash_hmac('sha1', http_build_query($data), $config['safe_key'], true);
+    $valToken = hash_hmac('sha1', http_build_query($data), \dux\Config::get('dux.use.safe_key'), true);
     return ($sign == $valToken);
 }
 
@@ -318,7 +289,7 @@ function url_base64_encode($string) {
 /**
  * base64 URL解码
  * @param $string
- * @return bool|string
+ * @return false|string
  */
 function url_base64_decode($string) {
     $data = str_replace(['-', '_'], ['+', '/'], $string);
@@ -331,10 +302,10 @@ function url_base64_decode($string) {
 
 /**
  * 遍历所有文件和目录
- * @param $dir
+ * @param string $dir
  * @return array
  */
-function list_dir($dir) {
+function list_dir(string $dir) {
     $dir .= substr($dir, -1) == '/' ? '' : '/';
     $dirInfo = [];
     foreach (glob($dir . '*') as $v) {
@@ -348,11 +319,11 @@ function list_dir($dir) {
 
 /**
  * 复制目录
- * @param $sourceDir
- * @param $aimDir
+ * @param string $sourceDir
+ * @param string $aimDir
  * @return bool
  */
-function copy_dir($sourceDir, $aimDir) {
+function copy_dir(string $sourceDir, string $aimDir) {
     $succeed = true;
     if (!file_exists($aimDir)) {
         if (!mkdir($aimDir, 0777)) {
@@ -378,10 +349,10 @@ function copy_dir($sourceDir, $aimDir) {
 
 /**
  * 删除目录
- * @param $dir
+ * @param string $dir
  * @return bool
  */
-function del_dir($dir) {
+function del_dir(string $dir) {
     if (!is_dir($dir)) {
         return false;
     }
@@ -399,13 +370,13 @@ function del_dir($dir) {
 
 /**
  * 隐藏字符串
- * @param $string 字符串
- * @param int $start 开始位置
- * @param int $length 长度
- * @param string $re 替换符
+ * @param string $string
+ * @param int $start
+ * @param int $length
+ * @param string $re
  * @return bool|string
  */
-function hide_str($string, $start = 0, $length = 0, $re = '*') {
+function hide_str(string $string, int $start = 0, int $length = 0, string $re = '*') {
     if (empty($string)) return false;
     $strarr = [];
     $mb_strlen = mb_strlen($string);
@@ -431,13 +402,13 @@ function hide_str($string, $start = 0, $length = 0, $re = '*') {
 
 /**
  * 日志写入
- * @param string $msg
+ * @param $msg
  * @param string $type
  * @param string $fileName
  * @return bool
  * @throws Exception
  */
-function dux_log($msg = '', $type = 'INFO', $fileName = '') {
+function dux_log($msg = '', string $type = 'INFO', string $fileName = '') {
     return \dux\Dux::log($msg, $type, $fileName);
 }
 
@@ -472,50 +443,50 @@ function date_tran($time) {
 
 /**
  * HTML转义
- * @param $html
+ * @param string $html
  * @return string
  */
-function html_in($html = '') {
+function html_in(string $html = '') {
     return \dux\lib\Filter::filter()->htmlIn($html);
 
 }
 
 /**
  * HTML反转义
- * @param $str
+ * @param string $str
  * @return string
  */
-function html_out($str = '') {
+function html_out(string $str = '') {
     return \dux\lib\Filter::filter()->htmlOut($str);
 }
 
 /**
  * 清理HTML代码
- * @param $str
- * @return string
+ * @param string $str
+ * @return mixed|string
  */
-function html_clear($str = '') {
+function html_clear(string $str = '') {
     return \dux\lib\Filter::filter()->html($str);
 }
 
 /**
  * 文本转html
- * @param $str
- * @return mixed
+ * @param string $str
+ * @return mixed|string
  */
-function str_html($str = '') {
+function str_html(string $str = '') {
     $str = str_replace("\n", '<br>', $str);
     return $str;
 }
 
 /**
  * 等宽度截取
- * @param $str
+ * @param string $str
  * @param int $len
  * @param bool $suffix
  * @return string
  */
-function str_len($str, $len = 20, $suffix = true) {
+function str_len(string $str, int $len = 20, bool $suffix = true) {
     if ($charset != 'utf-8') {
         $str = mb_convert_encoding($str, 'utf8', $charset);
     }
@@ -557,7 +528,7 @@ function int_format($str = 0) {
 }
 
 /**
- * 价格格式化不带千分位
+ * 格式化价格
  * @param $money
  * @return string
  */
@@ -568,12 +539,12 @@ function price_format($money = 0) {
 /**
  * 精准计算
  * @param $n1
- * @param $symbol
+ * @param string $symbol
  * @param $n2
- * @param string $scale
- * @return int|string
+ * @param int $scale
+ * @return int|string|null
  */
-function price_calculate($n1, $symbol, $n2, $scale = '2') {
+function price_calculate($n1, string $symbol, $n2, int $scale = 2) {
     switch ($symbol) {
         case "+"://加法
             $res = bcadd($n1, $n2, $scale);
@@ -602,13 +573,13 @@ function price_calculate($n1, $symbol, $n2, $scale = '2') {
  * @param string $pre
  * @return string
  */
-function log_no($pre = '') {
+function log_no(string $pre = '') {
     mt_srand((double)microtime() * 1000000);
     return $pre . date('Ymd') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
 }
 
 /**
- * 对象转list
+ * 对象数据转list
  * @param $objList
  * @param array $keyList
  * @return array
@@ -629,14 +600,13 @@ function object_to_array($objList, $keyList = ['key', 'text']) {
 
 /**
  * MD转Html
- * @param $text
+ * @param string $text
  * @param bool $line
  * @return string
  */
-function markdown_html($text, $line = false) {
+function markdown_html(string $text, bool $line = false) {
     if ($line) {
         return (new \Parsedown())->line($text);
-
     } else {
         return (new \Parsedown())->text($text);
     }
@@ -645,24 +615,28 @@ function markdown_html($text, $line = false) {
 /**
  * 压缩js
  * @param $str
+ * @return mixed
  */
-function pack_js($str) {
+function pack_js(string $str) {
     return (new \GK\JavascriptPacker($str, 'Normal', true, false))->pack();
 }
 
 /**
  * 编译scss
- * @param $str
+ * @param string $str
+ * @return string
  */
-function build_scss($str) {
+function build_scss(string $str) {
     return (new \Leafo\ScssPhp\Compiler())->compile($str);
 }
 
 /**
  * 基础UI库
+ * @param string $path
+ * @param bool $cssLoad
  * @return string
  */
-function load_ui($path = '', $cssLoad = true) {
+function load_ui(string $path = '', bool $cssLoad = true) {
     $css = ROOT_URL . '/public/common/css/dux.css?v=1.0.9';
     $js = ROOT_URL . '/public/common/js/dux.min.js?v=1.0.9';
     $data = [];
@@ -676,9 +650,9 @@ function load_ui($path = '', $cssLoad = true) {
 /**
  * 常用js库
  * @param string $name
- * @return mixed
+ * @return string
  */
-function load_js($name = 'jquery') {
+function load_js(string $name = 'jquery') {
     $data = [
         'jquery' => 'https://lib.baomitu.com/jquery/3.4.1/jquery.min.js',
         'vue' => 'https://lib.baomitu.com/vue/2.6.10/vue.min.js',

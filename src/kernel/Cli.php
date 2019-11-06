@@ -9,7 +9,8 @@ namespace dux\kernel;
 class Cli {
 
     /**
-     * Api constructor.
+     * Cli constructor.
+     * @throws \Exception
      */
     public function __construct() {
         if (!IS_CLI) {
@@ -19,17 +20,17 @@ class Cli {
 
     /**
      * 输出消息
-     * @param $msg
+     * @param string $msg
      */
-    public function echo($msg) {
+    public function echo(string $msg) {
         echo $msg;
     }
 
     /**
      * 返回消息
-     * @param $msg
+     * @param string $msg
      */
-    public function return($msg) {
+    public function return(string $msg) {
         exit($msg);
     }
 

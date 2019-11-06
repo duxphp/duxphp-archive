@@ -8,8 +8,10 @@ namespace dux\kernel;
 
 class ModelNo {
 
+    protected $driver = null;
+    protected $object = null;
     protected $config = [];
-    protected $database = 'default';
+
     protected $prefix = '';
     protected $params = [];
 
@@ -22,78 +24,146 @@ class ModelNo {
         'limit' => ''
     ];
 
-    public function __construct($database = 'default', $config = []) {
-        if ($database) {
-            $this->database = $database;
+    /**
+     * 初始化模型
+     * @param string $driver
+     * @param array $config
+     * @throws \Exception
+     */
+    public function __construct(string $driver = '', array $config = []) {
+        $this->driver = $driver ?: $this->driver;
+        if (!class_exists($this->driver)) {
+            throw new \Exception('The ModelNo driver class does not exist', 500);
         }
-        $sysConfig = \dux\Config::get('dux.database_no');
-        $this->config = array_merge((array)$sysConfig[$this->database], (array)$this->config, $config);
-        if (empty($this->config) || empty($this->config['type'])) {
-            throw new \Exception($this->config['type'] . ' database config error', 500);
+        $this->config = $config ?: $this->config;
+        $this->prefix = $this->config['prefix'];
+        if (empty($this->config)) {
+            throw new \Exception($this->driver . ' ModelNo config error', 500);
         }
-        $this->prefix = empty($this->config['prefix']) ? '' : $this->config['prefix'];
     }
 
-    public function setParams($params) {
+    /**
+     * 设置参数
+     * @param array $params
+     * @return $this
+     */
+    public function setParams(array $params) {
         $this->params = $params;
         return $this;
     }
 
-    public function setPrefix($pre) {
+    /**
+     * 设置前缀
+     * @param string $pre
+     * @return $this
+     */
+    public function setPrefix(string $pre) {
         $this->prefix = $pre;
         return $this;
     }
 
-    public function setConfig($config) {
+    /**
+     * 设置配置
+     * @param array $config
+     * @return $this
+     */
+    public function setConfig(array $config) {
         $this->config = $config;
         return $this;
     }
 
-    public function table($table) {
+    /**
+     * 查询表
+     * @param string $table
+     * @return $this
+     */
+    public function table(string $table) {
         $this->options['table'] = $table;
         return $this;
     }
 
-    public function field($field) {
+    /**
+     * 查询字段
+     * @param array $field
+     * @return $this
+     */
+    public function field(array $field) {
         $this->options['field'] = $field;
         return $this;
     }
 
+    /**
+     * 设置数据
+     * @param array $data
+     * @return $this
+     */
     public function data(array $data = []) {
         $this->options['data'] = $data;
         return $this;
     }
 
-    public function order($order) {
+    /**
+     * 数据排序
+     * @param string $order
+     * @return $this
+     */
+    public function order(string $order) {
         $this->options['order'] = $order;
         return $this;
     }
 
+    /**
+     * 数量
+     * @param $limit
+     * @return $this
+     */
     public function limit($limit) {
         $this->options['limit'] = $limit;
         return $this;
     }
 
+    /**
+     * 设置条件
+     * @param array $where
+     * @return $this
+     */
     public function where(array $where = []) {
         $this->options['where'] = $where;
         return $this;
     }
 
+    /**
+     * 查询多数据
+     * @return array
+     */
     public function select() {
         $data = $this->getObj()->select($this->_getTable(), $this->_getWhere(), $this->_getField(), $this->_getOrder(), $this->_getLimit());
         return empty($data) ? [] : $data;
     }
 
+    /**
+     * 查询数据
+     * @return int
+     */
     public function count() {
         $count = $this->getObj()->count($this->_getTable(), $this->_getWhere());
         return $count ? $count : 0;
     }
 
+    /**
+     * 查询单条数据
+     * @return array
+     */
     public function find() {
         $data = $this->limit(1)->select();
         return isset($data[0]) ? $data[0] : [];
     }
 
+    /**
+     * 插入数据
+     * @param array $data
+     * @return bool|mixed
+     */
     public function insert($data = []) {
         $ids = $this->insertAll($data);
         if (!$ids) {
@@ -102,6 +172,11 @@ class ModelNo {
         return $ids[0];
     }
 
+    /**
+     * 批量插入数据
+     * @param array $data
+     * @return bool
+     */
     public function insertAll($data = []) {
         if (empty($this->options['data']) || !is_array($this->options['data'])) {
             return false;
@@ -121,6 +196,10 @@ class ModelNo {
         return $ids;
     }
 
+    /**
+     * 更新数据
+     * @return bool
+     */
     public function update() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
@@ -137,6 +216,10 @@ class ModelNo {
         return $this->getObj()->update($table, $where, $datas, $this->params);
     }
 
+    /**
+     * 删除数据
+     * @return bool
+     */
     public function delete() {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
@@ -145,7 +228,13 @@ class ModelNo {
         return ($status === false) ? false : $status;
     }
 
-    public function setInc($field, $num = 1) {
+    /**
+     * 递增数据
+     * @param string $field
+     * @param int $num
+     * @return bool
+     */
+    public function setInc(string $field, int $num = 1) {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
         }
@@ -153,7 +242,13 @@ class ModelNo {
         return ($status === false) ? false : $status;
     }
 
-    public function setDec($field, $num = 1) {
+    /**
+     * 递减数据
+     * @param string $field
+     * @param int $num
+     * @return bool
+     */
+    public function setDec(string $field, int $num = 1) {
         if (empty($this->options['where']) || !is_array($this->options['where'])) {
             return false;
         }
@@ -161,23 +256,46 @@ class ModelNo {
         return ($status === false) ? false : $status;
     }
 
+    /**
+     * 聚合查询
+     * @param $group
+     * @return mixed
+     */
     public function aggregate($group) {
         return $this->getObj()->aggregate($this->_getTable(), $this->_getWhere(), $group);
     }
 
+    /**
+     * 去重查询
+     * @param $group
+     * @return mixed
+     */
     public function distinct($group) {
         return $this->getObj()->distinct($this->_getTable(), $this->_getWhere(), $group);
     }
 
-    public function sum($field) {
+    /**
+     * 数据求和
+     * @param $field
+     * @return int
+     */
+    public function sum(string $field) {
         $sum = $this->getObj()->sum($this->_getTable(), $this->_getWhere(), $field);
         return empty($sum) ? 0 : $sum;
     }
 
+    /**
+     * 获取字段
+     * @return mixed
+     */
     public function getFields() {
         return $this->getObj()->getFields($this->params);
     }
 
+    /**
+     * 获取主键
+     * @return mixed
+     */
     public function getPrimary() {
         return $this->getObj()->getPrimary();
     }
@@ -244,18 +362,16 @@ class ModelNo {
         return $limitArr;
     }
 
+    /**
+     * mox 模型对象
+     * @return null
+     */
     public function getObj() {
-        $key = 'dux.rdm.' . md5(http_build_query($this->config));
-        if (!di()->has($key)) {
-            $class = __NAMESPACE__ . '\modelNo\\' . ucfirst($this->config['type']) . 'Driver';
-            di()->set($key, function () use ($class) {
-                if (!class_exists($class)) {
-                    throw new \Exception($this->config['type'] . ' driver does not exist!', 500);
-                }
-                return new $class($this->config);
-            });
+        if ($this->object) {
+            return $this->object;
         }
-        return di()->get($key);
+        $this->object = new $this->driver($this->config);
+        return $this->object;
     }
 
 }

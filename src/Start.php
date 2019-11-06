@@ -83,7 +83,6 @@ class Start {
                 return $headers;
             }
         }
-
     }
 
     /**
