@@ -229,7 +229,6 @@ class Dux {
             }
         }
         return $data;
-
     }
 
     /**
@@ -326,10 +325,12 @@ class Dux {
      * @param array $hander
      */
     public static function header(int $code, callable $callback = null, array $hander = []) {
-        $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
-        header(implode(' ', [$protocol, $code, self::$codes[$code]]));
-        foreach ($hander as $key => $vo) {
-            header($key . ' : ' . $vo);
+        if (!IS_CLI) {
+            foreach ($hander as $key => $vo) {
+                $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+                header(implode(' ', [$protocol, $code, self::$codes[$code]]));
+                header($key . ' : ' . $vo);
+            }
         }
         exit($callback());
     }
@@ -378,7 +379,7 @@ class Dux {
      * @param string $fileName
      * @return mixed
      */
-    public static function log(string $msg, string $type = 'INFO', string $fileName = '') {
+    public static function log($msg, string $type = 'INFO', string $fileName = '') {
         return self::logObj()->set($msg, $type, $fileName);
     }
 

@@ -56,7 +56,7 @@ class Vcode {
         $image = $build->get($quality);
         $code = strtolower($build->getPhrase());
         $token = hash_hmac('sha1', $code, $key);
-        $this->getCache()->set($code, $token, $expire);
+        $this->cache()->set($code, $token, $expire);
         return [
             'image' => base64_encode($image),
             'token' => $token,
@@ -76,11 +76,11 @@ class Vcode {
             return false;
         }
         $code = strtolower($code);
-        $tmpToken = $this->getCache()->get($code);
+        $tmpToken = $this->cache()->get($code);
         if ($token <> $tmpToken) {
             return false;
         }
-        $this->getCache()->del($code);
+        $this->cache()->del($code);
         return true;
     }
 
@@ -89,7 +89,7 @@ class Vcode {
      * @return Cache|null
      * @throws \Exception
      */
-    public function getCache() {
+    public function cache() {
         if ($this->cacheObject) {
             return $this->cacheObject;
         }
