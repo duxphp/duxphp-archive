@@ -16,43 +16,22 @@
 
 - 实例化缓存类
 
-  - 说明：实例化 "\dux\lib\Cache" 缓存类
+  - 说明：实例化 "\dux\com\Cache" 缓存类
 
   - 参数：
 
-    $configName：配置名称，缓存配置名称
+    $config：缓存配置
 
     $group：缓存分区
 
   ```php
-  \dux\Dux::cache($configName = 'default', $group = 0);
+  $config = [
+      'type' => 'files'
+      ...
+  ];
+  \dux\Dux::cache(string $group = 'default', array $config = []);
   ```
 
-- 实例化存储类
-
-  - 说明：实例化 "\dux\lib\Storage" 缓存类
-
-  - 参数：
-
-    $configName：配置名称，缓存配置名称
-
-    $group：存储分区
-
-  ```php
-  \dux\Dux::storage($configName = 'default', $group = 0);
-  ```
-
-- 实例化 Cookie 类
-
-  - 说明：实例化 "\dux\lib\Cookie" Cookie 类
-
-  - 参数：
-
-    $configName：配置名称，缓存配置名称
-
-  ```php
-  \dux\Dux::cookie($configName = 'default');
-  ```
 
 - 实例化 Session 类
 
@@ -60,10 +39,11 @@
 
   - 参数：
 
-    $configName：配置名称，缓存配置名称
+    $pre：前缀名
+    $config：缓存配置
 
   ```php
-  \dux\Dux::session($configName = 'default');
+  \dux\Dux::session(string $pre = '', array $config = []);
   ```
 
 - 获取请求数据
@@ -78,10 +58,10 @@
 
     $default：默认值，为空时的默认值
 
-    $function：处理函数，将请求内容函数进行处理
+    $function：处理函数或回调，将请求内容函数进行处理
 
   ```php
-  \dux\Dux::request($method = '', $key = '', $default = '', $function = '');
+  \dux\Dux::request(string $method = '', string $key = '', string $default = '', $function = null);
   ```
 
 - Url生成
@@ -98,10 +78,8 @@
 
     $ssl：SSL 状态，生成的Url是否为自适应Https协议，否则为Http协议
 
-    $get：固定参数，生成的Url是否包含配置文件中的永久参数，否则不包含永久参数
-
   ```php
-  \dux\Dux::url($str = '', $params = [], $domain = false, $ssl = true, $get = true);
+  \dux\Dux::url(string $str = '', array $params = [], bool $domain = false, bool $ssl = true);
   ```
 
   - 演示：
@@ -124,7 +102,7 @@
     $layer：层名，mvc等层名
 
   ```php
-  \dux\Dux::target($class, $layer = 'model');
+  \dux\Dux::target(string $class, string $layer = 'model');
   ```
 
   - 演示：
@@ -145,7 +123,7 @@
     $enforce：是否正常加载，为否读取失败将不会有错误提示
 
   ```php
-  \dux\Dux::loadConfig($file, $enforce = true);
+  \dux\Dux::loadConfig(string $file, bool $enforce = true);
   ```
 
 - 保存配置文件
@@ -154,25 +132,14 @@
 
   - 参数：
 
-    $file：指定配置文件的绝对路径，不含 ".php"
+    $file：指定配置文件的根目录相对路径不含".php"
 
     $config：数组配置内容
 
   ```php
-  \dux\Dux::saveConfig($file, $config);
+  \dux\Dux::saveConfig(string $file, array $config);
   ```
 
-- 载入指定类
-
-  - 说明：载入指定路径的类
-
-  - 参数：
-
-    $file：类库绝对路径，不含 ".php"
-
-  ```php
-  \dux\Dux::import($file = '');
-  ```
 
 - 发送指定Header头数据
 
@@ -183,9 +150,11 @@
     $code：状态码，header状态码
 
     $callback：回调，输出回调内容
+    
+    $hander：头信息数组, 如："['key' => 'value']"
 
   ```php
-  \dux\Dux::header($code, callable $callback = null);
+  \dux\Dux::header(int $code, callable $callback = null, array $hander = []);
   ```
 
 - 404页面
@@ -202,14 +171,12 @@
 
   - 参数：
 
-    $title：错误消息标题
-
-    $msg：错误消息内容
+    $title：错误消息内容
 
     $code：状态码，header状态码
 
   ```php
-  \dux\Dux::errorPage($title, $msg, $code = 503);
+  \dux\Dux::errorPage(string $title, int $code = 503);
   ```
 
 - 运行时间
@@ -233,7 +200,7 @@
     $fileName：日志文件名称，默认为 "年-月-日" 作为日志名
 
   ```php
-  \dux\Dux::log($msg, $type = 'INFO', $fileName = '');
+  \dux\Dux::log($msg, string $type = 'INFO', string $fileName = '');
   ```
 
   

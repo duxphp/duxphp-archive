@@ -47,7 +47,7 @@ class Dux {
         $config = $config ?: \dux\Config::get('dux.database');
         $key = 'dux.database.' . http_build_query($config);
         if (!self::di()->has($key)) {
-            self::di()->set($key, function () use ($type, $config) {
+            self::di()->set($key, function () use ($config) {
                 $type = $config['type'];
                 unset($config['type']);
                 return new \dux\kernel\Model($type, $config);
@@ -81,7 +81,7 @@ class Dux {
         $config = $config ?: \dux\Config::get('dux.cache');
         $key = 'dux.log.' . http_build_query($config);
         if (!self::di()->has($key)) {
-            self::di()->set($key, function () use ($type, $config, $group) {
+            self::di()->set($key, function () use ($config, $group) {
                 $type = $config['type'];
                 unset($config['type']);
                 return new \dux\com\Cache($type, $config, $group);
