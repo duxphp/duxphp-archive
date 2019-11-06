@@ -11,18 +11,17 @@
 ```php
 return [
   // 数据库配置
-  'dux.database' => [
-    // 默认配置
-    'default' => [
-      'type' => 'mysql',             // 数据库类型，只含mysql驱动
-      'host' => '127.0.0.1',         // 数据库主机
-      'port' => '3306',              // 数据库端口
-      'dbname' => 'duxphp',          // 数据库名
-      'username' => 'root',          // 数据库用户名
-      'password' => 'root',          // 数据库密码
-      'prefix' => 'dux_',            // 数据表前缀
-      'charset' => 'utf8mb4',        // 数据库编码
-    ],
+  'dux' => [
+    'database' => [
+        'type' => \dux\kernel\model\MysqlPdoDriver::class,
+        'host' => 'localhost',
+        'port' => '3306',
+        'dbname' => 'dux',
+        'username' => 'root',
+        'password' => 'root',
+        'prefix' => 'dux_',
+        'charset' => 'utf8mb4',
+    ]
   ]
   ...
 ];
@@ -40,20 +39,27 @@ namespace app\index\index\model;
 
 class IndexModel extends \dux\kernel\Model {
 
-		public function __construct() {
+    public function __construct() {
         parent::__construct();
     }
     
 }
 ```
 
-框架会解析Url执行相应接口类：
+扩展接口类如下，含验证与扩展封装：
 
-```
-http://域名/a/index/index/index
-```
+```php
+<?php
+namespace app\index\index\model;
 
-其中"a"为api层配置名称，可以通过配置进行更改，非默认层Url需要带入层名
+class IndexModel extends \dux\kernel\ModelExtend {
+
+    public function __construct() {
+        parent::__construct();
+    }
+    
+}
+```
 
 ## 方法
 

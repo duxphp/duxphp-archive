@@ -41,6 +41,17 @@ ACTION_NAME               // 当前方法
 ## 框架结构
 
 ```
+├─ com                                // 公共组件
+│  ├─ log                             // 日志驱动
+│  │  ├─ FilesDriver.php              // 文件驱动
+│  │  ├─ LogInterface.php             // 日志接口类
+│  │  ├─ MongoDriver.php              // Mongo驱动
+│  │  └─ RedisDriver.php              // Redis驱动
+│  ├─ Api.php                         // 基础接口类
+│  ├─ Controller.php                  // 基础控制器类
+│  ├─ Function.php                    // 常用函数
+│  ├─ Model.php                       // 基础模型类
+│  └─ View.php                        // 视图类
 ├─ kernel                             // 应用模块
 │  ├─ model                           // 数据库驱动
 │  │  ├─ DbInterface.php              // 驱动接口
