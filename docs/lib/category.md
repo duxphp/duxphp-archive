@@ -29,7 +29,7 @@ $data = [
   $id：起始上级id
 
 ```php
-$cat->getTree($data, $id = 0);
+$cat->getTree(array $data, int $id = 0);
 ```
 
 ### 获取下级分类
@@ -41,7 +41,7 @@ $cat->getTree($data, $id = 0);
   $data：源数据
 
 ```php
-$cat->getChild($pid, $data);
+$cat->getChild(int $pid, array $data = []);
 ```
 
 ### 获取分类路径
@@ -53,6 +53,6 @@ $cat->getChild($pid, $data);
   $id：当前id
 
 ```php
-$cat->getPath($data, $id);
+$cat->getPath(array $data, int $id);
 ```
 

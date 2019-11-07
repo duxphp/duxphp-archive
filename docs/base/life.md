@@ -26,7 +26,7 @@ DuxPHP通过单入口进行执行，开发者需要对整个框架和项目的�
 
 3、加载配置文件
 
-自动加载项目"data/config/global.php"目录下的配置文件
+如果有自动加载项目"data/config/global.php"目录下的配置文件
 
 4、加载公共函数库
 

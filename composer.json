@@ -8,7 +8,7 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
+        "php": ">=7.2",
         "intervention/image": "^2.0",
         "ralouphie/mimey": "^2.0",
         "endroid/qr-code": "^3.0",
@@ -21,8 +21,8 @@
         "leafo/scssphp": "^0.1",
         "gkralik/php-uglifyjs": "^1.0",
         "overtrue/pinyin": "^4.0",
-        "alchemy/zippy": "^0.4.9",
-        "fukuball/jieba-php": "dev-master"
+        "alchemy/zippy": "^0.4",
+        "fukuball/jieba-php": "^0.33"
     },
     "autoload": {
         "psr-4": {

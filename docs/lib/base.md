@@ -36,6 +36,12 @@ hedaer请求头需要传递"token"参数即可判断
 isApi()
 ```
 
+## 依赖注入类
+
+```php
+di()
+```
+
 ## 获取系统钩子
 
 - 说明：获取应用指定模块类的同一方法
@@ -106,7 +112,7 @@ isApi()
 获取常用get、post等form或json请求数据，该函数为核心类的封装函数
 
 ```php
-request($method = '', $key = '', $default = '', $function = '');
+request(string $method = '', string $key = '', string $default = '', $function = null);
 ```
 
 ## Url生成
@@ -114,7 +120,7 @@ request($method = '', $key = '', $default = '', $function = '');
 生成系统内的Url链接，该函数为核心类的封装函数
 
 ```php
-url($str = '', $params = [], $domain = false, $ssl = true, $get = true);
+url(string $str = '', array $params = [], bool $domain = false, bool $ssl = true);
 ```
 
 ## 实例化自定义应用类
@@ -122,7 +128,7 @@ url($str = '', $params = [], $domain = false, $ssl = true, $get = true);
 该函数为核心类的封装函数
 
 ```php
-target($class, $layer = 'model');
+target(string $class, string $layer = 'model');
 ```
 
 ##配置文件加载
@@ -130,7 +136,7 @@ target($class, $layer = 'model');
 该函数为核心类的封装函数
 
 ```php
-load_config($file, $enforce = true);
+load_config(string $file, $enforce = true);
 ```
 
 ## 配置文件保存
@@ -138,7 +144,7 @@ load_config($file, $enforce = true);
 该函数为核心类的封装函数
 
 ```php
-save_config($file, $config);
+save_config(string $file, array $config);
 ```
 
 ## 二维数组排序
@@ -152,7 +158,7 @@ $key：排序字段
 $type：排序类型 "asc" 或 "desc"
 
 ```php
-array_sort($data, $key, $type = 'asc');
+array_sort(array $data, $key, string $type = 'asc');
 ```
 
 ## 数据签名
@@ -194,7 +200,7 @@ url_base64_decode($string);
 ## 遍历指定目录下文件
 
 ```php
-list_dir($dir);
+list_dir(string $dir);
 ```
 
 ## 复制目录文件
@@ -202,13 +208,13 @@ list_dir($dir);
 复制目录下下所有文件到指定目录
 
 ```php
-copy_dir($sourceDir, $aimDir);
+copy_dir(string $sourceDir, string $aimDir);
 ```
 
 ## 删除目录
 
 ```php
-del_dir($dir);
+del_dir(string $dir);
 ```
 
 ## 隐藏字符串
@@ -219,18 +225,14 @@ del_dir($dir);
 
 $string：原始字符串
 
-$bengin：隐藏开始位置，type = 4 时表示左侧保留长度
+$start：隐藏开始位置
 
-$len：隐藏长度，type = 4 时表示右侧保留长度
+$length：隐藏长度
 
-$type：隐藏类型，0 从左向右隐藏， 1 从右向左隐藏，2 从指定字符位置分割前由右向左隐藏，3 从指定字符位置分割后由左向右隐藏，4，保留首末指定字符串*
-
-$glue：替换隐藏字符串的字符
-
-$split：使用 glue 分割字符串，如：每4位进行分割
+$re：替换字符
 
 ```php
-hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split = 0);
+hide_str(string $string, int $start = 0, int $length = 0, string $re = '*');
 ```
 
 ## 日志写入
@@ -238,7 +240,7 @@ hide_str($string, $bengin = 0, $len = 4, $type = 0, $glue = "@", $split = 0);
 该函数为核心类的封装函数
 
 ```php
-dux_log($msg, $type = 'INFO');
+dux_log($msg = '', string $type = 'INFO', string $fileName = '');
 ```
 
 ## 个性化时间格式化
@@ -252,43 +254,43 @@ date_tran($time);
 ##Html 转义
 
 ```php
-html_in($html);
+html_in(string $html = '');
 ```
 
 ## Html反转义
 
 ```php
-html_out($str);
+html_out(string $str = '');
 ```
 
 ##Html清理
 
 ```php
-html_clear($str);
+html_clear(string $str = '');
 ```
 
 ##文本换行转Html
 
 ```php
-str_html($str);
+str_html(string $str = '');
 ```
 
 ##字符串截取
 
 ```php
-str_len($str, $len = 20, $suffix = true);
+str_len(string $str, int $length = 20, bool $suffix = true);
 ```
 
 ## 格式化为数字
 
 ```php
-int_format($str);
+int_format($str = 0);
 ```
 
 ## 价格格式化
 
 ```php
-price_format($money);
+price_format($money = 0);
 ```
 
 ##价格计算
@@ -304,21 +306,7 @@ price_format($money);
   $scale：保留小数
 
 ```php
-price_calculate($n1, $symbol, $n2, $scale = '2');
-```
-
-## 指定位置插入字符串
-
-- 参数：
-
-  $str：原始字符串
-
-  $i：从左到右指定位置
-
-  $substr：要插入的字符串
-
-```php
-str_insert($str, $i, $substr);
+price_calculate($n1, string $symbol, $n2, int $scale = 2);
 ```
 
 ## 生成不重复编号
@@ -327,6 +315,31 @@ str_insert($str, $i, $substr);
 log_no($pre = '');
 ```
 
+## 对象转数组
+
+```php
+object_to_array($objList, $keyList = ['key', 'text']);
+```
+
+## MD转Html
+
+```php
+markdown_html(string $text, bool $line = false);
+```
+
+## 压缩js
+
+```php
+pack_js(string $str);
+```
+
+## 压缩js
+
+```php
+build_scss(string $str);
+```
+
+
 ## 加载基础Url库
 
 - 说明：需要项目引入Dux前端框架支持
@@ -334,11 +347,11 @@ log_no($pre = '');
 - 参数：
 
   $path：项目根Url路径
-
+  
   $cssLoad：是否加载Css
 
 ```php
-load_ui($path = '', $cssLoad = true);
+load_ui(string $path = '', bool $cssLoad = true);
 ```
 
 ## 加载常用Js库
@@ -348,6 +361,6 @@ load_ui($path = '', $cssLoad = true);
   $name：可选 "jquery"、"vue"
 
 ```php
-load_js($name = 'jquery');
+load_js(string $name = 'jquery');
 ```
 

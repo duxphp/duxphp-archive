@@ -64,7 +64,7 @@ class Api {
      * 数据不存在
      * @param string $msg
      */
-    public function error404(string $msg = '记录不存在') {
+    public function error404(string $msg = 'There is no data') {
         $this->error($msg, 404);
     }
 

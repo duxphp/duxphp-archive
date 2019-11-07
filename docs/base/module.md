@@ -13,7 +13,7 @@ namespace app\index\index\controller;
 
 class Index extends \dux\kernel\Controller {
 
-		public function __construct() {
+	public function __construct() {
         parent::__construct();
     }
     

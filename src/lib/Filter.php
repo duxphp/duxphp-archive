@@ -7,7 +7,6 @@ namespace dux\lib;
  *
  * @author  Mr.L <admin@duxphp.com>
  */
-
 class Filter {
 
     protected $data = [];
@@ -23,7 +22,7 @@ class Filter {
      * @throws \dux\exception\Error
      */
     public static function verifyArray(array $data = [], array $rules = []) {
-        /*$data = [
+        /*$rules = [
             'field' => [
                 'rule' => ['params', 'desc'],
             ],
@@ -49,7 +48,7 @@ class Filter {
      * @throws \dux\exception\Error
      */
     public static function filterArray(array $data = [], array $rules = []) {
-        /*$data = [
+        /*$rules = [
             'field' => [
                 'rule' => 'params',
             ],
@@ -57,8 +56,12 @@ class Filter {
         $tmpData = [];
         foreach ($rules as $field => $rule) {
             foreach ($rule as $method => $params) {
+                if (is_int($method)) {
+                    $method = $params;
+                    $params = null;
+                }
                 if (!method_exists(self::filter(), $method)) {
-                    throw new \dux\exception\Error("Validation rules does not exist！");
+                    throw new \dux\exception\Error("Filter rules does not exist！");
                 }
                 $tmpData[$field] = self::filter()->$method($data[$field], $params);
             }

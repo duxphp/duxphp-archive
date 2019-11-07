@@ -108,10 +108,10 @@ class Http {
 
     /**
      * 下载文件
-     * @param mixed $filename 文件名
-     * @param string $showname 显示文件名
-     * @param integer $expire 缓存时间
-     * @return boolean
+     * @param $file
+     * @param string $showname
+     * @param int $expire
+     * @throws \Exception
      */
     static public function download($file, string $showname = '', int $expire = 1800) {
         if (is_string($file)) {

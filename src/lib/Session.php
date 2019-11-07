@@ -46,7 +46,7 @@ class Session {
      * @param array $config
      * @throws \Exception
      */
-    public function __construct(array $config, string $pre = '') {
+    public function __construct(array $config = [], string $pre = '') {
         $this->config = array_merge($this->config, $config);
         $this->pre = $pre;
         $this->time = ini_get('session.gc_maxlifetime');

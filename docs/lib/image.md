@@ -1,19 +1,24 @@
 # 图片处理类
 
-包含图片缩放、裁剪、添加水印等功能
+包含图片缩放、裁剪、添加水印等功能，处理类库采用 `Intervention\Image` 二次封装
 
 ## 使用
 
 ```
-// $img 待处理图片绝对路径
-// $driver 图片处理驱动 gd 或 imagick
-$image = new \dux\lib\Image($img, $driver = 'gd');
+// $img 待处理图片路径或图片内容
+// $config 图片配置
+
+$config = [
+    'type' => 'imagick', // imagick 或 gd
+    'font' => '' // 字体文件路径
+];
+$image = new \dux\lib\Image($img = null, array $config = []);
 ```
 
 ## 方法
 
 ### 裁剪图片
-
+支持连贯操作
 - 参数：
 
   $w：裁剪宽度
@@ -29,11 +34,11 @@ $image = new \dux\lib\Image($img, $driver = 'gd');
   $height：保存图片宽度
 
 ```php
-$image->crop($w, $h, $x = 0, $y = 0, $width = null, $height = null);
+$image->crop(int $width, int $height, int $x = 0, int $y = 0);
 ```
 
 ### 缩放图片
-
+支持连贯操作
 - 参数：
 
   $width：缩放宽度
@@ -43,11 +48,17 @@ $image->crop($w, $h, $x = 0, $y = 0, $width = null, $height = null);
   $type：缩放类型，"scale" 等比例缩放、"center" 居中缩放裁剪、"fixed"、固定尺寸缩放
 
 ```php
-$image->thumb($width, $height, $type = 'scale');
+$image->thumb(int $width, int $height, string $type = 'scale');
+```
+
+### 圆形裁剪
+支持连贯操作
+```php
+$image->circle();
 ```
 
 ### 图片水印
-
+支持连贯操作
 - 参数：
 
   $source：水印图片绝对路径
@@ -57,20 +68,79 @@ $image->thumb($width, $height, $type = 'scale');
   $alpha：透明度百分比
 
 ```php
-$image->water($source, $locate = 0, $alpha = 80);
+$image->water($source, int $locate = 0, int $alpha = 80);
 ```
 
-### 输出图片
 
-图片处理完毕进行输出保存
-
-- 参数：
-
-  $filename：文件保存绝对路径，如 "\upload\img.jpg"
-
-  $type：图片保存类型，默认为原始类型
+### 图片合成
 
 ```php
-$image->thumb($width, $height, $type = 'scale')->output($filename, $type = null);
+$data = [
+    [
+        'type' => 'image',
+        'file' => '',    //路径或图片内容
+        'width' => 0,
+        'height' => 0,
+        'round' => false,
+        'x' => 0,
+        'y' => 0
+    ],
+    [
+        'type' => 'text',
+        'text' => '',
+        'width' => 0,
+        'height' => 0,
+        'size' => '14',
+        'color' => '#000000',
+        'align' => 'center',
+        'valign' => 'center',
+        'x' => 0,
+        'y' => 0
+        ]
+    ];
+
+$image->generate(array $data)->get();
 ```
 
+### 生成二维码
+```php
+$label = [
+    'text' => '',
+    'size' => 16,
+];
+$logo = [
+    'file' => '',
+    'width' => 100,
+    'height' => 100,
+];
+$image->qrcode(string $text, int $size = 300, array $label = [], array $logo = [])->get();
+```
+
+### 获取图片内容
+支持连贯操作
+```php
+$type = 'jpg';
+$image->get(string $type = null, int $quality = 90);
+```
+
+### 保存图片
+支持连贯操作
+```php
+$type = 'jpg';
+$image->save(string $filename, int $quality = null, int $type = null);
+```
+
+
+### 输出到浏览器
+支持连贯操作
+
+```php
+$image->output(string $type = null, int $quality = 90);
+```
+
+
+### 获取 `ImageManager` 对象
+
+```php
+$image->getObj();
+```

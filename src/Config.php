@@ -19,6 +19,7 @@ class Config {
             'use' => [
                 'safe_key' => 'dux',
             ],
+            'tpl' => [],
             'log' => [
                 'type' => \dux\com\log\FilesDriver::class,
                 'path' => DATA_PATH . 'log/',

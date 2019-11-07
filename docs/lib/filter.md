@@ -10,52 +10,57 @@ $data = [
 	'content' => '这是一个内容',
 	'num' => 100
 ];
-// data 为数据源，fields 为使用字段，留空使用所有字段
-$filter = \dux\lib\Filter($data, $fields);
+$filter = \dux\lib\Filter();
 ```
 
 
 
-## 数据验证
+## 数据批量验证，使用系统错误提示
 
 ```php
-$status = $filter->validate([
+
+
+$filter->verifyArray($data, [
   'title' => [
-    [
-      'len' => '5,10',                   // 验证字符串长度为 5~10 字符
-      'required',                        // 验证是否为空
-      'url',                             // 验证是否 Url
-      'email',                           // 验证邮箱地址
-      'numeric',                         // 验证数字
-      'int',                             // 验证整数
-      'ip',                              // 验证IP地址
-      'date',                            // 验证日期，如：2019-01-01
-      'string',                          // 验证字符串
-      'chinese',                         // 验证中文
-      'phone',                           // 验证手机号码
-      'tel',                             // 验证座机号码
-      'card',                            // 验证银行卡号
-      'zip',                             // 验证邮编
-      'empty',                           // 验证是否为空
-      'regex' => '',                     // 验证正则，填写正则表达式
-      'object' => [$this, 'methods'],    // 通过对象验证
-      'image' => '',                     // 验证图片地址
-      'function' => ''                   // 通过函数验证
+      'required' => ['不能为空'],
+      'len' => ['请输入5~10个字符', '5,10'],
+      'url' => ['请输入Url'],
+      'email' => ['请输入邮箱'],
+      'numeric' => ['请输入数字'],
+      'int' => ['请输入整数'],
+      'ip' => ['请输入IP地址'],
+      'date' => ['请输入正确的日期'],
+      'string' => ['请输入字符串'],
+      'chinese' => ['请输入中文'],
+      'phone' => ['请输入手机号码'],
+      'tel' => ['请输入座机号码'],
+      'card' => ['请输入银行卡号'],
+      'zip' => ['请输入邮编'],
+      'empty' => ['不能为空'],
+      'regex' => ['自定义提示', '正则表达式'],
+      'object' => ['对象验证提示', $this, 'methods'],
+      'function' => ['函数验证提示', 'empty']
     ],
-    '标题']
+    ...
 ]);
 
-if(!$status) {
-  echo $filter->getError();
-}
 ```
+
+## 数据单独验证，方法请参考批量验证规则
+
+```php
+// $str 待验证数据
+// $params 验证参数
+$filter->verify()->方法($str, $params);
+```
+
+
 
 ## 数据过滤
 
 ```php
-$filter->filter([
+$filter->filterArray($data, [
   'title' => [
-    [
       'len' => '5,10',                   // 截取字符串 5~10 位
       'url',                             // 过滤 Url 链接
       'email',                           // 过滤邮箱地址
@@ -69,11 +74,20 @@ $filter->filter([
       'regex' => '',                     // 正则过滤，填写正则表达式
       'object' => [$this, 'methods'],    // 通过对象过滤
       'function' => ''                   // 通过函数过滤
-    ],
-    '标题']
+    ]
 ]);
 ```
 
+
+```
+
+## 数据单独过滤，方法请参考批量过滤规则
+
+```php
+// $str 待过滤数据
+// $params 过滤参数
+$str = $filter->filter()->方法($str, $params);
+```
 
 
 

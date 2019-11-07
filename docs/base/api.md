@@ -13,7 +13,7 @@ namespace app\index\index\api;
 
 class IndexApi extends \dux\kernel\Api {
 
-		public function __construct() {
+    public function __construct() {
         parent::__construct();
     }
     
@@ -45,7 +45,7 @@ http://域名/a/index/index/index
   - $data：数据，成功后返回数组数据
 
   ```php
-  $this->success($msg = '', $data = []);
+  $this->success($msg = '', array $data = []);
   ```
 
   输出：
@@ -73,7 +73,7 @@ http://域名/a/index/index/index
   - $url：链接，失败后跳转链接
 
   ```php
-  $this->error($msg = '', $code = 500, $url = '');
+  $this->error($msg = '', int $code = 500, string $url = '');
   ```
 
   输出：
@@ -95,7 +95,7 @@ http://域名/a/index/index/index
   说明：返回404错误信息
 
   ```php
-  $this->error404($msg = '记录不存在');
+  $this->error404(string $msg = 'There is no data');
   ```
 
 - 自定义数据输出
@@ -109,7 +109,7 @@ http://域名/a/index/index/index
   $type：类型，数据输出类型可选json与jsonp
 
   ```php
-  $this->returnData($data, $type = 'json');
+  $this->returnData($data, string $type = 'json');
   ```
 
 - Json数据输出
@@ -122,7 +122,7 @@ http://域名/a/index/index/index
   - $charset：数据编码
 
   ```php
-  $this->returnJson($data = [], $charset = "utf-8");
+  $this->returnJson(array $data = [], string $charset = "utf-8");
   ```
 
 - Jsonp数据输出
@@ -136,7 +136,7 @@ http://域名/a/index/index/index
   - $charset：数据编码
 
   ```php
-  $this->returnJsonp($data = [], $callback = 'q', $charset = "utf-8");
+  $this->returnJsonp(array $data = [], string $callback = 'q', string $charset = "utf-8");
   ```
 
   
