@@ -41,7 +41,6 @@ function isWechat() {
     if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false && !$_GET['webapp']) {
         return true;
     }
-
     return false;
 }
 
@@ -80,6 +79,7 @@ function di() {
  * @param string $method
  * @param array $vars
  * @return array|null
+ * @throws Exception
  */
 function hook(string $layer, string $name, string $method, array $vars = []) {
     if (empty($name)) {
@@ -121,10 +121,10 @@ function hook(string $layer, string $name, string $method, array $vars = []) {
  * @param string $name
  * @param string $method
  * @param array $vars
- * @param bool $error
  * @return array|null
+ * @throws Exception
  */
-function run(string $layer, string $name, string $method, array $vars = [], $error = false) {
+function run(string $layer, string $name, string $method, array $vars = []) {
     if (empty($name)) {
         return null;
     }
@@ -183,9 +183,10 @@ function url(string $str = '', array $params = [], bool $domain = false, bool $s
 
 /**
  * 模块调用
- * @param $class
+ * @param string $class
  * @param string $layer
- * @return mixed
+ * @return object
+ * @throws Exception
  */
 function target(string $class, string $layer = 'model') {
     return \dux\Dux::target($class, $layer);
@@ -482,14 +483,11 @@ function str_html(string $str = '') {
 /**
  * 等宽度截取
  * @param string $str
- * @param int $len
+ * @param int $length
  * @param bool $suffix
  * @return string
  */
-function str_len(string $str, int $len = 20, bool $suffix = true) {
-    if ($charset != 'utf-8') {
-        $str = mb_convert_encoding($str, 'utf8', $charset);
-    }
+function str_len(string $str, int $length = 20, bool $suffix = true) {
     $osLen = mb_strlen($str);
     if ($osLen <= $length) {
         return $str;

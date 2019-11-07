@@ -59,13 +59,13 @@ class Image {
         switch ($type) {
             // 居中裁剪缩放
             case 'center':
-                $this->imgObj->fit($width, $height, function () {
+                $this->imgObj->fit($width, $height, function ($constraint) {
                     $constraint->upsize();
                 }, 'center');
                 break;
             // 固定尺寸
             case 'fixed':
-                $this->imgObj->resize(300, 200, function () {
+                $this->imgObj->resize(300, 200, function ($constraint) {
                     $constraint->upsize();
                 });
                 break;
@@ -377,7 +377,7 @@ class Image {
     public function qrcode(string $text, int $size = 300, array $label = [], array $logo = []) {
         $qrCode = new \Endroid\QrCode\QrCode($text);
         if ($logo) {
-            $qrCode->setLogoPath($logo['url']);
+            $qrCode->setLogoPath($logo['file']);
             $qrCode->setLogoSize($logo['width'] ? $logo['width'] : 80, $logo['height'] ? $logo['height'] : 80);
         }
         if ($label) {

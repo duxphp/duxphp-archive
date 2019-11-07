@@ -5,8 +5,9 @@
 ## 使用
 
 ```php
-// $driver 为缓存配置名
-\Dux::Session($driver = 'default');
+// $config 缓存配置
+// $pre Session前缀
+\Dux::Session(array $config = [], string $pre = '');
 ```
 
 请在父类使用该方法，设置取值通过 $_SESSION 使用

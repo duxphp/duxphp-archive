@@ -4,31 +4,18 @@
 
 ## 配置
 
-将配置信息放置在 "data/config/global.php" 文件中
+将配置信息放置在 "data/config/global.php" 文件中，"type"为缓存类型，其他为驱动配置参数,配置参数请参考 ``https://www.phpfastcache.com/``
 
 ```php
 return [
-  'dux.cache' => [
-  			// 缓存类型可使用 "fiels"、"redis"、"memcached"
-  			'default' => [
+    'dux' => [
+        'cache' => [
             'type' => 'files',
-            'path' => DATA_PATH . 'cache/',
-            'group' => 'tmp',
-            'deep' => 0,
+            'path' => ROOT_PATH . 'cache/tmp/',
+            'securityKey' => 'data',
+            'cacheFileExtension' => 'cache'
         ],
-        'redis' => [
-            'type' => 'redis',
-            'host' => '127.0.0.1',
-            'port' => 6379,
-            'group' => 0,
-        ],
-        'memcached' => [
-            'type' => 'memcached',
-            'host' => '127.0.0.1',
-            'port' => 11211,
-            'group' => 0,
-        ],
-  ]
+    ],
   ...
 ];
 ```
@@ -36,11 +23,11 @@ return [
 ## 使用
 
 ```php
-// 缓存配置名，可以自定义配置
-$configName = 'default';
-// 缓存分区，将易冲突数据放置在不同的分区下
+// 缓存分组，将易冲突数据放置在不同的分组下
 $group = 0;
-$cache = \dux\Dux::cache($configName, $group);
+// 缓存配置，可以自定义缓存配置
+$config = [];
+$cache = \dux\Dux::cache(string $group = 'default', array $config = []);
 ```
 
 ## 方法

@@ -12,8 +12,6 @@
 return [
   // 模板配置
   'dux.tpl' => [
-    'path' => ROOT_PATH,                     // 项目根路径
-  	'cache' => ROOT_PATH . 'data/tpl',       // 模板缓存路径
   ]
   ...
 ];
