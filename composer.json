@@ -22,7 +22,7 @@
         "gkralik/php-uglifyjs": "^1.0",
         "overtrue/pinyin": "^4.0",
         "alchemy/zippy": "^0.4",
-        "fukuball/jieba-php": "^0.3"
+        "fukuball/jieba-php": "^0.33"
     },
     "autoload": {
         "psr-4": {
