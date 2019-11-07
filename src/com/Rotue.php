@@ -299,7 +299,7 @@ class Rotue {
         if ($this->object) {
             return $this->object;
         }
-        $this->object = \dux\Dux::cache();
+        $this->object = \dux\Dux::cache('route');
         return $this->object;
     }
 }

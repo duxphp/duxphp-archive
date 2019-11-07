@@ -79,7 +79,7 @@ class Dux {
      */
     public static function cache(string $group = 'default', array $config = []) {
         $config = $config ?: \dux\Config::get('dux.cache');
-        $key = 'dux.log.' . http_build_query($config);
+        $key = 'dux.cache.' . http_build_query($config);
         if (!self::di()->has($key)) {
             self::di()->set($key, function () use ($config, $group) {
                 $type = $config['type'];
