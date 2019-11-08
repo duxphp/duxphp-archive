@@ -466,8 +466,26 @@ function html_out(string $str = '') {
  * @param string $str
  * @return mixed|string
  */
-function html_clear(string $str = '') {
-    return \dux\lib\Filter::filter()->html($str);
+function html_clear(string $str = '', $len = 0) {
+    $str = \dux\lib\Filter::filter()->html($str);;
+    if(!$len) {
+        str_len($str, $len);
+    }
+    return $str;
+}
+
+/**
+ * 随机字符串
+ * @param int $length
+ * @return string
+ */
+function randStr($length = 5) {
+    $pattern = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLOMNOPQRSTUVWXYZ';
+    $key = '';
+    for ($i = 0; $i < $length; $i++) {
+        $key .= $pattern{mt_rand(0, 35)};
+    }
+    return $key;
 }
 
 /**
