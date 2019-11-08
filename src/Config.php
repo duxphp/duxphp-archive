@@ -18,6 +18,7 @@ class Config {
             'debug_log' => true,
             'use' => [
                 'safe_key' => 'dux',
+                'pre' => 'dux_',
             ],
             'tpl' => [
             ],
