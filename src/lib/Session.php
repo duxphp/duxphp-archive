@@ -101,6 +101,7 @@ class Session {
             if (is_array($data)) {
                 $data = json_encode($data);
             }
+            $this->cache()->set($this->pre . $sessionId, $data, $this->time);
             return (string)$data;
         } catch (\Exception $e) {
             dux_log($e->getMessage());
