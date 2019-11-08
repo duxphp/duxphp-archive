@@ -466,7 +466,7 @@ function html_out(string $str = '') {
  * @param string $str
  * @return mixed|string
  */
-function html_clear(string $str = '', $len = 0) {
+function html_clear(?string $str = null, $len = 0) {
     $str = \dux\lib\Filter::filter()->html($str);;
     if(!$len) {
         str_len($str, $len);
