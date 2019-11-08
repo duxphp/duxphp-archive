@@ -106,7 +106,7 @@ class Vcode {
         if ($this->object) {
             return $this->object;
         }
-        $this->object = new \Gregwar\Captcha\CaptchaBuilder();
+        $this->object = new \Gregwar\Captcha\CaptchaBuilder(null, (new \Gregwar\Captcha\PhraseBuilder(4)));
         return $this->object;
     }
 }

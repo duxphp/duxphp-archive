@@ -4,7 +4,7 @@
  * 判断AJAX
  */
 function isAjax() {
-    if ((isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') && $_SERVER['HTTP_X_DUX_AJAX']) {
+    if ((isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || $_SERVER['HTTP_X_AJAX']) {
         return true;
     } else {
         return false;
@@ -38,7 +38,7 @@ function isPost() {
  * @return bool
  */
 function isWechat() {
-    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false && !$_GET['webapp']) {
+    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false || $_GET['webapp']) {
         return true;
     }
     return false;
@@ -466,8 +466,26 @@ function html_out(string $str = '') {
  * @param string $str
  * @return mixed|string
  */
-function html_clear(string $str = '') {
-    return \dux\lib\Filter::filter()->html($str);
+function html_clear(?string $str = null, $len = 0) {
+    $str = \dux\lib\Filter::filter()->html($str);;
+    if(!$len) {
+        str_len($str, $len);
+    }
+    return $str;
+}
+
+/**
+ * 随机字符串
+ * @param int $length
+ * @return string
+ */
+function randStr($length = 5) {
+    $pattern = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLOMNOPQRSTUVWXYZ';
+    $key = '';
+    for ($i = 0; $i < $length; $i++) {
+        $key .= $pattern{mt_rand(0, 35)};
+    }
+    return $key;
 }
 
 /**

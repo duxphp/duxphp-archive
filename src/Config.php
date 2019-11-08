@@ -18,8 +18,10 @@ class Config {
             'debug_log' => true,
             'use' => [
                 'safe_key' => 'dux',
+                'pre' => 'dux_',
             ],
-            'tpl' => [],
+            'tpl' => [
+            ],
             'log' => [
                 'type' => \dux\com\log\FilesDriver::class,
                 'path' => DATA_PATH . 'log/',
@@ -36,7 +38,7 @@ class Config {
             ],
             'cache' => [
                 'type' => 'files',
-                'path' => ROOT_PATH . 'cache/tmp/',
+                'path' => DATA_PATH . 'cache/tmp/',
                 'securityKey' => 'data',
                 'cacheFileExtension' => 'cache'
             ],

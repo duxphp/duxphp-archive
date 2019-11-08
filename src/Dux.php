@@ -358,7 +358,7 @@ class Dux {
      */
     public static function notFound() {
         if (!IS_CLI) {
-            new \dux\exception\Error('404 Not Found', 404);
+            throw new \dux\exception\Error('404 Not Found', 404);
         } else {
             exit('The request does not exist');
         }
@@ -371,7 +371,7 @@ class Dux {
      */
     public static function errorPage(string $title, int $code = 503) {
         if (!IS_CLI) {
-            new \dux\exception\Error($title, $code);
+            throw new \dux\exception\Error($title, $code);
         } else {
             exit($title);
         }
@@ -392,7 +392,7 @@ class Dux {
 
     /**
      * 日志写入
-     * @param string $msg
+     * @param $msg
      * @param string $type
      * @param string $fileName
      * @return mixed
@@ -416,6 +416,79 @@ class Dux {
             });
         }
         return self::di()->get($keyName);
+    }
+
+    /**
+     * 设置Cookie
+     * @param $key
+     * @param $value
+     * @param int $expire
+     */
+    public static function setCookie($key, $value, $expire = 3600) {
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+        $value = json_encode($value);
+        setcookie(\dux\Config::get('dux.use.pre') . $key, $value, time() + $expire, ROOT_URL . "/");
+    }
+
+
+    /**
+     * 获取cookie
+     * @param $key
+     * @return mixed
+     */
+    public static function getCookie($key) {
+        $data = $_COOKIE[\dux\Config::get('dux.use.pre') . $key];
+        $data = json_decode($data, true);
+        if($data && count($data) == 1 && isset($data[0])) {
+            return $data[0];
+        }
+        return $data;
+    }
+
+    /**
+     * 删除Cookie
+     * @param $key
+     * @param $value
+     * @param int $expire
+     */
+    public static function delCookie($key) {
+        setcookie($key, null);
+    }
+
+    /**
+     * JWT编码
+     * @param $data
+     * @param int $iss
+     * @param int $aud
+     * @param int $exp
+     * @return string
+     */
+    public static function jwtEncode($data, int $iss = 0, int $aud = 0, int $exp = 3600) {
+        $time = time();
+        $token = [
+            "iss" => $iss ?: DOMAIN,
+            "aud" => $aud ?: DOMAIN,
+            "iat" => $time,
+            "nbf" => $time,
+            'data' => $data
+        ];
+        if ($exp) {
+            $token['exp'] = $time + $exp;
+        }
+        $key = \dux\Config::get('dux.use.safe_key');
+        return \Firebase\JWT\JWT::encode($token, $key);
+    }
+
+    /**
+     * JWT解码
+     * @param string $jwt
+     * @return object
+     */
+    public static function jwtDecode(string $jwt) {
+        $key = \dux\Config::get('dux.use.safe_key');
+        return (array)\Firebase\JWT\JWT::decode($jwt, $key, ['HS256']);
     }
 
 }

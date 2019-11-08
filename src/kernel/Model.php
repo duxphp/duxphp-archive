@@ -113,10 +113,10 @@ class Model {
 
     /**
      * 设置字段
-     * @param array $field
+     * @param $field
      * @return $this
      */
-    public function field(array $field) {
+    public function field($field) {
         $this->options['field'] = $field;
         return $this;
     }

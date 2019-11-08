@@ -4,9 +4,9 @@
  * 模型扩展
  */
 
-namespace dux\kernel\model;
+namespace dux\kernel;
 
-class ModelExtend extends \dux\kernel\Model {
+class ModelExtend extends Model {
 
     protected $error = '';
     protected $data = [];
@@ -92,7 +92,7 @@ class ModelExtend extends \dux\kernel\Model {
             return true;
         }
         $data = $this->data;
-        $filter = new (\dux\lib\Filter())->filter();
+        $filter = (new \dux\lib\Filter())->filter();
         foreach ($formatRule as $field => $val) {
             foreach ($val as $method => $v) {
                 $method = ucfirst($method);
@@ -152,7 +152,7 @@ class ModelExtend extends \dux\kernel\Model {
             return true;
         }
         $data = $this->data;
-        $filter = new (\dux\lib\Filter())->verify();
+        $filter = (new \dux\lib\Filter())->verify();
         foreach ($validateRule as $field => $val) {
             foreach ($val as $method => $v) {
                 $method = ucfirst($method);
