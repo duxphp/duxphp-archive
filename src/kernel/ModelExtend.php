@@ -4,9 +4,9 @@
  * 模型扩展
  */
 
-namespace dux\kernel\model;
+namespace dux\kernel;
 
-class ModelExtend extends \dux\kernel\Model {
+class ModelExtend extends Model {
 
     protected $error = '';
     protected $data = [];
