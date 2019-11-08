@@ -149,6 +149,52 @@ class Session {
     }
 
     /**
+     * 设置配置
+     * @param $config
+     * @return $this
+     */
+    public function setConfig($config) {
+        $this->config = array_merge($this->config, $config);
+        return $this;
+    }
+
+    /**
+     * 读取配置
+     * @param $key
+     * @return mixed
+     */
+    public function get($key) {
+        return $_SESSION[$this->config['pre'] . $key];
+    }
+
+
+    /**
+     * 设置会话
+     * @param $key
+     * @param $value
+     * @return mixed
+     */
+    public function set($key, $value) {
+        return $_SESSION[$this->config['pre'] . $key] = $value;
+    }
+
+    /**
+     * 删除会话内容
+     * @param $key
+     */
+    public function del($key) {
+        unset($_SESSION[$this->config['pre'] . $key]);
+    }
+
+    /**
+     * 清空会话内容
+     */
+    public function clear() {
+        session_unset();
+        session_destroy();
+    }
+
+    /**
      * 获取缓存对象
      * @return \dux\com\Cache
      * @throws \Exception
@@ -160,4 +206,5 @@ class Session {
         $this->object = \dux\Dux::cache('session', $this->config);
         return $this->object;
     }
+
 }
