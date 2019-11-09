@@ -26,10 +26,10 @@ class ModelExtend extends Model {
             $this->primary = $this->infoModel['pri'];
         }
         if (empty($this->formatRule)) {
-            $this->formatRule = $this->infoModel['format'];
+            $this->formatRule = (array) $this->infoModel['format'];
         }
         if (empty($this->validateRule)) {
-            $this->validateRule = $this->infoModel['validate'];
+            $this->validateRule = (array) $this->infoModel['validate'];
         }
     }
 
