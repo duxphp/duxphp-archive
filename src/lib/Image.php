@@ -52,25 +52,29 @@ class Image {
      * 图片缩放
      * @param int $width
      * @param int $height
-     * @param string $type
+     * @param $type
      * @return $this
      */
-    public function thumb(int $width, int $height, string $type = 'scale') {
+    public function thumb(int $width, int $height, $type = 0) {
         switch ($type) {
             // 居中裁剪缩放
+            case 1:
             case 'center':
                 $this->imgObj->fit($width, $height, function ($constraint) {
                     $constraint->upsize();
                 }, 'center');
                 break;
             // 固定尺寸
+            case 2:
             case 'fixed':
                 $this->imgObj->resize(300, 200, function ($constraint) {
                     $constraint->upsize();
                 });
                 break;
             // 等比例缩放
+            case 0:
             case 'scale':
+            default:
                 if ($width > $height) {
                     $this->imgObj->resize(null, $height, function ($constraint) {
                         $constraint->aspectRatio();
@@ -82,7 +86,6 @@ class Image {
                         $constraint->upsize();
                     });
                 }
-            default:
         }
         return $this;
     }
@@ -131,48 +134,57 @@ class Image {
     /**
      * 图片水印
      * @param $source
-     * @param int $locate
+     * @param $locate
      * @param int $alpha
      * @return $this
      */
-    public function water($source, int $locate = 0, int $alpha = 80) {
+    public function water($source, $locate = 0, int $alpha = 80) {
         $position = 'center';
         switch ($locate) {
             //左上角水印
             case 1:
+            case 'top-left':
                 $position = 'top-left';
                 break;
             //上居中水印
             case 2:
+            case 'top':
                 $position = 'top';
                 break;
             //右上角水印
             case 3:
+            case 'top-right':
                 $position = 'top-right';
                 break;
             //左居中水印
             case 4:
+            case 'left':
                 $position = 'left';
                 break;
             //居中水印
             default:
             case 5:
+            case 'center':
                 $position = 'center';
                 break;
             //右居中水印
             case 6:
+            case 'right':
                 $position = 'right';
                 break;
             //左下角水印
             case 7:
+            case 'bottom-left':
                 $position = 'bottom-left';
                 break;
             //下居中水印
             case 8:
+            case 'bottom':
                 $position = 'bottom';
                 break;
             //右下角水印
             case 9:
+            case 'bottom-right':
                 $position = 'bottom-right';
                 break;
         }
