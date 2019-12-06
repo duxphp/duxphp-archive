@@ -100,7 +100,7 @@ function hook(string $layer, string $name, string $method, array $vars = []) {
         $appName = explode('/', $path);
         $appName = $appName[0];
         $config = load_config('app/' . $appName . '/config/config', false);
-        if (!$config['app.system'] && (!$config['app.state'] || !$config['app.install'])) {
+        if (!$config['system'] && (!$config['state'] || !$config['install'])) {
             continue;
         }
         $class = '\\app\\' . $appName . '\\' . $layer . '\\' . ucfirst($name) . ucfirst($layer);
@@ -141,7 +141,7 @@ function run(string $layer, string $name, string $method, array $vars = []) {
         $appName = explode('/', $path);
         $appName = $appName[0];
         $config = load_config('app/' . $appName . '/config/config', false);
-        if (!$config['app.system'] && (!$config['app.state'] || !$config['app.install'])) {
+        if (!$config['system'] && (!$config['state'] || !$config['install'])) {
             continue;
         }
         $class = '\\app\\' . $appName . '\\' . $layer . '\\' . ucfirst($name) . ucwords($layer);
@@ -190,6 +190,36 @@ function url(string $str = '', array $params = [], bool $domain = false, bool $s
  */
 function target(string $class, string $layer = 'model') {
     return \dux\Dux::target($class, $layer);
+}
+
+/**
+ * 模型调用(别名)
+ * @param string $class
+ * @return object
+ * @throws Exception
+ */
+function model(string $class) {
+    return target($class, 'model');
+}
+
+/**
+ * 中间层调用(别名)
+ * @param string $class
+ * @return object
+ * @throws Exception
+ */
+function middle(string $class) {
+    return target($class, 'middle');
+}
+
+/**
+ * 服务层调用(别名)
+ * @param string $class
+ * @return object
+ * @throws Exception
+ */
+function service(string $class) {
+    return target($class, 'service');
 }
 
 /**
@@ -457,7 +487,7 @@ function html_in(string $html = '') {
  * @param string $str
  * @return string
  */
-function html_out(string $str = '') {
+function html_out(?string $str = '') {
     return \dux\lib\Filter::filter()->htmlOut($str);
 }
 
@@ -479,7 +509,7 @@ function html_clear(?string $str = null, $len = 0) {
  * @param int $length
  * @return string
  */
-function randStr($length = 5) {
+function rand_str($length = 5) {
     $pattern = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLOMNOPQRSTUVWXYZ';
     $key = '';
     for ($i = 0; $i < $length; $i++) {
@@ -612,6 +642,21 @@ function object_to_array($objList, $keyList = ['key', 'text']) {
         ];
     }
     return $list;
+}
+
+/**
+ * 二位数组转一维
+ * @param $list
+ * @param string $key
+ * @param string $value
+ * @return array
+ */
+function array_to_single($list, $key = '', $value = '') {
+    $data = [];
+    foreach ($list as $vo) {
+        $data[$vo[$key]] = $vo[$value];
+    }
+    return $data;
 }
 
 /**

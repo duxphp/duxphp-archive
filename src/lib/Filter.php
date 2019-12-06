@@ -74,7 +74,7 @@ class Filter {
      * @return VerifyInner|null
      */
     public static function verify() {
-        if (!self::$verifyObject) {
+        if (!self::$verifyObjcet) {
             self::$verifyObjcet = new VerifyInner();
         }
         return self::$verifyObjcet;
@@ -217,7 +217,7 @@ class FilterInner {
      * 过滤html
      */
     public function html($value) {
-        $value = filter_var($value, \FILTER_SANITIZE_STRING);
+        $value = filter_var($this->htmlOut($value), \FILTER_SANITIZE_STRING);
         if ($value === false) {
             return '';
         }
@@ -279,7 +279,7 @@ class FilterInner {
      * @param $params
      * @return mixed
      */
-    public function filterFunction($value, $params) {
+    public function function($value, $params) {
         if (!empty($value)) {
             return call_user_func($params, $value);
         } else {
@@ -549,7 +549,7 @@ class VerifyInner {
      * @param $params
      * @return bool
      */
-    public function validateFunction($value, $params) {
+    public function function($value, $params) {
         if (!call_user_func($params, $value)) {
             return false;
         }

@@ -17,7 +17,7 @@ class Dux {
      * 依赖注入
      * @return com\Di|null
      */
-    public static function di() {
+    public static function di(): ?\dux\com\Di {
         if (!isset(self::$di)) {
             self::$di = new \dux\com\Di();
         }
@@ -28,7 +28,7 @@ class Dux {
      * 获取路由对象
      * @return object
      */
-    public static function route() {
+    public static function route(): ?\dux\com\Rotue {
         $key = 'dux.route';
         if (!self::di()->has($key)) {
             self::di()->set($key, function () {
@@ -43,7 +43,7 @@ class Dux {
      * @param array $config
      * @return object
      */
-    public static function model(array $config = []) {
+    public static function model(array $config = []): ?\dux\kernel\Model {
         $config = $config ?: \dux\Config::get('dux.database');
         $key = 'dux.database.' . http_build_query($config);
         if (!self::di()->has($key)) {
@@ -58,9 +58,10 @@ class Dux {
 
     /**
      * 模板引擎类
-     * @return object
+     * @param array $config
+     * @return kernel\View|null
      */
-    public static function view(array $config = []) {
+    public static function view(array $config = []): ?\dux\kernel\View {
         $config = $config ?: \dux\Config::get('dux.tpl');
         $key = 'dux.tpl' . http_build_query($config);
         if (!self::di()->has($key)) {
@@ -75,9 +76,9 @@ class Dux {
      * 注册缓存类
      * @param string $group
      * @param array $config
-     * @return object
+     * @return com\Cache|null
      */
-    public static function cache(string $group = 'default', array $config = []) {
+    public static function cache(string $group = 'default', array $config = []): ?\dux\com\Cache {
         $config = $config ?: \dux\Config::get('dux.cache');
         $key = 'dux.cache.' . http_build_query($config);
         if (!self::di()->has($key)) {
@@ -96,7 +97,7 @@ class Dux {
      * @param array $config
      * @return object
      */
-    public static function session(string $pre = '', array $config = []) {
+    public static function session(string $pre = '', array $config = []): ?\dux\lib\Session {
         $config = $config ?: \dux\Config::get('dux.session');
         $key = 'dux.session.' . $pre . http_build_query($config);
         if (!self::di()->has($key)) {
@@ -144,10 +145,10 @@ class Dux {
         }
         foreach ($data as $k => $vo) {
             if ($function) {
-                $vo = call_user_func($function, $vo);
+                $data[$k] = call_user_func($function, $vo);
             }
             if (!empty($default) && empty($vo)) {
-                $vo = $default;
+                $data[$k] = $default;
             }
             if (is_string($vo)) {
                 $vo = trim($vo);
@@ -341,16 +342,20 @@ class Dux {
      * @param int $code
      * @param callable|null $callback
      * @param array $hander
+     * @param string $message
      */
-    public static function header(int $code, callable $callback = null, array $hander = []) {
+    public static function header(int $code, ?callable $callback = null, array $hander = []) {
         if (!IS_CLI) {
+            $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+            header(implode(' ', [$protocol, $code, self::$codes[$code]]));
             foreach ($hander as $key => $vo) {
-                $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
-                header(implode(' ', [$protocol, $code, self::$codes[$code]]));
                 header($key . ' : ' . $vo);
             }
         }
-        exit($callback());
+        if ($callback) {
+            exit($callback());
+        }
+        exit();
     }
 
     /**
@@ -405,7 +410,7 @@ class Dux {
      * 日志对象
      * @return object
      */
-    public static function logObj() {
+    public static function logObj(): ?\dux\com\Log {
         $config = \dux\Config::get('dux.log');
         $keyName = 'dux.log.' . http_build_query($config);
         if (!self::di()->has($keyName)) {
@@ -441,7 +446,7 @@ class Dux {
     public static function getCookie($key) {
         $data = $_COOKIE[\dux\Config::get('dux.use.pre') . $key];
         $data = json_decode($data, true);
-        if($data && count($data) == 1 && isset($data[0])) {
+        if ($data && count($data) == 1 && isset($data[0])) {
             return $data[0];
         }
         return $data;

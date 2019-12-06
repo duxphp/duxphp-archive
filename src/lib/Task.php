@@ -29,6 +29,7 @@ class Task {
         $this->tasKey = $key . '_task';
         $this->locKey = $key . '_lock';
         $this->config = array_merge($this->config, $config);
+        $this->object = new \dux\lib\Redis($this->config);
     }
 
     /**
@@ -38,26 +39,26 @@ class Task {
      * @param int $limit
      */
     public function list($type = 0, $offet = 0, $limit = 10) {
-        if (!type) {
-            $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [$offet, $offet + $limit - 1]]);
+        if (!$type) {
+            $list = (array)$this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [$offet, $limit]]);
         } else {
-            $taskList = $this->obj()->lRange($this->tasKey, $offet, $offet + $limit - 1);
+            $list = (array)$this->obj()->lRange($this->tasKey, $offet, $offet + $limit - 1);
         }
-        return $taskList;
+        return $list;
     }
 
     /**
      * 任务数量
-     * @param $type 0未执行 1队列中
+     * @param int $type 0未执行 1队列中
      * @param int $startTime 未执行开始时间
      * @param int $stopTime 未执行结束时间
      * @return int
      */
-    public function count($type, $startTime = 0, $stopTime = 0) {
-        if (!type) {
-            return intval($this->obj()->zCount($this->tasKey, $startTime, $stopTime));
+    public function count($type = 0, $startTime = 0, $stopTime = 0) {
+        if (!$type) {
+            return intval($this->obj()->zCount($this->key, $startTime, $stopTime));
         } else {
-            return intval($this->obj()->lLen($this->key));
+            return intval($this->obj()->lLen($this->tasKey));
         }
     }
 
@@ -113,6 +114,7 @@ class Task {
         }
         $pidData = [];
         for ($i = 0; $i <= $concurrent; $i++) {
+            $this->close();
             $pid = \pcntl_fork();
             if ($pid == -1) {
                 die("Fork failed");
@@ -169,21 +171,23 @@ class Task {
      * @param int $retry
      */
     private function execute(callable $callback, $retry = 3) {
-        $task = $this->obj()->lPop($this->tasKey);
-        if ($task) {
-            try {
-                if (!$callback(json_decode($task, true))) {
-                    if ($task['num'] < $retry) {
-                        $this->obj()->rPush($this->tasKey, json_encode([
-                            'time' => $task['time'],
-                            'class' => $task['class'],
-                            'args' => $task['arge'],
-                            'num' => $task['num'] + 1
-                        ], JSON_UNESCAPED_UNICODE));
-                    }
-                }
-            } catch (\Exception $e) {
-                \dux\Dux::log('Task: ' . $e->getMessage() . " line {$this->line} in file {$this->file}");
+        try {
+            $task = $this->obj()->lPop($this->tasKey);
+        }catch (\RedisException $e) {
+            $this->close();
+            $task = $this->obj()->lPop($this->tasKey);
+        }
+        if (empty($task)) {
+            return;
+        }
+        if (!$callback(json_decode($task, true))) {
+            if ($task['num'] < $retry) {
+                $this->obj()->rPush($this->tasKey, json_encode([
+                    'time' => $task['time'],
+                    'class' => $task['class'],
+                    'args' => $task['arge'],
+                    'num' => $task['num'] + 1
+                ], JSON_UNESCAPED_UNICODE));
             }
         }
     }
@@ -217,15 +221,13 @@ class Task {
      * @return \Redis|null
      */
     private function obj() {
-        if ($this->object) {
-            return $this->object;
-        }
-        $this->object = new \Redis();
-        $this->object->connect($this->config['host'], $this->config['port']);
-        if ($config['password']) {
-            $this->object->auth($config['password']);
-        }
-        $this->object->select($this->config['dbname']);
-        return $this->object;
+        return $this->object->link();
+    }
+
+    /**
+     * 断开连接
+     */
+    private function close() {
+        $this->object->close();
     }
 }

@@ -28,7 +28,7 @@ class FilesDriver implements LogInterface {
         foreach ($files as $key => $vo) {
             $fileInfo = pathinfo($vo);
             $data[] = [
-                'name' => $fileInfo['basename'] . '.log',
+                'name' => $fileInfo['basename'],
             ];
         }
         return array_reverse($data);
@@ -39,7 +39,7 @@ class FilesDriver implements LogInterface {
         if (!$dir) {
             return [];
         }
-        $file = file_get_contents($dir . '/' . $name . '.log');
+        $file = file_get_contents($dir . '/' . $name);
         $tmp = array_reverse(explode("\n", $file));
         $data = [];
         foreach ($tmp as $key => $vo) {
@@ -74,7 +74,7 @@ class FilesDriver implements LogInterface {
         if (!$dir) {
             return false;
         }
-        $file = $dir . '/' . $name . '.log';
+        $file = $dir . '/' . $name;
         return unlink($file);
     }
 

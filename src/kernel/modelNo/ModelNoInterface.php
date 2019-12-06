@@ -6,7 +6,7 @@
  * @author Mr.L <admin@duxphp.com>
  */
 
-namespace dux\kernel\model;
+namespace dux\kernel\modelNo;
 
 interface ModelNoInterface {
 
@@ -18,10 +18,9 @@ interface ModelNoInterface {
 
     /**
      * 获取字段
-     * @param array $params
      * @return mixed
      */
-    public function getFields(array $params = []);
+    public function getFields();
 
     /**
      * 查询数据
@@ -29,10 +28,10 @@ interface ModelNoInterface {
      * @param array $where
      * @param array $fields
      * @param string $order
-     * @param int $limit
+     * @param array $limit
      * @return array
      */
-    public function select(string $table, array $where, array $fields = [], string $order = '', int $limit = 0);
+    public function select(string $table, array $where, ?array $fields = [], ?string $order = '', ?array $limit = []);
 
     /**
      * 查询数量
@@ -45,21 +44,19 @@ interface ModelNoInterface {
     /**
      * 插入数据
      * @param $table
-     * @param array $datas
-     * @param array $params
+     * @param array $data
      * @return int|bool
      */
-    public function insert(string $table, array $data, array $params = []);
+    public function insert(string $table, array $data);
 
     /**
      * 更新数据
      * @param $table
      * @param array $where
      * @param array $data
-     * @param array $params
      * @return bool
      */
-    public function update(string $table, array $where = [], array $data = [], array $params = []);
+    public function update(string $table, array $where = [], array $data = []);
 
     /**
      * 删除数据

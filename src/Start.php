@@ -89,8 +89,8 @@ class Start {
      * 定义常量
      */
     protected static function definitions() {
-        if (!defined('ROOT_PATH')) {
-            exit('Please define ROOT_PATH constants');
+        if (!defined('ROOT_PATH') || !defined('ROOT_ABSOLUTE_PATH')) {
+            exit('Please define ROOT_PATH and ROOT_ABSOLUTE_PATH constants');
         }
         if (!defined('VERSION')) define('VERSION', '2.0.0 dev');
         if (!defined('VERSION_DATE')) define('VERSION_DATE', '20191015');

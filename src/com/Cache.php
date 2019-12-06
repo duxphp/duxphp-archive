@@ -120,6 +120,9 @@ class Cache {
             return $this->object;
         }
         $driver = '\\Phpfastcache\\Drivers\\' . ucfirst($this->type) . '\\Config';
+		if ($this->config['path']) {
+            $this->config['path'] = ROOT_ABSOLUTE_PATH . $this->config['path'];
+        }
         $this->object = \Phpfastcache\CacheManager::getInstance($this->type, new $driver($this->config));
         return $this->object;
     }

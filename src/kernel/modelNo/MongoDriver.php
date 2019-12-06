@@ -7,7 +7,7 @@
 
 namespace dux\kernel\modelNo;
 
-class MongoDriver implements \dux\kernel\model\ModelNoInterface {
+class MongoDriver implements \dux\kernel\modelNo\ModelNoInterface {
 
     protected $config = [];
     protected $link = null;
@@ -16,6 +16,8 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
     protected $primary = null;
     protected $primaryDefault = '_id';
     protected $fields = [];
+    protected $params = [];
+
 
     public function __construct($config = []) {
         $this->config = $config;
@@ -26,17 +28,28 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
         return $this;
     }
 
+    public function setFields(array $params = []){
+        $this->fields = $params;
+        array_unshift($this->fields, $this->getPrimary());
+        array_unshift($this->fields, $this->primaryDefault);
+        return $this->fields;
+    }
+
+    /**
+     * 设置参数
+     * @param array $params
+     * @return $this
+     */
+    public function setParams(array $params) {
+        $this->params = $params;
+        return $this;
+    }
+
     public function getPrimary() {
         return !empty($this->primary) ? $this->primary : $this->primaryDefault;
     }
 
-    public function getFields(array $params = []) {
-        if (!empty($this->fields)) {
-            return $this->fields;
-        }
-        $this->fields = array_keys($params);
-        array_unshift($this->fields, $this->getPrimary());
-        array_unshift($this->fields, $this->primaryDefault);
+    public function getFields() {
         return $this->fields;
     }
 
@@ -55,9 +68,10 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
         return $this->getLink()->executeCommand($this->config['dbname'], $cmd);
     }
 
-    public function select(string $table, array $where, array $fields = [], string $order = '', int $limit = 0) {
+    public function select(string $table, array $where, ?array $fields = [], ?string $order = '', ?array $limit = []) {
         $fields = $this->parsingField($fields);
         $order = $this->_parsingOrder($order);
+        $where = $this->parsingWhere($where);
         $options = [];
         if (!empty($fields)) {
             $options['projection'] = $fields;
@@ -146,15 +160,14 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
      * 插入数据
      * @param $table 集合名
      * @param array $data 数据
-     * @param array $params 参数
      * @return array|bool
      */
-    public function insert(string $table, array $data, $params = []) {
+    public function insert(string $table, array $data) {
         $bulk = $this->getBulk();
         $write_concern = $this->getWrite();
         $ids = [];
         foreach ($data as $val) {
-            $val = $this->_dataParsing($val, $params);
+            $val = $this->_dataParsing($val);
             if (!isset($val[$this->primaryDefault])) {
                 $val[$this->primaryDefault] = new \MongoDB\BSON\ObjectID;
             }
@@ -169,27 +182,35 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
         return $ids;
     }
 
-    public function update(string $table, array $where = [], array $data = [], array $params = [], bool $upsert = false, bool $multi = false) {
-        return $this->_update($table, $where, ['$set' => $data], $params, $upsert, $multi);
+    public function update(string $table, array $where = [], array $data = [], bool $upsert = false, bool $multi = true) {
+        return $this->_update($table, $where, '$set',$data, $upsert, $multi);
     }
 
     public function setInc(string $table, array $where = [], string $field = '', int $num = 1) {
-        return $this->_update($table, $where, ['$inc' => [$field => $num]]);
+        return $this->_update($table, $where, '$inc',[$field => $num]);
     }
 
     public function setDec(string $table, array $where = [], string $field = '', int $num = 1) {
         $num *= -1;
-        return $this->_update($table, $where, ['$inc' => [$field => $num]]);
+        return $this->_update($table, $where,'$inc',[$field => $num]);
     }
 
-    private function _update(string $table, array $where = [], array $data = [], array $params = [], bool $upsert = false, bool $multi = false) {
+    private function _update(string $table, array $where = [],?string $dataSymbol = null, array $data = [], bool $upsert = false, bool $multi = true) {
         $bulk = $this->getBulk();
         $writeConcern = $this->getWrite();
         $updateOptions = [
             'upsert' => $upsert,
             'multi' => $multi
         ];
-        $data = $this->_dataParsing($data, $params, false);
+
+        $data = $this->_dataParsing($data, false);
+
+        if(!is_null($dataSymbol)){
+            $data = [
+                $dataSymbol => $data
+            ];
+        }
+
         $where = $this->parsingWhere($where);
         $bulk->update($where, $data, $updateOptions);
         $res = $this->getLink()->executeBulkWrite($this->config['dbname'] . '.' . $table, $bulk, $writeConcern);
@@ -212,12 +233,13 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
         }
     }
 
-    private function _dataParsing(array $data = [], array $params = [], bool $dataDefault = true) {
+    private function _dataParsing(array $data = [], bool $dataDefault = true) {
         if (empty($data)) {
             return [];
         }
         $defaultFields = [];
         $typeFields = [];
+        $params = $this->params;
         foreach ($params as $key => $vo) {
             $defaultFields[$key] = $vo['default'];
             $typeFields[$key] = $vo['type'];
@@ -344,11 +366,11 @@ class MongoDriver implements \dux\kernel\model\ModelNoInterface {
 
         $getVal = function ($field, $value) {
             if (!is_array($value)) {
-                return $this->_dataParsing([$field => $value], [], false)[$field];
+                return $this->_dataParsing([$field => $value], false)[$field];
             }
             $list = [];
             foreach ($value as $val) {
-                $list[] = $this->_dataParsing([$field => $val], [], false)[$field];
+                $list[] = $this->_dataParsing([$field => $val], false)[$field];
             }
             return $list;
         };

@@ -121,34 +121,27 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
         if ($return) {
             return $sqlStr;
         }
-        $time = microtime();
-        $result = $sth->execute();
-        $endTime = microtime();
-        if (!IS_CLI && \dux\Config::get('dux.debug_sql')) {
-            \dux\Engine::$sqls[] = [
-                'sql' => $sqlStr,
-                'time' => round($endTime - $time, 2),
-            ];
-        }
-        if ($result) {
-            $this->linkCurrentNum = 0;
-            if($type) {
-                $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
-                $sth->closeCursor();
-                return $data;
-            }else {
-                $data = $sth->rowCount();
-                $sth->closeCursor();
-                return $data;
+        try {
+            @$sth->execute();
+        } catch (\PDOException $e) {
+            $err = $sth->errorInfo();
+            if (in_array($err[1], $this->errorCode['gone_away']) && $this->linkCurrentNum < $this->linkNum) {
+                $this->linkCurrentNum++;
+                $this->link = null;
+                return $this->exec($sql, $params, $return, $type);
             }
+            throw new \Exception('Database SQL: "' . $sqlStr . '". ErrorInfo: ' . $err[1], 500);
         }
-        $err = $sth->errorInfo();
-        if (in_array($sth->errorCode(), $this->errorCode['gone_away']) && $this->linkCurrentNum < $this->linkNum) {
-            $this->linkCurrentNum++;
-            $this->link = null;
-            return $this->exec($sql, $params, $return, $type);
+        $this->linkCurrentNum = 0;
+        if ($type) {
+            $data = $sth->fetchAll(\PDO::FETCH_ASSOC);
+            $sth->closeCursor();
+            return $data;
+        } else {
+            $data = $sth->rowCount();
+            $sth->closeCursor();
+            return $data;
         }
-        throw new \PDOException('Database SQL: "' . $sqlStr . '". ErrorInfo: ' . $err[2], 500);
     }
 
     public function beginTransaction() {
@@ -191,39 +184,23 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
         return (false === strpos($table, ' ')) ? "`{$table}`" : $table;
     }
 
-    protected function _connect($isMaster = true) {
-        $dbArr = [];
-        if (false == $isMaster && !empty($this->config['slave'])) {
-            $master = $this->config;
-            unset($master['slave']);
-            foreach ($this->config['slave'] as $k => $v) {
-                $dbArr[] = array_merge($master, $this->config['slave'][$k]);
-            }
-            shuffle($dbArr);
-        } else {
-            $dbArr[] = $this->config;
-        }
+    protected function _connect() {
         $pdo = null;
-        $error = '';
-        foreach ($dbArr as $db) {
-            $dsn = "mysql:host={$db['host']};port={$db['port']};dbname={$db['dbname']};charset={$db['charset']}";
-            try {
-                $pdo = new \PDO($dsn, $db['username'], $db['password']);
-                break;
-            } catch (\PDOException $e) {
-                $error = $e->getMessage();
-            }
+        $dsn = "mysql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['dbname']};charset={$this->config['charset']}";
+        try {
+            $pdo = new \PDO($dsn, $this->config['username'], $this->config['password'], [
+                \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$this->config['charset']}",
+            ]);
+        } catch (\PDOException $e) {
+            throw new \Exception('connect database error :' . $e->getMessage(), 500);
         }
-        if (!$pdo) {
-            throw new \PDOException('connect database error :' . $error, 500);
-        }
-        $pdo->exec("set names {$db['charset']}");
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $pdo;
     }
 
     protected function getLink() {
-        if (!isset($this->link)) {
-            $this->link = $this->_connect(true);
+        if (!$this->link) {
+            $this->link = $this->_connect();
         }
         return $this->link;
     }

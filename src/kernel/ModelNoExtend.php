@@ -1,35 +1,39 @@
 <?php
 
 /**
- * 模型扩展
+ * MondeNo扩展类
+ * User: tangshuai
  */
-
 namespace dux\kernel;
 
-class ModelExtend extends Model {
+/**
+ * 抽象类
+ */
+abstract class ModelNoExtend extends ModelNo {
 
     protected $error = '';
     protected $data = [];
     protected $infoModel = [];
+
     protected $primary = '';
 
     protected $validateRule = [];
     protected $formatRule = [];
 
     public function __construct() {
-        $config = \dux\Config::get('dux.database');
+        $config = \dux\Config::get('dux.database_no');
         $this->driver = $config['type'];
         $this->prefix = $config['prefix'];
         $this->config = $config;
         parent::__construct();
         if (empty($this->primary)) {
-            $this->primary = $this->infoModel['pri'];
+            $this->primary = empty($this->infoModel['pri']) ? '_id' : $this->infoModel['pri'];
         }
         if (empty($this->formatRule)) {
-            $this->formatRule = (array) $this->infoModel['format'];
+            $this->formatRule = $this->infoModel['format'];
         }
         if (empty($this->validateRule)) {
-            $this->validateRule = (array) $this->infoModel['validate'];
+            $this->validateRule = $this->infoModel['validate'];
         }
     }
 
@@ -95,7 +99,7 @@ class ModelExtend extends Model {
         $filter = (new \dux\lib\Filter())->filter();
         foreach ($formatRule as $field => $val) {
             foreach ($val as $method => $v) {
-                $method = lcfirst($method);
+                $method = ucfirst($method);
                 list($params, $trigger, $type) = $v;
                 $type = isset($type) ? $type : 1;
                 if (!$type) {
@@ -176,7 +180,7 @@ class ModelExtend extends Model {
                 }
                 switch ($method) {
                     case 'callback':
-                        if (!call_user_func_array([&$this, $params], [$field, $value, $time])) {
+                        if (!call_user_func_array([&$this, $params], [$field, $value])) {
                             return $this->error($msg);
                         }
                         break;

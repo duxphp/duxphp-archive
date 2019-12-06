@@ -12,6 +12,8 @@ class ModelNo {
     protected $object = null;
     protected $config = [];
 
+    protected $primary = null;
+
     protected $prefix = '';
     protected $params = [];
 
@@ -178,6 +180,11 @@ class ModelNo {
      * @return bool
      */
     public function insertAll($data = []) {
+
+        if(!empty($data)){
+            $this->data($data);
+        }
+
         if (empty($this->options['data']) || !is_array($this->options['data'])) {
             return false;
         }
@@ -189,7 +196,7 @@ class ModelNo {
         if (!isset($datas[0])) {
             $datas = [$datas];
         }
-        $ids = $this->getObj()->insert($table, $datas, $this->params);
+        $ids = $this->getObj()->insert($table, $datas);
         if ($ids === false) {
             return false;
         }
@@ -213,7 +220,7 @@ class ModelNo {
         if (empty($datas) || !is_array($datas)) {
             return false;
         }
-        return $this->getObj()->update($table, $where, $datas, $this->params);
+        return $this->getObj()->update($table, $where, $datas);
     }
 
     /**
@@ -289,7 +296,7 @@ class ModelNo {
      * @return mixed
      */
     public function getFields() {
-        return $this->getObj()->getFields($this->params);
+        return $this->getObj()->getFields();
     }
 
     /**
@@ -349,7 +356,7 @@ class ModelNo {
         $limit = $this->options['limit'];
         $this->options['limit'] = [];
         if (empty($limit)) {
-            return 0;
+            return [];
         }
         if (!is_array($limit)) {
             $limit = explode(',', $limit);
@@ -370,7 +377,24 @@ class ModelNo {
         if ($this->object) {
             return $this->object;
         }
+
         $this->object = new $this->driver($this->config);
+
+        $funArr = [
+            'setPrimary'            => $this->getPrimary(),
+            'setFields'             => array_keys($this->params),
+            'setParams'             => $this->params
+        ];
+
+        foreach ($funArr as $fun => $val){
+
+            if(!method_exists($this->object, $fun)){
+                continue;
+            }
+
+            call_user_func([$this->object,$fun],$val);
+        }
+
         return $this->object;
     }
 

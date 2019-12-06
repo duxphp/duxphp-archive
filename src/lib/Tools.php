@@ -48,10 +48,13 @@ class Tools {
             throw new \Exception('分页显示数量不能小于1', 500);
         }
         $output = [];
-        $current = max($currentPage, 1);
         $totalPage = ceil($totalItems / $perPage);
         if (!$totalPage) {
             $totalPage = 1;
+        }
+        $current = $currentPage ? $currentPage : 1;
+        if ($current > $totalPage) {
+            $current = $totalPage;
         }
         $tagOffset = ($current - 1) * $perPage;
         $tagOffset = ($tagOffset >= 0) ? $tagOffset : 0;

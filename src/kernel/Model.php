@@ -148,7 +148,7 @@ class Model {
      * @param string $order
      * @return $this
      */
-    public function order(string $order) {
+    public function order(?string $order) {
         $this->options['append']['order'] = $order;
         return $this;
     }

@@ -88,7 +88,8 @@ class Rotue {
         }
         $path = rtrim(str_replace('\\', '/', parse_url($uri, PHP_URL_PATH)), '/');
         $uriData = array_filter(array_merge((array)$this->uris[$method], (array)$this->uris['ALL']));
-        $getUrl = array_key_first($_GET);
+        reset($_GET);
+        $getUrl = key($_GET);
         if (strpos($getUrl, '/') === 0) {
             unset($_GET[$getUrl]);
         }

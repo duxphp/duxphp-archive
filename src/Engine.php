@@ -2,6 +2,8 @@
 
 namespace dux;
 
+use dux\exception\Exception;
+
 class Engine {
 
     public static $classes = [];
@@ -57,14 +59,14 @@ class Engine {
 
     /**
      * 错误接管
-     * @param $error
-     * @param $message
-     * @param $filename
-     * @param $line
+     * @param $errno
+     * @param $errstr
+     * @param $errfile
+     * @param $errline
      */
-    public function handleError($error, $message, $file, $line) {
-        if ($error & error_reporting()) {
-            new \dux\exception\Handle($message, 500, $file, $line, [], \dux\Config::get('dux.debug'), false, \dux\Config::get('dux.log'));
+    public function handleError($errno, $errstr, $errfile, $errline) {
+        if ($errno & error_reporting()) {
+            new \dux\exception\Error($errstr, $errno, $errfile, $errline);
         }
     }
 
@@ -73,7 +75,7 @@ class Engine {
      * @param $e
      */
     public function handleException($e) {
-        new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), \dux\Config::get('dux.debug'), false, \dux\Config::get('dux.log'));
+        new \dux\exception\Exception($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace());
     }
 
     /**
@@ -89,7 +91,7 @@ class Engine {
             array_map(function ($vo) {
                 return trim($vo);
             }, $rule);
-            list($method, $url) = $rule;
+            [$method, $url] = $rule;
             if (empty($method) || empty($url)) {
                 continue;
             }
