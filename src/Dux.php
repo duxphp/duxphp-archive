@@ -112,11 +112,11 @@ class Dux {
      * 获取请求数据
      * @param string $method
      * @param string $key
-     * @param string $default
+     * @param null $default
      * @param null $function
      * @return array|false|mixed|string
      */
-    public static function request(string $method = '', string $key = '', string $default = '', $function = null) {
+    public static function request(string $method = '', string $key = '', $default = null, $function = null) {
         $method = strtolower($method);
         switch ($method) {
             case 'get':
@@ -143,27 +143,34 @@ class Dux {
         if ($key) {
             $data = [$data[$key]];
         }
-        foreach ($data as $k => $vo) {
+        foreach ($data as $k => &$vo) {
             if ($function) {
-                $data[$k] = call_user_func($function, $vo);
+                $vo = call_user_func($function, $vo);
             }
-            if (!empty($default) && empty($vo)) {
-                $data[$k] = $default;
+            if (!is_null($default) && empty($vo)) {
+                $vo = $default;
             }
             if (is_string($vo)) {
                 $vo = trim($vo);
                 if ($vo == 'null' || $vo == 'undefined') {
-                    $data[$k] = null;
+                    $vo = null;
                 }
                 if ($vo == 'true') {
-                    $data[$k] = true;
+                    $vo = true;
                 }
                 if ($vo == 'false') {
-                    $data[$k] = false;
+                    $vo = false;
                 }
                 if (filter_var($vo, \FILTER_VALIDATE_FLOAT) !== false) {
-                    $data[$k] = (float)$data[$k];
+                    if (strpos($vo, '.') === false) {
+                        $decimal = 0;
+                    } else {
+                        $tmp = explode('.', $vo);
+                        $decimal = strlen(end($tmp));
+                    }
+                    $vo = number_format($vo, $decimal, '.', '');
                 }
+                $vo = html_in((string)$vo);
             }
         }
         if ($key) {
@@ -347,6 +354,9 @@ class Dux {
     public static function header(int $code, ?callable $callback = null, array $hander = []) {
         if (!IS_CLI) {
             $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+            if (!isset(self::$codes[$code])) {
+                $code = 500;
+            }
             header(implode(' ', [$protocol, $code, self::$codes[$code]]));
             foreach ($hander as $key => $vo) {
                 header($key . ' : ' . $vo);
@@ -363,7 +373,7 @@ class Dux {
      */
     public static function notFound() {
         if (!IS_CLI) {
-            throw new \dux\exception\Error('404 Not Found', 404);
+            throw new \dux\exception\Message('404 Not Found', 404);
         } else {
             exit('The request does not exist');
         }
@@ -376,7 +386,7 @@ class Dux {
      */
     public static function errorPage(string $title, int $code = 503) {
         if (!IS_CLI) {
-            throw new \dux\exception\Error($title, $code);
+            throw new \dux\exception\Message($title, $code);
         } else {
             exit($title);
         }

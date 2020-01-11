@@ -44,8 +44,7 @@ class ModelExtend extends Model {
             $data = request('post');
         }
         if (empty($data)) {
-            $this->error = 'Create the data does not exist!';
-            return false;
+            dux_log('Create the data does not exist!');
         }
         if (empty($time)) {
             $time = $data[$this->primary] ? 'edit' : 'add';
@@ -96,7 +95,7 @@ class ModelExtend extends Model {
         foreach ($formatRule as $field => $val) {
             foreach ($val as $method => $v) {
                 $method = lcfirst($method);
-                list($params, $trigger, $type) = $v;
+                [$params, $trigger, $type] = $v;
                 $type = isset($type) ? $type : 1;
                 if (!$type) {
                     if (!isset($data[$field])) {
@@ -133,8 +132,7 @@ class ModelExtend extends Model {
             }
         }
         if (empty($data)) {
-            $this->error = 'Submit data is not correct!';
-            return false;
+            return $this->error('Submit data is not correct!');
         }
         $this->data = $data;
         return true;
@@ -156,7 +154,7 @@ class ModelExtend extends Model {
         foreach ($validateRule as $field => $val) {
             foreach ($val as $method => $v) {
                 $method = lcfirst($method);
-                list($params, $msg, $where, $trigger) = $v;
+                [$params, $msg, $where, $trigger] = $v;
                 if (empty($trigger)) {
                     $trigger = 'all';
                 }
@@ -235,11 +233,12 @@ class ModelExtend extends Model {
 
     /**
      * 失败
-     * @param $msg
+    * @param $msg
      * @return bool
+     * @throws \dux\exception\Message
      */
     public function error($msg) {
-        $this->error = $msg;
+        dux_error($msg);
         return false;
     }
 

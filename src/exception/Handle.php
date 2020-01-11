@@ -54,26 +54,24 @@ class Handle {
             ];
         }
         if ($this->log) {
-            \dux\Dux::log($title . ' ' . $desc);
-        }
-        if (IS_CLI) {
-            return "error: {$title} : {$desc}";
-        }
-        if (isAjax()) {
-            if (!$this->debug) {
-                $title = \dux\Dux::$codes[$code];
-            }
             $data = [
                 'code' => $code,
                 'message' => $title,
                 'line' => $desc,
                 'trace' => $trace,
             ];
-            \dux\Dux::header($code, function () use ($data) {
-                return json_encode($data);
-            }, [
-                'Content-Type' => 'application/json; charset=UTF-8'
-            ]);
+            \dux\Dux::log($data, 'ERROR');
+        }
+        if (IS_CLI) {
+            return "error: {$title} : {$desc}";
+        }
+        if (isAjax()) {
+            if (!$this->error) {
+                $title = \dux\Dux::$codes[$code];
+            }
+            \dux\Dux::header($code, function () use ($title) {
+                return $title;
+            });
         }
         if ($this->debug) {
             $content = file_get_contents($this->file);

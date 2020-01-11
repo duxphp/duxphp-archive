@@ -11,9 +11,6 @@ class Controller {
     private $view;
     public $layout = null;
 
-    /**
-     * 初始化     控制器
-     */
     public function __construct() {
         if (method_exists($this, 'init')) {
             $this->init();
@@ -122,7 +119,7 @@ class Controller {
     public function error(?string $msg, string $url = null, int $code = 500) {
         if (isAjax()) {
             $header = [
-                'Content-Type' => 'application/javascript;charset=utf-8;'
+                'Content-Type' => 'text/html; charset=UTF-8;'
             ];
             if ($url) {
                 $header['Location'] = $url;

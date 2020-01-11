@@ -161,11 +161,11 @@ function run(string $layer, string $name, string $method, array $vars = []) {
  * 获取请求参数
  * @param string $method
  * @param string $key
- * @param string $default
+ * @param null $default
  * @param null $function
  * @return array|false|mixed|string
  */
-function request(string $method = '', string $key = '', string $default = '', $function = null) {
+function request(string $method = '', string $key = '', $default = null, $function = null) {
     return \dux\Dux::request($method, $key, $default, $function);
 }
 
@@ -444,6 +444,15 @@ function dux_log($msg = '', string $type = 'INFO', string $fileName = '') {
 }
 
 /**
+ * 用户错误提示
+ * @param $msg
+ */
+function dux_error($msg, $code = 500) {
+    throw new \dux\exception\Message($msg, $code);
+    return false;
+}
+
+/**
  * 人性化时间
  * @param $time
  * @return string
@@ -493,12 +502,14 @@ function html_out(?string $str = '') {
 
 /**
  * 清理HTML代码
- * @param string $str
- * @return mixed|string
+ * @param string|null $str
+ * @param int $len
+ * @param array $allowed
+ * @return string|null
  */
-function html_clear(?string $str = null, $len = 0) {
-    $str = \dux\lib\Filter::filter()->html($str);;
-    if(!$len) {
+function html_clear(?string $str = null, $len = 0, $allowed = []) {
+    $str = \dux\lib\Filter::filter()->html($str, $allowed);
+    if ($len) {
         str_len($str, $len);
     }
     return $str;
@@ -695,16 +706,17 @@ function build_scss(string $str) {
  * 基础UI库
  * @param string $path
  * @param bool $cssLoad
+ * @param string $app
  * @return string
  */
-function load_ui(string $path = '', bool $cssLoad = true) {
-    $css = ROOT_URL . '/public/common/css/dux.css?v=1.0.9';
-    $js = ROOT_URL . '/public/common/js/dux.min.js?v=1.0.9';
+function load_ui(string $path = '', bool $cssLoad = true, $app = '') {
+    $css = ROOT_URL . '/public/common/css/dux.css';
+    $js = ROOT_URL . '/public/common/js/dux.min.js';
     $data = [];
     if ($cssLoad) {
         $data[] = '<link rel="stylesheet" href="' . $css . '">' . "\r\n";
     }
-    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-debug="' . ($config['debug_browser'] ? true : false) . '" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '"></script>' . "\r\n";
+    $data[] = '<script type="text/javascript" src="' . $js . '" data-cfg-autoload="false" data-debug="' . ($config['debug_browser'] ? true : false) . '" data-path="' . $path . '/" data-role="' . ROLE_NAME . '" data-root="' . ROOT_URL . '" data-app="' . $app . '"></script>' . "\r\n";
     return join("", $data);
 }
 

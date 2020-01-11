@@ -8,7 +8,7 @@ namespace dux\kernel;
 
 class Api {
 
-    protected $data;
+    protected $data = [];
 
     /**
      * Api constructor.
@@ -27,6 +27,9 @@ class Api {
      * @param array $data
      */
     public function success($msg = '', array $data = []) {
+        $header = [
+            'Content-Type' => 'application/json; charset=utf-8;'
+        ];
         if (empty($msg)) {
             $msg = \dux\Dux::$codes[200];
         }
@@ -37,7 +40,7 @@ class Api {
         ];
         \dux\Dux::header(200, function () use ($data) {
             $this->returnData($data);
-        });
+        }, $header);
     }
 
     /**
@@ -47,17 +50,15 @@ class Api {
      * @param string $url
      */
     public function error($msg = '', int $code = 500, string $url = '') {
-        if (empty($msg)) {
-            $msg = \dux\Dux::$codes[$code];
-        }
-        $data = [
-            'code' => $code,
-            'message' => $msg,
-            'url' => $url
+        $header = [
+            'Content-Type' => 'text/html; charset=UTF-8;'
         ];
-        \dux\Dux::header(200, function () use ($data) {
-            $this->returnData($data);
-        });
+        if ($url) {
+            $header['Location'] = $url;
+        }
+        \dux\Dux::header($code, function () use ($msg) {
+            return $msg;
+        }, $header);
     }
 
     /**

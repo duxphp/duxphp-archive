@@ -181,7 +181,7 @@ class ModelNo {
      */
     public function insertAll($data = []) {
 
-        if(!empty($data)){
+        if (!empty($data)) {
             $this->data($data);
         }
 
@@ -374,28 +374,26 @@ class ModelNo {
      * @return null
      */
     public function getObj() {
-        if ($this->object) {
-            return $this->object;
-        }
-
-        $this->object = new $this->driver($this->config);
-
-        $funArr = [
-            'setPrimary'            => $this->getPrimary(),
-            'setFields'             => array_keys($this->params),
-            'setParams'             => $this->params
-        ];
-
-        foreach ($funArr as $fun => $val){
-
-            if(!method_exists($this->object, $fun)){
-                continue;
+        $key = 'mox_' . http_build_query($this->config);
+        if (!\dux\Dux::di()->has($key)) {
+            $class = new $this->driver($this->config);
+            if (!$class instanceof \dux\kernel\modelNo\ModelNoInterface) {
+                throw new \Exception('The database class must interface class inheritance', 500);
             }
-
-            call_user_func([$this->object,$fun],$val);
+            $funArr = [
+                'setPrimary' => $this->getPrimary(),
+                'setFields' => array_keys($this->params),
+                'setParams' => $this->params
+            ];
+            foreach ($funArr as $fun => $val) {
+                if (!method_exists($class, $fun)) {
+                    continue;
+                }
+                call_user_func([$class, $fun], $val);
+            }
+            \dux\Dux::di()->set($key, $class);
         }
-
-        return $this->object;
+        return \dux\Dux::di()->get($key);
     }
 
 }

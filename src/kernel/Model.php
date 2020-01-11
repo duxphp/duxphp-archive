@@ -221,7 +221,7 @@ class Model {
      * @throws \Exception
      */
     public function count() {
-        return $this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+        return (int)$this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -271,7 +271,11 @@ class Model {
             $stack[] = '(' . implode(', ', $dataParams['stack']) . ')';
         }
         $columns = array_unique($columns);
-        return $this->getObj()->insert($table, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
+        $id = $this->getObj()->insert($table, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
+        if ($id === false) {
+            dux_error('Insert the data failure');
+        }
+        return $id;
     }
 
     /**
@@ -299,6 +303,9 @@ class Model {
         if ($this->_getRaw()) {
             return $status;
         }
+        if ($status === false) {
+            dux_error('Update the data failure');
+        }
         return ($status === false) ? false : true;
     }
 
@@ -314,6 +321,9 @@ class Model {
         $status = $this->getObj()->delete($this->_getTable(), $this->_getWhere(), $this->_getBindParams(), $this->_getFetchSql());
         if ($this->_getRaw()) {
             return $status;
+        }
+        if ($status === false) {
+            dux_error('Delete the data failure');
         }
         return ($status === false) ? false : true;
     }
@@ -473,14 +483,15 @@ class Model {
      * @throws \Exception
      */
     public function getObj() {
-        if ($this->object) {
-            return $this->object;
+        $key = 'model_' . http_build_query($this->config);
+        if (!\dux\Dux::di()->has($key)) {
+            $class = new $this->driver($this->config);
+            if (!$class instanceof \dux\kernel\model\DbInterface) {
+                throw new \Exception('The database class must interface class inheritance', 500);
+            }
+            \dux\Dux::di()->set($key, $class);
         }
-        $this->object = new $this->driver($this->config);
-        if (!$this->object instanceof \dux\kernel\model\DbInterface) {
-            throw new \Exception('The database class must interface class inheritance', 500);
-        }
-        return $this->object;
+        return \dux\Dux::di()->get($key);
     }
 
     protected function _getField() {
@@ -500,7 +511,11 @@ class Model {
                     if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min', 'max', 'avg', 'sum', 'count'])) {
                         $filedSql[] = $match[1] . ' as ' . $this->columnQuote($match[2]);
                     } else {
-                        $filedSql[] = $vo;
+                        if (preg_match("/(^_([a-zA-Z0-9]_?)*$)|(^[a-zA-Z](_?[a-zA-Z0-9])*_?$)/", $vo)) {
+                            $filedSql[] = $this->columnQuote($vo);
+                        } else {
+                            $filedSql[] = $vo;
+                        }
                     }
                 }
             }
@@ -524,7 +539,7 @@ class Model {
         ];
         $sql = [];
         foreach ($join as $vo) {
-            list($table, $relation, $way) = $vo;
+            [$table, $relation, $way] = $vo;
             preg_match('/([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $table, $match);
             $table = $this->prefix . $match[1] . (isset($match[3]) ? ' as ' . $match[3] : '');
             if (!$relation[0]) {

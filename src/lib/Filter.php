@@ -24,17 +24,17 @@ class Filter {
     public static function verifyArray(array $data = [], array $rules = []) {
         /*$rules = [
             'field' => [
-                'rule' => ['params', 'desc'],
+                'rule' => ['desc', params'],
             ],
         ];*/
         foreach ($rules as $field => $rule) {
             foreach ($rule as $method => $ruleArray) {
-                list($desc, $params) = $ruleArray;
+                [$desc, $params] = $ruleArray;
                 if (!method_exists(self::verify(), $method)) {
-                    throw new \dux\exception\Error("Validation rules does not exist！");
+                    dux_error("Validation rules does not exist！");
                 }
                 if (!self::verify()->$method($data[$field], $params)) {
-                    throw new \dux\exception\Error($desc);
+                    dux_error($desc);
                 }
             }
         }
@@ -60,8 +60,9 @@ class Filter {
                     $method = $params;
                     $params = null;
                 }
+
                 if (!method_exists(self::filter(), $method)) {
-                    throw new \dux\exception\Error("Filter rules does not exist！");
+                    dux_error("Filter rules does not exist！");
                 }
                 $tmpData[$field] = self::filter()->$method($data[$field], $params);
             }
@@ -103,7 +104,7 @@ class FilterInner {
     public function len($value, $params) {
         $rule = explode(',', $params, 2);
         if (count($rule) > 1) {
-            list($min, $mix) = $rule;
+            [$min, $mix] = $rule;
         } else {
             $min = 1;
             $max = $rule[0];
@@ -165,7 +166,7 @@ class FilterInner {
     public function int($value, $params) {
         $rule = explode(',', $params, 2);
         if (count($rule) > 1) {
-            list($min, $max) = $rule;
+            [$min, $max] = $rule;
         } else {
             $min = 0;
             $max = $rule[0];
@@ -216,12 +217,16 @@ class FilterInner {
     /**
      * 过滤html
      */
-    public function html($value) {
-        $value = filter_var($this->htmlOut($value), \FILTER_SANITIZE_STRING);
-        if ($value === false) {
-            return '';
+    public function html($value, $params) {
+        $config = \HTMLPurifier_Config::createDefault();
+        if (!empty($params)) {
+            //$config->set('HTML.Allowed', 'h1,a[href]');
+            $config->set('HTML.Allowed', implode(',', $params));
+        } else {
+            $config->set('HTML.Allowed', '');
         }
-        return $value;
+        $purifier = new \HTMLPurifier($config);
+        return $purifier->purify($value);
     }
 
     /**
@@ -279,7 +284,7 @@ class FilterInner {
      * @param $params
      * @return mixed
      */
-    public function function($value, $params) {
+    public function function ($value, $params) {
         if (!empty($value)) {
             return call_user_func($params, $value);
         } else {
@@ -549,7 +554,7 @@ class VerifyInner {
      * @param $params
      * @return bool
      */
-    public function function($value, $params) {
+    public function function ($value, $params) {
         if (!call_user_func($params, $value)) {
             return false;
         }

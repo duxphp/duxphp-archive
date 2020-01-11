@@ -180,12 +180,13 @@ class Task {
         if (empty($task)) {
             return;
         }
-        if (!$callback(json_decode($task, true))) {
+        $task = json_decode($task, true);
+        if (!$callback($task)) {
             if ($task['num'] < $retry) {
                 $this->obj()->rPush($this->tasKey, json_encode([
                     'time' => $task['time'],
                     'class' => $task['class'],
-                    'args' => $task['arge'],
+                    'args' => $task['args'],
                     'num' => $task['num'] + 1
                 ], JSON_UNESCAPED_UNICODE));
             }
