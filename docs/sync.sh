@@ -7,7 +7,7 @@ Please enter the digital operation
 `echo "[1]to obtain the public key"`
 `echo "[2]git sync(Please set up the public key)"`
 EOF
-read -p "Please enter the operation：" num1
+read -p "Please enter the operation: " num1
 case $num1 in
  1)
   echo "to obtain the public key"
@@ -43,14 +43,14 @@ dir=""
 delete=1
 
 function getUrl() {
-  read -p "Git SSH url：" str
+  read -p "Git SSH url: " str
   url=$str
   if [ "$url" = "" ]; then
     echo 'Input error'
     getUrl
   fi
 
-  read -p "Branch name：" str
+  read -p "Branch name: " str
   branch=$str
   if [ "$branch" = "" ]; then
     echo 'Input error'
@@ -59,7 +59,7 @@ function getUrl() {
 }
 
 function getDir() {
-  read -p "Sync path：" str
+  read -p "Sync path: " str
   dir=$str
   if [ "$dir" = "" ]; then
     echo 'Input error'
