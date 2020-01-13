@@ -3,18 +3,18 @@
 function menu ()
 {
  cat << EOF
-请输入操作数字
-`echo "[1]生成公钥"`
-`echo "[2]GIT同步(请先设置仓库公钥)"`
+Please enter the digital operation
+`echo "[1]to obtain the public key"`
+`echo "[2]git sync(Please set up the public key)"`
 EOF
-read -p "请输入对操作的数字：" num1
+read -p "Please enter the operation：" num1
 case $num1 in
  1)
-  echo "生成公钥"
+  echo "to obtain the public key"
   menuRsa
   ;;
  2)
-  echo "GIT同步"
+  echo "git sync"
   menuGit
   ;;
  3)
@@ -43,40 +43,40 @@ dir=""
 delete=1
 
 function getUrl() {
-  read -p "请输入仓库SSH地址：" str
+  read -p "Git SSH url：" str
   url=$str
   if [ "$url" = "" ]; then
-    echo '输入错误，请重新输入'
+    echo 'Input error'
     getUrl
   fi
 
-  read -p "请输入仓库分支名：" str
+  read -p "Branch name：" str
   branch=$str
   if [ "$branch" = "" ]; then
-    echo '输入错误，请重新输入'
+    echo 'Input error'
     getUrl
   fi
 }
 
 function getDir() {
-  read -p "请输入同步路径：" str
+  read -p "Sync path：" str
   dir=$str
   if [ "$dir" = "" ]; then
-    echo '输入错误，请重新输入'
+    echo 'Input error'
     getDir
   fi
 }
 
 function getDelete() {
   if [ ! -d $dir ]; then
-    echo "请手动创建同步路径"
+    echo "Please create sync path"
     exit 0
   fi
   if [ "`ls -A ${dir}`" = "" ];
   then
-    echo "目录为空，执行同步中..."
+    echo "Sync data..."
   else
-    echo "请手动清空同步路径下文件"
+    echo "Please clear the sync path file"
     exit 0
   fi
 }
@@ -87,7 +87,7 @@ function menuGit() {
   getDir
   getDelete
   git clone -b $branch $getUrl $getDir
-  echo "请将以下代码放入webhook脚本中"
+  echo "The following code into the webhook"
 cat << EOF
 echo "=========================="
 echo "start update git"
