@@ -363,9 +363,8 @@ class Dux {
             }
         }
         if ($callback) {
-            exit($callback());
+            echo call_user_func($callback);
         }
-        exit();
     }
 
     /**

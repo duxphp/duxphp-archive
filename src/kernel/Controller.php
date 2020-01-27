@@ -45,6 +45,7 @@ class Controller {
         }, [
             'Content-Type' => 'text/html;charset=utf-8;'
         ]);
+        exit();
     }
 
     /**
