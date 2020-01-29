@@ -131,6 +131,7 @@ class Controller {
         } else {
             $this->alert($msg, $url);
         }
+        exit();
     }
 
     /**
