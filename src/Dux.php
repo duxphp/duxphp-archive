@@ -357,9 +357,11 @@ class Dux {
             if (!isset(self::$codes[$code])) {
                 $code = 500;
             }
-            header(implode(' ', [$protocol, $code, self::$codes[$code]]));
-            foreach ($hander as $key => $vo) {
-                header($key . ' : ' . $vo);
+            if (!headers_sent()) {
+                header(implode(' ', [$protocol, $code, self::$codes[$code]]));
+                foreach ($hander as $key => $vo) {
+                    header($key . ' : ' . $vo);
+                }
             }
         }
         if ($callback) {
@@ -371,11 +373,7 @@ class Dux {
      * 页面不存在
      */
     public static function notFound() {
-        if (!IS_CLI) {
-            throw new \dux\exception\Message('404 Not Found', 404);
-        } else {
-            exit('The request does not exist');
-        }
+        self::errorPage('404 Not Found', 404);
     }
 
     /**

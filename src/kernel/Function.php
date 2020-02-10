@@ -449,7 +449,6 @@ function dux_log($msg = '', string $type = 'INFO', string $fileName = '') {
  */
 function dux_error($msg, $code = 500) {
     throw new \dux\exception\Message($msg, $code);
-    return false;
 }
 
 /**

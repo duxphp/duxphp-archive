@@ -5,11 +5,6 @@
 
 namespace dux\exception;
 
-class Message extends \ErrorException {
+class Message extends \Exception {
 
-    public function __construct($message, $code = 0) {
-        $this->message = $message;
-        $this->code = $code;
-        new \dux\exception\Handle($message, $code, '', 0, [], false, true, false);
-    }
 }

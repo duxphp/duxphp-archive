@@ -36,7 +36,7 @@ class Handle {
         $this->debug = $debug;
         $this->error = $error;
         $this->log = $log;
-        $this->render();
+        //return $this->render();
     }
 
     public function render() {
@@ -63,9 +63,8 @@ class Handle {
             \dux\Dux::log($data, 'ERROR');
         }
         if (IS_CLI) {
-            return "error: {$title} : {$desc}";
-        }
-        if (isAjax()) {
+            echo "error: {$title} : {$desc}";
+        } else if (isAjax()) {
             if (!$this->error) {
                 $title = \dux\Dux::$codes[$code];
             }
@@ -134,7 +133,7 @@ class Handle {
                 $html = file_get_contents(CORE_PATH . 'tpl/error.html');
                 $html = str_replace('{$title}', $title, $html);
             }
-            return \dux\Dux::header(500, function () use ($html) {
+            \dux\Dux::header($code, function () use ($html) {
                 return $html;
             }, [
                 'Content-Type' => 'text/html; charset=UTF-8'
