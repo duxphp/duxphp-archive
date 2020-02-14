@@ -87,7 +87,7 @@ function menuGit() {
   getDir
   getDelete
   echo "git clone -b ${branch} ${getUrl} ${getDir}"
-  git clone -b $branch $getUrl $getDir
+  git clone -b ${branch} ${getUrl} ${getDir}
   echo "The following code into the webhook"
 cat << EOF
 echo "=========================="
