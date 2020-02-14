@@ -67,10 +67,11 @@ class Task {
      * @param $time
      * @param $class
      * @param array $args
-     * @param int $num
+     * @param int $delay
+     * @param int $mode
      * @return int
      */
-    public function add($time, $class, $args = [], $num = 0) {
+    public function add($time, $class, $args = [], $delay = 5, $mode = 0) {
         return $this->obj()->zAdd(
             $this->key,
             $time,
@@ -78,7 +79,9 @@ class Task {
                 'time' => $time,
                 'class' => $class,
                 'args' => $args,
-                'num' => $num
+                'num' => 0,
+                'delay' => $delay,
+                'mode' => $mode
             ], JSON_UNESCAPED_UNICODE)
         );
     }
@@ -92,15 +95,16 @@ class Task {
      * @return int
      */
     public function thread(callable $callback, int $concurrent = 10, int $timeout = 30, int $retry = 3) {
-        if(!function_exists('pcntl_fork')) {
-            return  $this->single($callback, $timeout, $retry);
+        if (!function_exists('pcntl_fork')) {
+            return $this->single($callback, $timeout, $retry);
         }
         if ($this->hasLock()) {
             return -1;
         }
         $this->lock($timeout);
         $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [0, $concurrent]]);
-        $concurrent = intval($this->obj()->lLen($this->key));
+
+        $concurrent = intval($this->obj()->lLen($this->tasKey));
         foreach ($taskList as $data) {
             if ($this->obj()->zRem($this->key, $data)) {
                 if ($this->obj()->rPush($this->tasKey, $data)) {
@@ -173,24 +177,39 @@ class Task {
     private function execute(callable $callback, $retry = 3) {
         try {
             $task = $this->obj()->lPop($this->tasKey);
-        }catch (\RedisException $e) {
+        } catch (\RedisException $e) {
             $this->close();
             $task = $this->obj()->lPop($this->tasKey);
         }
         if (empty($task)) {
-            return;
+            return true;
         }
         $task = json_decode($task, true);
-        if (!$callback($task)) {
+        if ($callback($task)) {
+            return true;
+        }
+        if (!$task['mode']) {
             if ($task['num'] < $retry) {
                 $this->obj()->rPush($this->tasKey, json_encode([
-                    'time' => $task['time'],
+                    'time' => time() + $task['delay'],
                     'class' => $task['class'],
                     'args' => $task['args'],
-                    'num' => $task['num'] + 1
+                    'num' => $task['num'] + 1,
+                    'delay' => $task['delay'],
+                    'mode' => $task['mode']
                 ], JSON_UNESCAPED_UNICODE));
             }
+        } else {
+            $this->obj()->rPush($this->tasKey, json_encode([
+                'time' => time() + $task['delay'],
+                'class' => $task['class'],
+                'args' => $task['args'],
+                'num' => 0,
+                'delay' => $task['delay'],
+                'mode' => $task['mode']
+            ], JSON_UNESCAPED_UNICODE));
         }
+        return true;
     }
 
     /**
