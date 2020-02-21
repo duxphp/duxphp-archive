@@ -12,8 +12,8 @@ class Model {
     protected $object = null;
     protected $config = [];
 
-    protected $prefix = '';
-    protected $table = '';
+    public $prefix = '';
+    public $table = '';
 
     protected $options = [
         'table' => '',
