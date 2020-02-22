@@ -29,7 +29,7 @@ class Task {
         $this->tasKey = $key . '_task';
         $this->locKey = $key . '_lock';
         $this->config = array_merge($this->config, $config);
-        $this->object = new \dux\lib\Redis($this->config);
+        //$this->object = new \dux\lib\Redis($this->config);
     }
 
     /**
@@ -88,16 +88,12 @@ class Task {
 
     /**
      * 执行队列
-     * @param callable $callback 执行函数
+     * @param string $url 队列Url
      * @param int $concurrent 进程数量
      * @param int $timeout 队列超时，秒
-     * @param int $retry 重试次数
      * @return int
      */
-    public function thread(callable $callback, int $concurrent = 10, int $timeout = 30, int $retry = 3) {
-        if (!function_exists('pcntl_fork')) {
-            return $this->single($callback, $timeout, $retry);
-        }
+    public function thread($url, int $concurrent = 10, int $timeout = 30) {
         if ($this->hasLock()) {
             return -1;
         }
@@ -116,55 +112,30 @@ class Task {
             $this->unLock();
             return 0;
         }
-        $pidData = [];
-        for ($i = 0; $i <= $concurrent; $i++) {
-            $this->close();
-            $pid = \pcntl_fork();
-            if ($pid == -1) {
-                die("Fork failed");
-            }
-            if ($pid > 0) {
-                $pidData[] = $pid;
-            }
-            if ($pid == 0) {
-                $this->execute($callback, $retry);
-                exit;
-            }
-        }
-        while (count($pidData) > 0) {
-            pcntl_wait($status);
-            foreach ($pidData as $key => $pid) {
-                $res = pcntl_waitpid($pid, $status, WNOHANG);
-                if ($res == -1 || $res > 0) {
-                    unset($pidData[$key]);
-                }
-            }
-        }
-        $this->unLock();
-        return 1;
-    }
 
-    public function single(callable $callback, int $timeout = 30, int $retry = 3) {
-        if ($this->hasLock()) {
-            return -1;
-        }
-        $this->lock($timeout);
-        $taskList = $this->obj()->zRangeByScore($this->key, 0, time(), ['limit' => [0, 1]]);
-        $data = $taskList[0];
-        if (!$data) {
-            $this->unLock();
-            return 0;
-        }
-        if ($this->obj()->zRem($this->key, $data)) {
-            if (!$this->obj()->rPush($this->tasKey, $data)) {
-                $this->unLock();
-                return 0;
+        $client = new \GuzzleHttp\Client();
+        $requests = function ($total) use($url) {
+            for ($i = 0; $i < $total; $i++) {
+                yield new \GuzzleHttp\Psr7\Request('GET', $url);
             }
-        } else {
-            $this->unLock();
-            return 0;
-        }
-        $this->execute($callback, $retry);
+        };
+
+        $pool = new \GuzzleHttp\Pool($client, $requests($concurrent), [
+            'concurrency' => $concurrent,
+            'fulfilled' => function ($response, $index) {
+                $contents = $response->getBody()->getContents();
+                if($contents <> 'SUCCESS' && strpos($contents, 'ERROR:') !== false) {
+                    dux_log('Task:' . $contents);
+                }
+            },
+            'rejected' => function ($reason, $index) {
+                dux_log('Task:Request failed');
+            },
+        ]);
+
+        $promise = $pool->promise();
+        $promise->wait();
+
         $this->unLock();
         return 1;
     }
@@ -174,18 +145,13 @@ class Task {
      * @param callable $callback
      * @param int $retry
      */
-    private function execute(callable $callback, $retry = 3) {
-        try {
-            $task = $this->obj()->lPop($this->tasKey);
-        } catch (\RedisException $e) {
-            $this->close();
-            $task = $this->obj()->lPop($this->tasKey);
-        }
+    public function execute(callable $callback, $retry = 3) {
+        $task = $this->obj()->lPop($this->tasKey);
         if (empty($task)) {
             return true;
         }
         $task = json_decode($task, true);
-        if ($callback($task)) {
+        if ($callback($task) === true) {
             return true;
         }
         if (!$task['mode']) {
@@ -241,7 +207,16 @@ class Task {
      * @return \Redis|null
      */
     private function obj() {
-        return $this->object->link();
+        if($this->object) {
+            return $this->object;
+        }
+        $this->object = new \Redis();
+        $this->object->connect($this->config['host'], $this->config['port']);
+        if ($this->config['password']) {
+            $this->object->auth($this->config['password']);
+        }
+        $this->object->select($this->config['dbname']);
+        return $this->object;
     }
 
     /**
