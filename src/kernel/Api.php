@@ -19,6 +19,7 @@ class Api {
         $data = json_decode($data, true);
         $data = $data ? $data : [];
         $this->data = array_merge($request, $data);
+        $_SERVER['HTTP_X_AJAX'] = true;
     }
 
     /**
@@ -41,6 +42,7 @@ class Api {
         \dux\Dux::header(200, function () use ($data) {
             $this->returnData($data);
         }, $header);
+        exit;
     }
 
     /**
@@ -59,6 +61,7 @@ class Api {
         \dux\Dux::header($code, function () use ($msg) {
             return $msg;
         }, $header);
+        exit;
     }
 
     /**
