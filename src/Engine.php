@@ -66,7 +66,7 @@ class Engine {
      */
     public function handleError($errno, $errstr, $errfile, $errline) {
         if ($errno & error_reporting()) {
-            $handle = new \dux\exception\Handle($errstr, $errno, $errfile, $errline, [], \dux\Config::get('dux.debug'), \dux\Config::get('dux.debug'), \dux\Config::get('dux.log'));
+            $handle = new \dux\exception\Handle($errstr, $errno, $errfile, $errline, [], \dux\Config::get('dux.debug'), \dux\Config::get('dux.debug_error'), \dux\Config::get('dux.debug_log'));
             $handle->render();
         }
     }
@@ -79,7 +79,7 @@ class Engine {
         if ($e instanceof \dux\exception\Message) {
             $handle = new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), false, true, false);
         } else {
-            $handle = new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), \dux\Config::get('dux.debug'), \dux\Config::get('dux.debug'), \dux\Config::get('dux.log'));
+            $handle = new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), \dux\Config::get('dux.debug'), \dux\Config::get('dux.debug_error'), \dux\Config::get('dux.debug_log'));
         }
         $handle->render();
     }
