@@ -472,12 +472,12 @@ class Dux {
     /**
      * JWT编码
      * @param $data
-     * @param int $iss
-     * @param int $aud
      * @param int $exp
+     * @param string $iss
+     * @param string $aud
      * @return string
      */
-    public static function jwtEncode($data, int $iss = 0, int $aud = 0, int $exp = 3600) {
+    public static function jwtEncode($data, int $exp = 3600, ?string $iss = null, ?string $aud = null) {
         $time = time();
         $token = [
             "iss" => $iss ?: DOMAIN,
