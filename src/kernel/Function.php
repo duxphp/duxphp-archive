@@ -523,7 +523,7 @@ function rand_str($length = 5) {
     $pattern = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLOMNOPQRSTUVWXYZ';
     $key = '';
     for ($i = 0; $i < $length; $i++) {
-        $key .= $pattern{mt_rand(0, 35)};
+        $key .= $pattern[mt_rand(0, 35)];
     }
     return $key;
 }
