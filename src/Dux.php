@@ -360,7 +360,7 @@ class Dux {
             if (!headers_sent()) {
                 header(implode(' ', [$protocol, $code, self::$codes[$code]]));
                 foreach ($hander as $key => $vo) {
-                    header($key . ' : ' . $vo);
+                    header($key . ': ' . $vo);
                 }
             }
         }

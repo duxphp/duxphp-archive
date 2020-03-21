@@ -104,7 +104,8 @@ class Start {
         if (!defined('PACK_PATH')) define('PACK_PATH', CORE_PATH . 'package/');
         if (!defined('ROOT_URL')) define('ROOT_URL', str_replace('\\', '/', rtrim(dirname($_SERVER["SCRIPT_NAME"]), '\\/')));
         if (!defined('ROOT_SCRIPT')) define('ROOT_SCRIPT', str_replace('\\', '/', rtrim($_SERVER["SCRIPT_NAME"], '\\/')));
-        if (!defined('DOMAIN')) define('DOMAIN', (($_SERVER['HTTPS'] <> "on") ? 'http' : 'https') . '://' . $_SERVER["HTTP_HOST"]);
+        $httpType = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')) ? 'https://' : 'http://';
+        if (!defined('DOMAIN')) define('DOMAIN', $httpType . '://' . $_SERVER["HTTP_HOST"]);
         if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', 'http://' . $_SERVER["HTTP_HOST"]);
     }
 
@@ -155,7 +156,7 @@ class Start {
      */
     protected static function start() {
         if (strtolower($_SERVER['REQUEST_METHOD']) == 'options') {
-            Dux::header(204);
+            exit(Dux::header(204));
         }
         (new \dux\Engine())->run();
     }
