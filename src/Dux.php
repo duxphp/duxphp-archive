@@ -161,15 +161,6 @@ class Dux {
                 if ($vo == 'false') {
                     $vo = false;
                 }
-                if (filter_var($vo, \FILTER_VALIDATE_FLOAT) !== false) {
-                    if (strpos($vo, '.') === false) {
-                        $decimal = 0;
-                    } else {
-                        $tmp = explode('.', $vo);
-                        $decimal = strlen(end($tmp));
-                    }
-                    $vo = number_format($vo, $decimal, '.', '');
-                }
                 $vo = html_in((string)$vo);
             }
         }
