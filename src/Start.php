@@ -105,7 +105,7 @@ class Start {
         if (!defined('ROOT_URL')) define('ROOT_URL', str_replace('\\', '/', rtrim(dirname($_SERVER["SCRIPT_NAME"]), '\\/')));
         if (!defined('ROOT_SCRIPT')) define('ROOT_SCRIPT', str_replace('\\', '/', rtrim($_SERVER["SCRIPT_NAME"], '\\/')));
         $httpType = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')) ? 'https://' : 'http://';
-        if (!defined('DOMAIN')) define('DOMAIN', $httpType . '://' . $_SERVER["HTTP_HOST"]);
+        if (!defined('DOMAIN')) define('DOMAIN', $httpType . $_SERVER["HTTP_HOST"]);
         if (!defined('DOMAIN_HTTP')) define('DOMAIN_HTTP', 'http://' . $_SERVER["HTTP_HOST"]);
     }
 
