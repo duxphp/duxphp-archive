@@ -104,8 +104,18 @@ class Engine {
             \dux\Dux::route()->add($method, $url, $module);
         }
         if (IS_CLI) {
-            $params = getopt('u:');
+            $params = getopt('u:q:');
             $url = $params['u'];
+            $query = $params['q'];
+            if ($query) {
+                if (!is_array($query)) {
+                    $query = [$query];
+                }
+                foreach ($query as $vo) {
+                    $item = explode('=', $vo, 2);
+                    $_GET[$item[0]] = $item[1];
+                }
+            }
         } else {
             $url = URL;
         }
