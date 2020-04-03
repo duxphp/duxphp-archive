@@ -30,19 +30,19 @@ class Console {
         $method = $modelArray[1] ?: 'default';
 
         if (!self::$module[$name]) {
-            exit('Module does not exist');
+            exit('Module does not exist' . "\n");
         }
         if (!class_exists(self::$module[$name])) {
-            exit('The module class does not exist');
+            exit('The module class does not exist' . "\n");
         }
         $class = new self::$module[$name]();
         if (!$class instanceof \dux\console\ConsoleInterface) {
-            exit('The console class must interface class inheritance');
+            exit('The console class must interface class inheritance' . "\n");
         }
         if(!method_exists($class, $method)) {
-            exit('Module approach does not exist');
+            exit('Module approach does not exist' . "\n");
         }
-        exit(call_user_func([$class, $method], $param));
+        exit(call_user_func([$class, $method], $param) . "\n");
     }
 
     /**
@@ -52,7 +52,7 @@ class Console {
      */
     public static function register($model, $class) {
         if (self::$module[$model]) {
-            exit('Registration module has been in existence');
+            exit('Registration module has been in existence' . "\n");
         }
         self::$module[$model] = $class;
     }
