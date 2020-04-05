@@ -630,8 +630,7 @@ function price_calculate($n1, string $symbol, $n2, int $scale = 2) {
  * @return string
  */
 function log_no(string $pre = '') {
-    mt_srand((double)microtime() * 1000000);
-    return $pre . date('Ymd') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+    return $pre . date('Ymd').substr(time(), -5) . substr(microtime(), 2, 5) . sprintf('%02d', rand(1000, 9999));
 }
 
 /**
