@@ -15,7 +15,7 @@ class Tools {
      */
     static public function zipCompress(string $file, string $dir = '') {
         $zipFile = new \PhpZip\ZipFile();
-        $zipFile->addDir($dir)->saveAsFile($file)->close();
+        $zipFile->addDirRecursive($dir)->saveAsFile($file)->close();
     }
 
     /**
