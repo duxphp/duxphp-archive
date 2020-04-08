@@ -14,10 +14,8 @@ class Tools {
      * @throws \Exception
      */
     static public function zipCompress(string $file, string $dir = '') {
-        $zippy = \Alchemy\Zippy\Zippy::load();
-        $zippy->create($file, [
-            'folder' => $dir
-        ], true);
+        $zipFile = new \PhpZip\ZipFile();
+        $zipFile->addDir($dir)->saveAsFile($file)->close();
     }
 
     /**
@@ -27,8 +25,8 @@ class Tools {
      * @throws \Exception
      */
     static public function zipExtract(string $file, string $dir = '') {
-        $zippy = \Alchemy\Zippy\Zippy::load();
-        $zippy->open($file)->extract($dir);
+        $zipFile = new \PhpZip\ZipFile();
+        $zipFile->openFile($file)->extractTo($dir)->close();
     }
 
     /**
