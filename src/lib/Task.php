@@ -32,9 +32,9 @@ class Task {
      */
     public function list($type = 0, $offet = 0, $limit = 10) {
         if (!$type) {
-            \dux\Dux::model()->table($this->table)->where(['status' => 0])->limit($offet . ',' . $limit)->select();
+            $list = \dux\Dux::model()->table($this->table)->where(['status' => 0])->limit($offet . ',' . $limit)->select();
         } else {
-            \dux\Dux::model()->table($this->table)->where(['status' => 1])->limit($offet . ',' . $limit)->select();
+            $list = \dux\Dux::model()->table($this->table)->where(['status' => 1])->limit($offet . ',' . $limit)->select();
         }
         return $list;
     }
