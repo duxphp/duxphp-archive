@@ -75,6 +75,15 @@ class Task {
     }
 
     /**
+     * 获取队列信息
+     * @param $class
+     * @param array $args
+     */
+    public function info($class, $args = []) {
+        return \dux\Dux::model()->table($this->table)->where(['class' => $class, 'args' => json_encode($args, JSON_UNESCAPED_UNICODE)])->find();
+    }
+
+    /**
      * 执行队列
      * @param string $url 队列Url
      * @param int $concurrent 进程数量
