@@ -43,12 +43,10 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
     public function select($table, $condition = '', $params = [], $field = '*', $append = '', $return = false) {
         $field = !empty($field) ? $field : '*';
         $condition = !empty($condition) ? ' WHERE ' . $condition : '';
-        $table = $this->_table($table);
         return $this->query("SELECT {$field} FROM {$table} {$condition} {$append}", $params, $return);
     }
 
     public function aggregate($type, $table, $condition = '', $params = [], $field = '*', $append = '', $return = false) {
-        $table = $this->_table($table);
         $condition = !empty($condition) ? ' WHERE ' . $condition : '';
         if ($type == 'COUNT') {
             $field = '*';
@@ -58,7 +56,6 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
     }
 
     public function insert($table, array $columns = [], array $values = [], array $params = [], $return = false) {
-        $table = $this->_table($table);
         $status = $this->execute("INSERT INTO {$table} (" . implode(', ', $columns) . ") VALUES " . implode(', ', $values), $params, $return);
         $id = $this->getLink()->lastInsertId();
         if ($id) {
@@ -68,26 +65,19 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
         }
     }
 
-    public function update($table, $condition = '', array $columns = [], array $values = [], array $params = [], $return = false) {
+    public function update($table, $condition = '', array $columns = [], array $params = [], $return = false) {
         if (empty($condition)) return false;
-        $table = $this->_table($table);
         $condition = !empty($condition) ? ' WHERE ' . $condition : '';
-        $stock = [];
-        foreach ($columns as $key => $vo) {
-            $stock[] = $vo . ' = ' . $values[$key];
-        }
-        return $this->execute("UPDATE {$table} SET " . implode(', ', $stock) . $condition, $params, $return);
+        return $this->execute("UPDATE {$table} SET " . implode(', ', $columns) . $condition, $params, $return);
     }
 
     public function delete($table, $condition = '', $params = [], $return = false) {
         if (empty($condition)) return false;
-        $table = $this->_table($table);
         $condition = !empty($condition) ? ' WHERE ' . $condition : '';
         return $this->execute("DELETE FROM {$table} {$condition}", $params, $return);
     }
 
     public function getFields($table) {
-        $table = $this->_table($table);
         $obj = $this->getLink()->prepare("DESCRIBE {$table}");
         $obj->execute();
         $data = $obj->fetchAll(\PDO::FETCH_COLUMN);
@@ -96,15 +86,30 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
     }
 
     public function getSql() {
-        $sql = $this->sqlMeta['sql'];
-        $arr = $this->sqlMeta['params'];
-        uksort($arr, function ($a, $b) {
-            return strlen($b) - strlen($a);
-        });
-        foreach ($arr as $k => $v) {
-            $sql = str_replace($k, $this->sqlMeta['link']->quote($v), $sql);
+        $query = $this->sqlMeta['sql'];
+        $map = $this->sqlMeta['params'];
+
+        $query = preg_replace(
+            '/"([a-zA-Z0-9_]+)"/i',
+            '`$1`',
+            $query
+        );
+        foreach ($map as $key => $value) {
+            if ($value[1] === \PDO::PARAM_STR) {
+                $replace = $this->sqlMeta['link']->quote($value[0]);
+            } elseif ($value[1] === \PDO::PARAM_NULL) {
+                $replace = 'NULL';
+            } elseif ($value[1] === \PDO::PARAM_LOB) {
+                $replace = '{LOB_DATA}';
+            } else {
+                $replace = $value[0];
+            }
+
+            $query = str_replace($key, $replace, $query);
         }
-        return $sql;
+
+        return $query;
+
     }
 
     public function query($sql, array $params = [], $return = false) {
@@ -117,8 +122,8 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
 
     private function exec($sql, $params, $return, $type) {
         $sth = $this->_bindParams($sql, $params, $this->getLink());
-        $sqlStr = $this->getSql();
         if ($return) {
+            $sqlStr = $this->getSql();
             return $sqlStr;
         }
         try {
@@ -130,7 +135,8 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
                 $this->link = null;
                 return $this->exec($sql, $params, $return, $type);
             }
-            throw new \Exception('Database SQL: "' . $sqlStr . '". ErrorInfo: ' . $err[1], 500);
+            $sqlStr = $sqlStr ?: $this->getSql();
+            throw new \Exception('Database SQL: "' . $sqlStr . '". ErrorInfo: ' . $err[1] . ' ' . $err[2], 500);
         }
         $this->linkCurrentNum = 0;
         if ($type) {
@@ -175,22 +181,18 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
         $this->sqlMeta = ['sql' => $sql, 'params' => $params, 'link' => $link];
         $sth = $link->prepare($sql);
         foreach ($params as $k => $v) {
-            $sth->bindValue($k, $v);
+            $sth->bindValue($k, $v[0], $v[1]);
         }
         return $sth;
-    }
-
-    protected function _table($table) {
-        return (false === strpos($table, ' ')) ? "`{$table}`" : $table;
     }
 
     protected function _connect() {
         $pdo = null;
         $dsn = "mysql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['dbname']};charset={$this->config['charset']}";
         try {
-            $pdo = new \PDO($dsn, $this->config['username'], $this->config['password'], [
-                \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$this->config['charset']}",
-            ]);
+            $pdo = new \PDO($dsn, $this->config['username'], $this->config['password']);
+            $pdo->exec("SET NAMES {$this->config['charset']}");
+            $pdo->exec('SET SQL_MODE=' . ($this->config['strict'] ? 'NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES' : '""'));
         } catch (\PDOException $e) {
             throw new \Exception('connect database error :' . $e->getMessage(), 500);
         }
@@ -198,7 +200,7 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
         return $pdo;
     }
 
-    protected function getLink() {
+    public function getLink() {
         if (!$this->link) {
             $this->link = $this->_connect();
         }

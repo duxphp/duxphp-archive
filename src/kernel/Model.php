@@ -6,23 +6,26 @@
 
 namespace dux\kernel;
 
+use PDO;
+use PDOException;
+
 class Model {
 
     protected $driver = null;
     protected $object = null;
     protected $config = [];
+    protected $guid = 0;
 
     public $prefix = '';
-    public $table = '';
 
     protected $options = [
-        'table' => '',
+        'table' => [],
         'field' => [],
         'lock' => false,
         'join' => [],
         'where' => [],
         'data' => [],
-        'bind_params' => [],
+        'map' => [],
         'append' => [],
         'order' => '',
         'limit' => '',
@@ -70,16 +73,6 @@ class Model {
     }
 
     /**
-     * 设置表
-     * @param string $table
-     * @return $this
-     */
-    public function setTable(string $table) {
-        $this->table = $table;
-        return $this;
-    }
-
-    /**
      * 设置配置
      * @param array $config
      * @return $this
@@ -95,19 +88,21 @@ class Model {
      * @return $this
      */
     public function table(string $table) {
-        $this->options['table'] = $table;
+        preg_match('/([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $table, $match);
+        $this->options['table'] = [$match[1], $match[3]];
         return $this;
     }
 
     /**
      * 关联表
      * @param string $table
-     * @param array $relation
+     * @param $relation
      * @param string $way
      * @return $this
      */
-    public function join(string $table, array $relation, string $way = '><') {
-        $this->options['join'][] = [$table, $relation, $way];
+    public function join(string $table, $relation, string $way = '><') {
+        preg_match('/(?<table>[a-zA-Z0-9_]+)\s?(\((?<alias>[a-zA-Z0-9_]+)\))?/', $table, $match);
+        $this->options['join'][] = [$match['table'], $match['alias'], $relation, $way];
         return $this;
     }
 
@@ -127,9 +122,8 @@ class Model {
      * @param array $bindParams
      * @return $this
      */
-    public function data(array $data = [], array $bindParams = []) {
+    public function data(array $data = []) {
         $this->options['data'] = $data;
-        $this->options['bind_params'] = $bindParams;
         return $this;
     }
 
@@ -200,8 +194,15 @@ class Model {
      * @return $this
      */
     public function where(array $where = [], array $bindParams = []) {
+        $maps = [];
+        foreach ($bindParams as $key => $value) {
+            if (strpos($key, ':', 0) === false) {
+                $key = ':' . $key;
+            }
+            $maps[$key] = is_array($value) ? $value : $this->typeMap($value, gettype($value));
+        }
         $this->options['where'] = $where;
-        $this->options['bind_params'] = $bindParams;
+        $this->options['map'] = $maps;
         return $this;
     }
 
@@ -211,9 +212,22 @@ class Model {
      * @throws \Exception
      */
     public function select() {
-        $data = $this->getObj()->select($this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
-        return empty($data) ? [] : $data;
+        $field = $this->_getField();
+        $table = $this->_getTable();
+        $join = $this->_getJoin();
+        $data = $this->getObj()->select($table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
+        $data = empty($data) ? [] : $data;
+        $result = [];
+        $columnMap = [];
+        $this->columnMap($field['column'], $columnMap);
+        $currentStack = [];
+        $result = [];
+        foreach ($data as $vo) {
+            $result[] = $this->dataMap($vo, $field['column'], $columnMap);
+        }
+        return $result;
     }
+
 
     /**
      * 统计数量
@@ -221,7 +235,8 @@ class Model {
      * @throws \Exception
      */
     public function count() {
-        return (int)$this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+        $field = $this->_getField();
+        return (int)$this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -234,17 +249,6 @@ class Model {
         return isset($data[0]) ? $data[0] : [];
     }
 
-    /**
-     * 拼接字段
-     * @param string $string
-     * @return string
-     */
-    protected function columnQuote(string $string) {
-        if (strpos($string, '.') !== false) {
-            return '`' . $this->prefix . str_replace('.', '".`', $string) . '`';
-        }
-        return '`' . $string . '`';
-    }
 
     /**
      * 插入数据
@@ -255,23 +259,70 @@ class Model {
         if (empty($this->options['data']) || !is_array($this->options['data'])) {
             return false;
         }
+
         $table = $this->_getTable();
         $datas = $this->_getData();
-        if (empty($datas) || !is_array($datas)) {
-            return false;
-        }
+        $stack = [];
+        $columns = [];
+        $fields = [];
+        $map = [];
+
         if (!isset($datas[0])) {
             $datas = [$datas];
         }
-        $stack = [];
-        $columns = [];
-        foreach ($datas as $key => $data) {
-            $dataParams = $this->_dataParsing($data, $key);
-            $columns = array_merge($columns, $dataParams['fields']);
-            $stack[] = '(' . implode(', ', $dataParams['stack']) . ')';
+
+        foreach ($datas as $data) {
+            foreach ($data as $key => $value) {
+                $columns[] = $key;
+            }
         }
+
         $columns = array_unique($columns);
-        $id = $this->getObj()->insert($table, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
+        foreach ($datas as $data) {
+            $values = [];
+            foreach ($columns as $key) {
+                if (strtoupper(substr($key, -5)) === '[SQL]') {
+                    $values[] = $this->buildRaw($this->_columnQuote(substr($key, 0, -5)) . ' = ' . $data[$key], $map);
+                    continue;
+                }
+                $mapKey = $this->mapKey();
+                $values[] = $mapKey;
+                if (!isset($data[$key])) {
+                    $map[$mapKey] = [null, PDO::PARAM_NULL];
+                } else {
+                    $value = $data[$key];
+                    $type = gettype($value);
+                    switch ($type) {
+                        case 'array':
+                            $map[$mapKey] = [
+                                strpos($key, '[ARRAY]') === strlen($key) - 7 ?
+                                    serialize($value) :
+                                    json_encode($value)
+                                ,
+                                PDO::PARAM_STR
+                            ];
+                            break;
+                        case 'object':
+                            $value = serialize($value);
+                        case 'NULL':
+                        case 'resource':
+                        case 'boolean':
+                        case 'integer':
+                        case 'double':
+                        case 'string':
+                            $map[$mapKey] = $this->typeMap($value, $type);
+                            break;
+                    }
+                }
+            }
+            $stack[] = '(' . implode(', ', $values) . ')';
+        }
+
+        foreach ($columns as $key) {
+            $fields[] = $this->_columnQuote(preg_replace("/(\s*\[(ARRAY|SQL)\]$)/i", '', $key));
+        }
+
+        $id = $this->getObj()->insert($table, $fields, $stack, $map, $this->_getFetchSql());
         if ($id === false) {
             dux_error('Insert the data failure');
         }
@@ -291,15 +342,53 @@ class Model {
             return false;
         }
         $table = $this->_getTable();
-        $datas = $this->_getData();
+        $data = $this->_getData();
         $where = $this->_getWhere();
-        if (empty($datas) || !is_array($datas)) {
+        $map = $this->_getBindParams();
+        if (empty($data) || !is_array($data)) {
             return false;
         }
-        $dataParams = $this->_dataParsing($datas);
-        $stack = $dataParams['stack'];
-        $columns = array_unique($dataParams['fields']);
-        $status = $this->getObj()->update($table, $where, $columns, $stack, $this->_getBindParams(), $this->_getFetchSql());
+        $fields = [];
+        foreach ($data as $key => $value) {
+            $column = $this->_columnQuote(preg_replace("/(\s*\[(ARRAY|SQL|\+|\-|\*|\/)\]$)/i", '', $key));
+            if (strtoupper(substr($key, -5)) === '[SQL]') {
+                $fields[] = $this->buildRaw($column . ' = ' . $data[$key], $map);
+                continue;
+            }
+            $map_key = $this->mapKey();
+            preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
+            if (isset($match['operator'])) {
+                if (is_numeric($value)) {
+                    $fields[] = $column . ' = ' . $column . ' ' . $match['operator'] . ' ' . $value;
+                }
+            } else {
+                $fields[] = $column . ' = ' . $map_key;
+                $type = gettype($value);
+                switch ($type) {
+                    case 'array':
+                        $map[$map_key] = [
+                            strpos($key, '[ARRAY]') === strlen($key) - 7 ?
+                                serialize($value) :
+                                json_encode($value)
+                            ,
+                            PDO::PARAM_STR
+                        ];
+                        break;
+                    case 'object':
+                        $value = serialize($value);
+                    case 'NULL':
+                    case 'resource':
+                    case 'boolean':
+                    case 'integer':
+                    case 'double':
+                    case 'string':
+                        $map[$map_key] = $this->typeMap($value, $type);
+                        break;
+                }
+            }
+        }
+
+        $status = $this->getObj()->update($table, $where, $fields, $map, $this->_getFetchSql());
         if ($this->_getRaw()) {
             return $status;
         }
@@ -362,7 +451,8 @@ class Model {
      */
     public function sum(string $field = '') {
         $this->field($field);
-        return $this->getObj()->aggregate('SUM', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+        $field = $this->_getField();
+        return $this->getObj()->aggregate('SUM', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -373,7 +463,8 @@ class Model {
      */
     public function avg(string $field = '') {
         $this->field($field);
-        return $this->getObj()->aggregate('AVG', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+        $field = $this->_getField();
+        return $this->getObj()->aggregate('AVG', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -384,7 +475,8 @@ class Model {
      */
     public function max(string $field = '') {
         $this->field($field);
-        return $this->getObj()->aggregate('MAX', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+        $field = $this->_getField();
+        return $this->getObj()->aggregate('MAX', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -395,7 +487,8 @@ class Model {
      */
     public function min(string $field = '') {
         $this->field($field);
-        return $this->getObj()->aggregate('MIN', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $this->_getField(), $this->_getAppend(), $this->_getFetchSql());
+        $field = $this->_getField();
+        return $this->getObj()->aggregate('MIN', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -494,37 +587,196 @@ class Model {
         return \dux\Dux::di()->get($key);
     }
 
+
+    /**
+     * 拼接表名
+     * @param $table
+     * @param bool $prefix
+     * @return string
+     */
+    protected function _tableQuote($table, $prefix = true) {
+        if (!preg_match('/^[a-zA-Z0-9_]+$/i', $table)) {
+            throw new \Exception("Incorrect table name \"$table\"");
+        }
+        return '`' . ($prefix ? $this->prefix : '') . $table . '`';
+    }
+
+    /**
+     * 拼接字段
+     * @param string $string
+     * @return string
+     */
+    protected function _columnQuote(string $string) {
+        if (!preg_match('/^[a-zA-Z0-9_*]+(\.?[a-zA-Z0-9_*]+)?$/i', $string)) {
+            throw new InvalidArgumentException("Incorrect column name \"$string\"");
+        }
+        if (strpos($string, '.') !== false) {
+            if (strpos($string, '*') !== false) {
+                return '`' . str_replace('.', '`.', $string);
+            } else {
+                return '`' . str_replace('.', '`.`', $string) . '`';
+            }
+        }
+        return '`' . $string . '`';
+    }
+
+    /**
+     * 查询字段
+     * @param $columns
+     * @param $map
+     * @return string
+     */
+    protected function columnPush(&$columns, &$map) {
+        $stack = [];
+        foreach ($columns as $key => $value) {
+            if (!is_int($key) && strpos($key, '_sql') !== false) {
+                $tmp = is_array($value) ? $value : [$value];
+                foreach ($tmp as $v) {
+                    $stack[] = $this->buildRaw($v, $map);
+                }
+            }
+            if (is_array($value)) {
+                $stack[] = $this->columnPush($value, $map, false);
+            } elseif (!is_int($key) && is_string($value) && strtoupper(substr($key, -5)) === '[SQL]') {
+                preg_match('/(?<column>[a-zA-Z0-9_\.]+)?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $key, $match);
+                $stack[] = $value . ' AS ' . $this->_columnQuote($match['column']);
+            } elseif (is_int($key) && is_string($value)) {
+                preg_match('/(?<column>[a-zA-Z0-9_\.\*]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $match);
+                if (!empty($match['alias'])) {
+                    $stack[] = $this->_columnQuote($match['column']) . ' AS ' . $this->_columnQuote($match['alias']);
+                    $columns[$key] = $match['alias'];
+                    if (!empty($match['type'])) {
+                        $columns[$key] .= '[' . $match['type'] . ']';
+                    }
+                } else {
+
+                    $stack[] = $this->_columnQuote($match['column']);
+                }
+            }
+        }
+        return implode(',', $stack);
+    }
+
+    /**
+     * 字段类型
+     * @param $columns
+     * @param $stack
+     * @return mixed
+     */
+    protected function columnMap($columns, &$stack) {
+        foreach ($columns as $key => $value) {
+            if (!is_int($key) && strpos($key, '_sql') !== false) {
+                preg_match('/(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $keyMatch);
+                $stack[$key] = ['_sql', $keyMatch['type'] ?: 'String'];
+            } elseif (is_int($key) && strpos($value, '*') === false) {
+                preg_match('/([a-zA-Z0-9_\*]+\.)?(?<column>[a-zA-Z0-9_\*]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $keyMatch);
+                $columnKey = !empty($keyMatch['alias']) ? $keyMatch['alias'] : $keyMatch['column'];
+                if (isset($keyMatch['type'])) {
+                    $stack[$value] = [$columnKey, $keyMatch['type']];
+                } else {
+                    $stack[$value] = [$columnKey, 'String'];
+                }
+            } elseif (strtoupper(substr($key, -5)) === '[SQL]') {
+                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $keyMatch);
+                $columnKey = $keyMatch['column'];
+                if (isset($keyMatch['type'])) {
+                    $stack[$key] = [$columnKey, $keyMatch['type']];
+                } else {
+                    $stack[$key] = [$columnKey, 'String'];
+                }
+            } elseif (!is_int($key) && is_array($value)) {
+                $this->columnMap($value, $stack, false);
+            }
+        }
+        return $stack;
+    }
+
+    /**
+     * 格式化数据
+     * @param $data
+     * @param $columns
+     * @param $columnMap
+     * @return array
+     */
+    protected function dataMap($data, $columns, $columnMap) {
+        $result = [];
+        $dataKeys = array_column($columnMap, 0);
+        foreach ($data as $key => $vo) {
+            if (!in_array($key, $dataKeys)) {
+                $columnMap[$key] = [$key, 'string'];
+                $columns[] = $key;
+            }
+        }
+        foreach ($columns as $key => $vo) {
+            if (!is_int($key) && strpos($key, '_sql') !== false) {
+                continue;
+            }
+            if (!is_int($key) && is_array($vo)) {
+                //子循环
+                $result[$key] = $this->dataMap($data, $vo, $columnMap);
+            } else {
+                if (is_string($key)) {
+                    $map = $columnMap[$key];
+                } else {
+                    $map = $columnMap[$vo];
+                }
+                [$columnKey, $columnType] = $map;
+                $dataKey = preg_replace("/^[a-zA-Z0-9_]+\./i", "", $columnKey);
+                $item = $data[$columnKey];
+                if ($columnType) {
+                    if (is_null($item)) {
+                        $result[$dataKey] = null;
+                        continue;
+                    }
+                    switch (strtoupper($columnType)) {
+                        case 'NUMBER':
+                            $result[$dataKey] = (double)$item;
+                            break;
+                        case 'INT':
+                            $result[$dataKey] = (int)$item;
+                            break;
+                        case 'BOLL':
+                            $result[$dataKey] = (bool)$item;
+                            break;
+                        case 'ARRAY':
+                        case 'OBJECT':
+                            $result[$dataKey] = unserialize($item);
+                            break;
+                        case 'JSON':
+                            $result[$dataKey] = json_decode($item, true);
+                            break;
+                        case 'STRING':
+                        default:
+                            $result[$dataKey] = $item;
+                            break;
+                    }
+                } else {
+                    $result[$key] = $item;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 获取字段
+     * @return array|string
+     */
     protected function _getField() {
         $fields = $this->options['field'];
         $this->options['field'] = [];
-        if (empty($fields)) {
-            $filedSql = '*';
-        } else if (is_string($fields)) {
-            $filedSql = $fields;
-        } else {
-            $filedSql = [];
-            foreach ($fields as $key => $vo) {
-                if (is_string($key)) {
-                    $filedSql[] = $vo . ' AS ' . $this->columnQuote($key);
-                } else {
-                    preg_match('/([a-zA-Z0-9_\-\.\(\)]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $vo, $match);
-                    if (isset($match[1], $match[2]) && !in_array(strtolower($match[1]), ['min', 'max', 'avg', 'sum', 'count'])) {
-                        $filedSql[] = $match[1] . ' as ' . $this->columnQuote($match[2]);
-                    } else {
-                        if (preg_match("/(^_([a-zA-Z0-9]_?)*$)|(^[a-zA-Z](_?[a-zA-Z0-9])*_?$)/", $vo)) {
-                            $filedSql[] = $this->columnQuote($vo);
-                        } else {
-                            $filedSql[] = $vo;
-                        }
-                    }
-                }
-            }
-            $filedSql = implode(',', $filedSql);
-        }
+        $aliasData = $this->fetchTableAlias();
+        $fields = $this->columnExpand($fields, $aliasData);
+        $filedSql = $this->columnPush($fields, $this->options['map'], true);
         $filedSql = str_replace('{pre}', $this->config['prefix'], $filedSql);
-        return $filedSql;
+        return ['sql' => $filedSql, 'column' => $fields];
     }
 
+    /**
+     * 获取连表
+     * @return string
+     * @throws \Exception
+     */
     protected function _getJoin() {
         $join = $this->options['join'];
         $this->options['join'] = [];
@@ -537,37 +789,45 @@ class Model {
             '<>' => 'FULL',
             '><' => 'INNER',
         ];
-        $sql = [];
+        $tableJoin = [];
         foreach ($join as $vo) {
-            [$table, $relation, $way] = $vo;
-            preg_match('/([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $table, $match);
-            $table = $this->prefix . $match[1] . (isset($match[3]) ? ' as ' . $match[3] : '');
-            if (!$relation[0]) {
-                $str = [];
-                foreach ($relation as $k => $v) {
-                    if ($k == '_sql') {
-                        $str[] = $v;
+            [$table, $alias, $relation, $way] = $vo;
+            $table = $this->_tableQuote($table) . ($alias ? ' AS ' . $this->_columnQuote($alias) : '');
+            if (is_string($relation)) {
+                $relation = 'USING ("' . $relation . '")';
+            }
+            if (is_array($relation)) {
+                if (isset($relation[0])) {
+                    $relation = [$relation[0] => $relation[1]];
+                }
+                $joins = [];
+                foreach ($relation as $key => $value) {
+                    if ($key == '_sql') {
+                        $tmpArray = is_array($value) ? $value : [$value];
+                        foreach ($tmpArray as $tmp) {
+                            $joins[] = $tmp;
+                        }
                     } else {
-                        $str[] = $k . ' = ' . $v;
+                        $joins[] = (strpos($key, '.') > 0 ? $this->_columnQuote($key) : '"' . $key . '"') .
+                            ' = ' .
+                            (strpos($value, '.') > 0 ? $this->_columnQuote($value) : '"' . $value . '"');
                     }
                 }
-                $relation = implode(' AND ', $str);
-            } else {
-                if (count($relation) == 1) {
-                    $relation = 'USING ("' . $relation . '")';
-                } else {
-                    $relation = $relation[0] . ' = ' . $relation[1];
-                }
+                $relation = ' ON ' . implode(' AND ', $joins);
             }
-            $relation = 'on ' . $relation;
-            $sql[] = " {$joinArray[$way]} JOIN {$table} {$relation} ";
+            $tableJoin[] = " {$joinArray[$way]} JOIN {$table} {$relation} ";
         }
-        return implode(' ', $sql);
+        return implode(' ', $tableJoin);
     }
 
+    /**
+     * 获取主表
+     * @return mixed|string
+     * @throws \Exception
+     */
     protected function _getTable() {
         $table = $this->options['table'];
-        $this->options['table'] = '';
+        $this->options['table'] = [];
         if (empty($table)) {
             $class = get_called_class();
             $class = str_replace('\\', '/', $class);
@@ -576,13 +836,10 @@ class Model {
             $class = preg_replace("/(?=[A-Z])/", "_\$1", $class);
             $class = substr($class, 1);
             $class = strtolower($class);
-            $table = $class;
+            $table = $this->_tableQuote($class);
         } else {
-            preg_match('/([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $table, $match);
-            $table = trim($match[1]) . (isset($match[3]) ? ' as ' . $match[3] : '');
+            $table = $this->_tableQuote($table[0]) . ($table[1] ? ' AS ' . $this->_columnQuote($table[1]) : '');
         }
-        $table = $this->prefix . $table;
-        $this->table = $table;
         return $table;
     }
 
@@ -607,13 +864,13 @@ class Model {
     protected function _getWhere() {
         $condition = $this->options['where'];
         $this->options['where'] = [];
-        return $this->_whereParsing($condition, $this->options['bind_params'], ' AND ');
+        return $this->_whereParsing($condition, $this->options['map'], ' AND ');
     }
 
     protected function _getBindParams() {
-        $where = $this->options['bind_params'];
-        $this->options['bind_params'] = [];
-        return $where;
+        $map = $this->options['map'];
+        $this->options['map'] = [];
+        return $map;
     }
 
     protected function _getData() {
@@ -647,87 +904,246 @@ class Model {
         return $appendData ? implode(' ', $appendData) : '';
     }
 
-    private function _whereParsing($data, &$map, $conjunctor, $inheritField = '') {
+
+    /**
+     * 自动键
+     * @return string
+     */
+    private function mapKey() {
+        return ':MeDoO_' . $this->guid++ . '_mEdOo';
+    }
+
+    /**
+     * 展开所有字段
+     * @param $fields
+     * @param $aliasData
+     * @return array
+     */
+    private function columnExpand($fields, $aliasData) {
+        $data = [];
+        foreach ($fields as $key => $vo) {
+            if (is_int($key) && !is_array($vo) && strpos($vo, '*') !== false) {
+                if (strpos($vo, '.') !== false) {
+                    $tmp = explode('.', $vo, 2);
+                    $alias = $tmp[0];
+                    $table = $aliasData[$alias];
+                } else {
+                    $alias = $this->options['table'][1];
+                    $table = $aliasData[$this->options['table'][1] ?: $this->options['table'][0]];
+                }
+                $tableFiels = $this->fetchColumnNames($table, $alias);
+                foreach ($tableFiels as $field) {
+                    $data[] = $field;
+                }
+            } elseif (!is_int($key) && strpos($key, '_sql') !== false) {
+                $data[$key] = $vo;
+            } elseif (!is_int($key) && is_array($vo)) {
+                $data[$key] = $this->columnExpand($vo, $aliasData);
+            } else {
+                $data[] = $vo;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 编译Sql
+     * @param $value
+     * @param $map
+     * @return string|string[]|null
+     */
+    private function buildRaw($value, &$map) {
+        $query = preg_replace_callback(
+            '/(([`\']).*?)?((FROM|TABLE|INTO|UPDATE|JOIN)\s*)?\<(([a-zA-Z0-9_]+)(\.[a-zA-Z0-9_]+)?)\>(.*?\2)?/i',
+            function ($matches) {
+                if (!empty($matches[2]) && isset($matches[8])) {
+                    return $matches[0];
+                }
+
+                if (!empty($matches[4])) {
+                    return $matches[1] . $matches[4] . ' ' . $this->_tableQuote($matches[5]);
+                }
+
+                return $matches[1] . $this->_columnQuote($matches[5]);
+            },
+            $value);
+        return $query;
+    }
+
+    /**
+     * 数据类型
+     * @param $value
+     * @param $type
+     * @return array
+     */
+    private function typeMap($value, $type) {
+        $map = [
+            'NULL' => PDO::PARAM_NULL,
+            'integer' => PDO::PARAM_INT,
+            'double' => PDO::PARAM_STR,
+            'boolean' => PDO::PARAM_BOOL,
+            'string' => PDO::PARAM_STR,
+            'object' => PDO::PARAM_STR,
+            'resource' => PDO::PARAM_LOB
+        ];
+
+        if ($type === 'boolean') {
+            $value = ($value ? '1' : '0');
+        } elseif ($type === 'NULL') {
+            $value = null;
+        }
+        return [$value, $map[$type]];
+    }
+
+    /**
+     * 条件链接
+     * @param $data
+     * @param $map
+     * @param $conjunctor
+     * @param $outerConjunctor
+     * @return string
+     */
+    protected function _whereConjunct($data, $map, $conjunctor, $outerConjunctor) {
         $stack = [];
-        $i = 0;
+        foreach ($data as $value) {
+            $stack[] = '(' . $this->_whereParsing($value, $map, $conjunctor) . ')';
+        }
+        return implode($outerConjunctor . ' ', $stack);
+    }
+
+    /**
+     * 条件组合
+     * @param $data
+     * @param $map
+     * @param $conjunctor
+     * @return string
+     */
+    private function _whereParsing($data, &$map, $conjunctor) {
+        $stack = [];
         foreach ($data as $key => $value) {
-            $tmpField = $inheritField . '_' . $i;
-            $i++;
-            if (is_array($value) && preg_match("/^(AND|OR)(\s+#.*)?$/", $key, $relation_match)) {
+            $type = gettype($value);
+            //嵌套条件
+            if ($type === 'array' && preg_match("/^(AND|OR)(\s+#.*)?$/", $key, $relation_match)) {
                 $relationship = $relation_match[1];
-                $stack[] = $value !== array_keys(array_keys($value)) ? '(' . $this->_whereParsing($value, $map, ' ' . $relationship, $tmpField) . ')' : '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
+                $stack[] = $value !== array_keys(array_keys($value)) ?
+                    '(' . $this->_whereParsing($value, $map, ' ' . $relationship) . ')' :
+                    '(' . $this->_whereConjunct($value, $map, ' ' . $relationship, $conjunctor) . ')';
                 continue;
             }
+            $mapKey = $this->mapKey();
+
+            //执行原生条件
             if (strtolower($key) == '_sql') {
                 if (!is_array($value)) {
                     $value = [$value];
                 }
                 foreach ($value as $s) {
-                    $stack[] = $s;
+                    $stack[] = $this->buildRaw($s, $map);
                 }
-            } else {
-                if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
-                    $stack[] = "{$match[1]} {$match['operator']} {$match[3]}";
-                } else {
-                    preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
-                    $key = str_replace('`', '', $match[1]);
-                    $field = '`' . str_replace('.', '`.`', $key) . '`';
+            } //普通条件
+            else if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
+                $stack[] = $this->_columnQuote($match[1]) . ' ' . $match['operator'] . ' ' . $this->_columnQuote($match[3]);
+            } //运算符条件
+            else {
+                preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
+                $column = $this->_columnQuote($match[1]);
 
-                    $bindField = ':_where_' . str_replace('.', '_', $key) . $tmpField . '_' . $i;
-
-                    if (isset($match['operator'])) {
-                        $operator = $match['operator'];
-                        if (in_array($operator, ['>', '>=', '<', '<='])) {
-                            $stack[] = "{$field} {$operator} {$bindField}";
-                            $map[$bindField] = $value;
-                        } else if ($operator === '!') {
-                            if (is_array($value)) {
-                                foreach ($value as $k => $v) {
-                                    $value[$k] = "'" . $v . "'";
-                                }
-                                $stack[] = $field . ' NOT IN (' . implode(', ', $value) . ')';
-                            } else {
-                                $stack[] = "{$field} != {$bindField}";
-                                $map[$bindField] = $value;
-                            }
-                        } else if ($operator === '~' || $operator === '!~') {
-                            if (!is_array($value)) {
-                                $value = [$value];
-                            }
-                            $connector = ' OR ';
-                            $like_clauses = [];
-                            foreach ($value as $index => $item) {
-                                $item = strval($item);
-
-                                if (!preg_match('/(\[.+\]|_|%.+|.+%)/', $item)) {
-                                    $item = '%' . $item . '%';
-                                }
-                                $like_clauses[] = $field . ($operator === '!~' ? ' NOT' : '') . ' LIKE ' . $bindField . '_' . $index;
-                                $map[$bindField . '_' . $index] = $item;
-                            }
-
-                            $stack[] = '(' . implode($connector, $like_clauses) . ')';
-
-                        } else if ($operator === '<>' || $operator === '><') {
-                            if (is_array($value)) {
-                                $stack[] = '(' . $field . ($operator === '><' ? ' NOT' : '') . ' BETWEEN ' . $bindField . '_a AND ' . $bindField . '_b)';
-                                $map[$bindField . '_a'] = $value[0];
-                                $map[$bindField . '_b'] = $value[1];
-                            }
-                        } else if ($operator === 'REGEXP') {
-                            $stack[] = $key . ' REGEXP ' . $bindField;
-                            $map[$bindField] = $value;
-                        }
-                    } else {
-                        if (is_array($value)) {
-                            foreach ($value as $k => $v) {
-                                $value[$k] = "'" . $v . "'";
-                            }
-                            $stack[] = $field . ' IN (' . implode(', ', $value) . ')';
+                if (isset($match['operator'])) {
+                    $operator = $match['operator'];
+                    if (in_array($operator, ['>', '>=', '<', '<='])) {
+                        $condition = $column . ' ' . $operator . ' ';
+                        if (is_numeric($value)) {
+                            $condition .= $mapKey;
+                            $map[$mapKey] = [$value, is_float($value) ? PDO::PARAM_STR : PDO::PARAM_INT];
                         } else {
-                            $stack[] = "{$field} = {$bindField}";
-                            $map[$bindField] = $value;
+                            $condition .= $mapKey;
+                            $map[$mapKey] = [$value, PDO::PARAM_STR];
                         }
+                        $stack[] = $condition;
+                    } elseif ($operator === '!') {
+                        switch ($type) {
+                            case 'NULL':
+                                $stack[] = $column . ' IS NOT NULL';
+                                break;
+                            case 'array':
+                                $placeholders = [];
+
+                                foreach ($value as $index => $item) {
+                                    $stack_key = $mapKey . $index . '_i';
+                                    $placeholders[] = $stack_key;
+                                    $map[$stack_key] = $this->typeMap($item, gettype($item));
+                                }
+                                $stack[] = $column . ' NOT IN (' . implode(', ', $placeholders) . ')';
+                                break;
+                            case 'integer':
+                            case 'double':
+                            case 'boolean':
+                            case 'string':
+                                $stack[] = $column . ' != ' . $mapKey;
+                                $map[$mapKey] = $this->typeMap($value, $type);
+                                break;
+                        }
+                    } elseif ($operator === '~' || $operator === '!~') {
+                        if ($type !== 'array') {
+                            $value = [$value];
+                        }
+                        $connector = ' OR ';
+                        $data = array_values($value);
+                        if (is_array($data[0])) {
+                            if (isset($value['AND']) || isset($value['OR'])) {
+                                $connector = ' ' . array_keys($value)[0] . ' ';
+                                $value = $data[0];
+                            }
+                        }
+                        $like_clauses = [];
+                        foreach ($value as $index => $item) {
+                            $item = strval($item);
+                            if (!preg_match('/(\[.+\]|[\*\?\!\%#^-_]|%.+|.+%)/', $item)) {
+                                $item = '%' . $item . '%';
+                            }
+                            $like_clauses[] = $column . ($operator === '!~' ? ' NOT' : '') . ' LIKE ' . $mapKey . 'L' . $index;
+                            $map[$mapKey . 'L' . $index] = [$item, PDO::PARAM_STR];
+                        }
+                        $stack[] = '(' . implode($connector, $like_clauses) . ')';
+                    } elseif ($operator === '<>' || $operator === '><') {
+                        if ($type === 'array') {
+                            if ($operator === '><') {
+                                $column .= ' NOT';
+                            }
+                            $stack[] = '(' . $column . ' BETWEEN ' . $mapKey . 'a AND ' . $mapKey . 'b)';
+                            $data_type = (is_numeric($value[0]) && is_numeric($value[1])) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                            $map[$mapKey . 'a'] = [$value[0], $data_type];
+                            $map[$mapKey . 'b'] = [$value[1], $data_type];
+                        }
+                    } elseif ($operator === 'REGEXP') {
+                        $stack[] = $column . ' REGEXP ' . $mapKey;
+                        $map[$mapKey] = [$value, PDO::PARAM_STR];
+                    } elseif ($operator === 'SQL') {
+                        $stack[] = $column . ' ' . $this->buildRaw($value, $map);
+                        //$map[$mapKey] = [$value, PDO::PARAM_STR];
+                    }
+
+                } else {
+                    switch ($type) {
+                        case 'NULL':
+                            $stack[] = $column . ' IS NULL';
+                            break;
+                        case 'array':
+                            $placeholders = [];
+                            foreach ($value as $index => $item) {
+                                $stack_key = $mapKey . $index . '_i';
+                                $placeholders[] = $stack_key;
+                                $map[$stack_key] = $this->typeMap($item, gettype($item));
+                            }
+                            $stack[] = $column . ' IN (' . implode(', ', $placeholders) . ')';
+                            break;
+                        case 'integer':
+                        case 'double':
+                        case 'boolean':
+                        case 'string':
+                            $stack[] = $column . ' = ' . $mapKey;
+                            $map[$mapKey] = $this->typeMap($value, $type);
+                            break;
                     }
                 }
             }
@@ -735,48 +1151,23 @@ class Model {
         return implode($conjunctor . ' ', $stack);
     }
 
-    private function _whereConjunct($data, $map, $conjunctor, $outer_conjunctor) {
-        $stack = [];
-        foreach ($data as $value) {
-            $stack[] = '(' . $this->_whereParsing($value, $map, $conjunctor) . ')';
-        }
-        return implode($outer_conjunctor . ' ', $stack);
+    private function fetchColumnNames($table, $alias = '') {
+        $columns = $this->getObj()->getLink()->query('SHOW columns FROM ' . $this->_tableQuote($table))->fetchAll(PDO::FETCH_COLUMN);
+        $columns = array_map(function ($val) use ($alias) {
+            return $alias ? $alias . '.' . $val : $val;
+        }, $columns);
+        return $columns;
     }
 
-    private function _dataParsing($data = [], $inheritField = '') {
-        $stack = [];
-        $fields = [];
-        $tableField = $this->getObj()->getFields($this->table);
-        $restData = [];
-        if (empty($data)) {
-            return $restData;
+    private function fetchTableAlias() {
+        $data = [];
+        foreach ($this->options['join'] as $vo) {
+            [$table, $alias, $relation, $way] = $vo;
+            $data[$alias ?: $table] = $table;
         }
-        foreach ($data as $key => $value) {
-            $column = preg_replace("/(\s*\[(JSON|\+|\-|\*|\/)\]$)/i", '', $key);
-            $bindField = ':_data_' . ($inheritField ? $inheritField . '_' : '') . str_replace('.', '_', $column);
-            if (!in_array($column, $tableField) || !isset($value)) {
-                continue;
-            }
-            $column = $this->columnQuote($column);
-            $fields[] = $column;
-            preg_match('/(?<column>[a-zA-Z0-9_]+)(\[(?<operator>\+|\-|\*|\/)\])?/i', $key, $match);
-            if (isset($match['operator'])) {
-                if (is_numeric($value)) {
-                    $stack[] = $column . $match['operator'] . ' ' . $value;
-                }
-            } else {
-                $stack[] = $bindField;
-                if (is_array($value)) {
-                    $this->options['bind_params'][$bindField] = json_encode($value, JSON_UNESCAPED_UNICODE);
-                } else {
-                    $this->options['bind_params'][$bindField] = $value;
-                }
-            }
-        }
-        return [
-            'stack' => $stack,
-            'fields' => $fields,
-        ];
+        $data[$this->options['table'][1] ?: $this->options['table'][0]] = $this->options['table'][0];
+        return $data;
     }
+
 
 }
