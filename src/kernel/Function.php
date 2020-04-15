@@ -223,6 +223,16 @@ function service(string $class) {
 }
 
 /**
+ * 模型SQL
+ * @param $str
+ * @param $map
+ * @return \dux\kernel\Raw
+ */
+function model_sql($str, $map) {
+    return \dux\kernel\Model::sql($str, $map);
+}
+
+/**
  * 加载配置文件
  * @param string $file
  * @param bool $enforce

@@ -2,12 +2,18 @@
 
 /**
  * 公共模型
+ *
+ * @import medoo
  */
 
 namespace dux\kernel;
 
 use PDO;
-use PDOException;
+
+class Raw {
+    public $map;
+    public $value;
+}
 
 class Model {
 
@@ -217,13 +223,14 @@ class Model {
         $join = $this->_getJoin();
         $data = $this->getObj()->select($table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
         $data = empty($data) ? [] : $data;
+
+        $columns = $field['column'];
+        $column_map = [];
         $result = [];
-        $columnMap = [];
-        $this->columnMap($field['column'], $columnMap);
-        $currentStack = [];
-        $result = [];
+        $this->columnMap($columns, $column_map, true);
         foreach ($data as $vo) {
-            $result[] = $this->dataMap($vo, $field['column'], $columnMap);
+            $current_stack = [];
+            $this->dataMap($vo, $columns, $column_map, $current_stack, true, $result);
         }
         return $result;
     }
@@ -281,10 +288,11 @@ class Model {
         foreach ($datas as $data) {
             $values = [];
             foreach ($columns as $key) {
-                if (strtoupper(substr($key, -5)) === '[SQL]') {
-                    $values[] = $this->buildRaw($this->_columnQuote(substr($key, 0, -5)) . ' = ' . $data[$key], $map);
+                if ($raw = $this->buildRaw($data[$key], $map)) {
+                    $values[] = $raw;
                     continue;
                 }
+
                 $mapKey = $this->mapKey();
                 $values[] = $mapKey;
                 if (!isset($data[$key])) {
@@ -351,8 +359,8 @@ class Model {
         $fields = [];
         foreach ($data as $key => $value) {
             $column = $this->_columnQuote(preg_replace("/(\s*\[(ARRAY|SQL|\+|\-|\*|\/)\]$)/i", '', $key));
-            if (strtoupper(substr($key, -5)) === '[SQL]') {
-                $fields[] = $this->buildRaw($column . ' = ' . $data[$key], $map);
+            if ($raw = $this->buildRaw($value, $map)) {
+                $fields[] = $column . ' = ' . $raw;
                 continue;
             }
             $map_key = $this->mapKey();
@@ -629,18 +637,12 @@ class Model {
     protected function columnPush(&$columns, &$map) {
         $stack = [];
         foreach ($columns as $key => $value) {
-            if (!is_int($key) && strpos($key, '_sql') !== false) {
-                $tmp = is_array($value) ? $value : [$value];
-                foreach ($tmp as $v) {
-                    $stack[] = $this->buildRaw($v, $map);
-                }
-            }
-            if (is_array($value)) {
+            if (!is_int($key) && is_array($value)) {
                 $stack[] = $this->columnPush($value, $map, false);
-            } elseif (!is_int($key) && is_string($value) && strtoupper(substr($key, -5)) === '[SQL]') {
-                preg_match('/(?<column>[a-zA-Z0-9_\.]+)?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $key, $match);
-                $stack[] = $value . ' AS ' . $this->_columnQuote($match['column']);
-            } elseif (is_int($key) && is_string($value)) {
+            } elseif ($raw = $this->buildRaw($value, $map)) {
+                preg_match('/(?<column>[a-zA-Z0-9_\.]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $match);
+                $stack[] = $raw . ' AS ' . $this->_columnQuote($match['column']);
+            } elseif (is_string($value)) {
                 preg_match('/(?<column>[a-zA-Z0-9_\.\*]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $match);
                 if (!empty($match['alias'])) {
                     $stack[] = $this->_columnQuote($match['column']) . ' AS ' . $this->_columnQuote($match['alias']);
@@ -657,105 +659,131 @@ class Model {
         return implode(',', $stack);
     }
 
-    /**
-     * 字段类型
-     * @param $columns
-     * @param $stack
-     * @return mixed
-     */
-    protected function columnMap($columns, &$stack) {
+    protected function columnMap($columns, &$stack, $root) {
+        if ($columns === '*') {
+            return $stack;
+        }
+
         foreach ($columns as $key => $value) {
-            if (!is_int($key) && strpos($key, '_sql') !== false) {
-                preg_match('/(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $keyMatch);
-                $stack[$key] = ['_sql', $keyMatch['type'] ?: 'String'];
-            } elseif (is_int($key) && strpos($value, '*') === false) {
-                preg_match('/([a-zA-Z0-9_\*]+\.)?(?<column>[a-zA-Z0-9_\*]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $keyMatch);
-                $columnKey = !empty($keyMatch['alias']) ? $keyMatch['alias'] : $keyMatch['column'];
-                if (isset($keyMatch['type'])) {
-                    $stack[$value] = [$columnKey, $keyMatch['type']];
+            if (is_int($key)) {
+                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $key_match);
+
+                $column_key = !empty($key_match['alias']) ?
+                    $key_match['alias'] :
+                    $key_match['column'];
+
+                if (isset($key_match['type'])) {
+                    $stack[$value] = [$column_key, $key_match['type']];
                 } else {
-                    $stack[$value] = [$columnKey, 'String'];
+                    $stack[$value] = [$column_key, 'String'];
                 }
-            } elseif (strtoupper(substr($key, -5)) === '[SQL]') {
-                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $keyMatch);
-                $columnKey = $keyMatch['column'];
-                if (isset($keyMatch['type'])) {
-                    $stack[$key] = [$columnKey, $keyMatch['type']];
+            } elseif ($this->isRaw($value)) {
+                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $key_match);
+
+                $column_key = $key_match['column'];
+
+                if (isset($key_match['type'])) {
+                    $stack[$key] = [$column_key, $key_match['type']];
                 } else {
-                    $stack[$key] = [$columnKey, 'String'];
+                    $stack[$key] = [$column_key, 'String'];
                 }
             } elseif (!is_int($key) && is_array($value)) {
+                if ($root && count(array_keys($columns)) === 1) {
+                    $stack[$key] = [$key, 'String'];
+                }
+
                 $this->columnMap($value, $stack, false);
             }
         }
+
         return $stack;
     }
 
-    /**
-     * 格式化数据
-     * @param $data
-     * @param $columns
-     * @param $columnMap
-     * @return array
-     */
-    protected function dataMap($data, $columns, $columnMap) {
-        $result = [];
-        $dataKeys = array_column($columnMap, 0);
-        foreach ($data as $key => $vo) {
-            if (!in_array($key, $dataKeys)) {
-                $columnMap[$key] = [$key, 'string'];
-                $columns[] = $key;
-            }
-        }
-        foreach ($columns as $key => $vo) {
-            if (!is_int($key) && strpos($key, '_sql') !== false) {
-                continue;
-            }
-            if (!is_int($key) && is_array($vo)) {
-                //子循环
-                $result[$key] = $this->dataMap($data, $vo, $columnMap);
-            } else {
-                if (is_string($key)) {
-                    $map = $columnMap[$key];
-                } else {
-                    $map = $columnMap[$vo];
+    protected function dataMap($data, $columns, $column_map, &$stack, $root, &$result) {
+        if ($root) {
+            $columns_key = array_keys($columns);
+
+            if (count($columns_key) === 1 && is_array($columns[$columns_key[0]])) {
+                $index_key = array_keys($columns)[0];
+                $data_key = preg_replace("/^[a-zA-Z0-9_]+\./i", "", $index_key);
+
+                $current_stack = [];
+
+                foreach ($data as $item) {
+                    $this->dataMap($data, $columns[$index_key], $column_map, $current_stack, false, $result);
+
+                    $index = $data[$data_key];
+
+                    $result[$index] = $current_stack;
                 }
-                [$columnKey, $columnType] = $map;
-                $dataKey = preg_replace("/^[a-zA-Z0-9_]+\./i", "", $columnKey);
-                $item = $data[$columnKey];
-                if ($columnType) {
-                    if (is_null($item)) {
-                        $result[$dataKey] = null;
+            } else {
+                $current_stack = [];
+
+                $this->dataMap($data, $columns, $column_map, $current_stack, false, $result);
+
+                $result[] = $current_stack;
+            }
+
+            return;
+        }
+
+        foreach ($columns as $key => $value) {
+            $isRaw = $this->isRaw($value);
+
+            if (is_int($key) || $isRaw) {
+                $map = $column_map[$isRaw ? $key : $value];
+
+                $column_key = $map[0];
+
+                $item = $data[$column_key];
+
+                if (isset($map[1])) {
+                    $map[1] = ucwords(strtolower($map[1]));
+                    if ($isRaw && in_array($map[1], ['Object', 'Json'])) {
                         continue;
                     }
-                    switch (strtoupper($columnType)) {
-                        case 'NUMBER':
-                            $result[$dataKey] = (double)$item;
+
+                    if (is_null($item)) {
+                        $stack[$column_key] = null;
+                        continue;
+                    }
+
+                    switch ($map[1]) {
+                        case 'Number':
+                            $stack[$column_key] = (double)$item;
                             break;
-                        case 'INT':
-                            $result[$dataKey] = (int)$item;
+
+                        case 'Int':
+                            $stack[$column_key] = (int)$item;
                             break;
-                        case 'BOLL':
-                            $result[$dataKey] = (bool)$item;
+
+                        case 'Bool':
+                            $stack[$column_key] = (bool)$item;
                             break;
-                        case 'ARRAY':
-                        case 'OBJECT':
-                            $result[$dataKey] = unserialize($item);
+
+                        case 'Object':
+                            $stack[$column_key] = unserialize($item);
                             break;
-                        case 'JSON':
-                            $result[$dataKey] = json_decode($item, true);
+
+                        case 'Json':
+                            $stack[$column_key] = json_decode($item, true);
                             break;
-                        case 'STRING':
-                        default:
-                            $result[$dataKey] = $item;
+
+                        case 'String':
+                            $stack[$column_key] = $item;
                             break;
                     }
                 } else {
-                    $result[$key] = $item;
+                    $stack[$column_key] = $item;
                 }
+            } else {
+                $current_stack = [];
+
+                $this->dataMap($data, $value, $column_map, $current_stack, false, $result);
+
+                $stack[$key] = $current_stack;
             }
         }
-        return $result;
     }
 
     /**
@@ -802,11 +830,8 @@ class Model {
                 }
                 $joins = [];
                 foreach ($relation as $key => $value) {
-                    if ($key == '_sql') {
-                        $tmpArray = is_array($value) ? $value : [$value];
-                        foreach ($tmpArray as $tmp) {
-                            $joins[] = $tmp;
-                        }
+                    if ($raw = $this->isRaw($value)) {
+                        $joins[] = $this->buildRaw($value, $this->options['map']);
                     } else {
                         $joins[] = (strpos($key, '.') > 0 ? $this->_columnQuote($key) : '"' . $key . '"') .
                             ' = ' .
@@ -935,7 +960,7 @@ class Model {
                 foreach ($tableFiels as $field) {
                     $data[] = $field;
                 }
-            } elseif (!is_int($key) && strpos($key, '_sql') !== false) {
+            } elseif (!is_int($key) && $this->isRaw($vo)) {
                 $data[$key] = $vo;
             } elseif (!is_int($key) && is_array($vo)) {
                 $data[$key] = $this->columnExpand($vo, $aliasData);
@@ -946,13 +971,21 @@ class Model {
         return $data;
     }
 
+    protected function isRaw($object) {
+        return $object instanceof Raw;
+    }
+
     /**
      * 编译Sql
      * @param $value
      * @param $map
      * @return string|string[]|null
      */
-    private function buildRaw($value, &$map) {
+    protected function buildRaw($raw, &$map) {
+
+        if (!$this->isRaw($raw)) {
+            return false;
+        }
         $query = preg_replace_callback(
             '/(([`\']).*?)?((FROM|TABLE|INTO|UPDATE|JOIN)\s*)?\<(([a-zA-Z0-9_]+)(\.[a-zA-Z0-9_]+)?)\>(.*?\2)?/i',
             function ($matches) {
@@ -966,7 +999,15 @@ class Model {
 
                 return $matches[1] . $this->_columnQuote($matches[5]);
             },
-            $value);
+            $raw->value);
+
+        $raw_map = $raw->map;
+
+        if (!empty($raw_map)) {
+            foreach ($raw_map as $key => $value) {
+                $map[$key] = $this->typeMap($value, gettype($value));
+            }
+        }
         return $query;
     }
 
@@ -1032,22 +1073,15 @@ class Model {
             }
             $mapKey = $this->mapKey();
 
-            //执行原生条件
-            if (strtolower($key) == '_sql') {
-                if (!is_array($value)) {
-                    $value = [$value];
-                }
-                foreach ($value as $s) {
-                    $stack[] = $this->buildRaw($s, $map);
-                }
-            } //普通条件
+            if (is_int($key) && $raw = $this->buildRaw($value, $map)) {
+                $stack[] = $raw;
+            }
             else if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
                 $stack[] = $this->_columnQuote($match[1]) . ' ' . $match['operator'] . ' ' . $this->_columnQuote($match[3]);
-            } //运算符条件
+            }
             else {
                 preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
                 $column = $this->_columnQuote($match[1]);
-
                 if (isset($match['operator'])) {
                     $operator = $match['operator'];
                     if (in_array($operator, ['>', '>=', '<', '<='])) {
@@ -1055,6 +1089,8 @@ class Model {
                         if (is_numeric($value)) {
                             $condition .= $mapKey;
                             $map[$mapKey] = [$value, is_float($value) ? PDO::PARAM_STR : PDO::PARAM_INT];
+                        } elseif ($raw = $this->buildRaw($value, $map)) {
+                            $condition .= $raw;
                         } else {
                             $condition .= $mapKey;
                             $map[$mapKey] = [$value, PDO::PARAM_STR];
@@ -1074,6 +1110,11 @@ class Model {
                                     $map[$stack_key] = $this->typeMap($item, gettype($item));
                                 }
                                 $stack[] = $column . ' NOT IN (' . implode(', ', $placeholders) . ')';
+                                break;
+                            case 'object':
+                                if ($raw = $this->buildRaw($value, $map)) {
+                                    $stack[] = $column . ' != ' . $raw;
+                                }
                                 break;
                             case 'integer':
                             case 'double':
@@ -1137,6 +1178,11 @@ class Model {
                             }
                             $stack[] = $column . ' IN (' . implode(', ', $placeholders) . ')';
                             break;
+                        case 'object':
+                            if ($raw = $this->buildRaw($value, $map)) {
+                                $stack[] = $column . ' = ' . $raw;
+                            }
+                            break;
                         case 'integer':
                         case 'double':
                         case 'boolean':
@@ -1169,5 +1215,11 @@ class Model {
         return $data;
     }
 
+    public static function sql($string, $map = []) {
+        $raw = new Raw();
+        $raw->map = $map;
+        $raw->value = $string;
+        return $raw;
+    }
 
 }
