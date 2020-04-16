@@ -26,9 +26,11 @@ class Model {
 
     protected $options = [
         'table' => [],
+        'table_map' => [],
+        'join' => [],
+        'join_map' => [],
         'field' => [],
         'lock' => false,
-        'join' => [],
         'where' => [],
         'data' => [],
         'map' => [],
@@ -218,9 +220,9 @@ class Model {
      * @throws \Exception
      */
     public function select() {
-        $field = $this->_getField();
         $table = $this->_getTable();
         $join = $this->_getJoin();
+        $field = $this->_getField();
         $data = $this->getObj()->select($table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
         $data = empty($data) ? [] : $data;
 
@@ -808,6 +810,8 @@ class Model {
         $fields = $fields ? $fields : ['*'];
         $aliasData = $this->fetchTableAlias();
         $fields = $this->columnExpand($fields, $aliasData);
+        $this->options['table_map'] = [];
+        $this->options['join_map'] = [];
         $filedSql = $this->columnPush($fields, $this->options['map'], true);
         $filedSql = str_replace('{pre}', $this->config['prefix'], $filedSql);
         return ['sql' => $filedSql, 'column' => $fields];
@@ -833,6 +837,7 @@ class Model {
         $tableJoin = [];
         foreach ($join as $vo) {
             [$table, $alias, $relation, $way] = $vo;
+            $this->options['join_map'][] = [$table, $alias];
             $table = $this->_tableQuote($table) . ($alias ? ' AS ' . $this->_columnQuote($alias) : '');
             if (is_string($relation)) {
                 $relation = 'USING ("' . $relation . '")';
@@ -855,6 +860,7 @@ class Model {
             }
             $tableJoin[] = " {$joinArray[$way]} JOIN {$table} {$relation} ";
         }
+        $data = $joinData;
         return implode(' ', $tableJoin);
     }
 
@@ -865,7 +871,6 @@ class Model {
      */
     protected function _getTable() {
         $table = $this->options['table'];
-        $this->options['table'] = [];
         if (empty($table)) {
             $class = get_called_class();
             $class = str_replace('\\', '/', $class);
@@ -874,11 +879,11 @@ class Model {
             $class = preg_replace("/(?=[A-Z])/", "_\$1", $class);
             $class = substr($class, 1);
             $class = strtolower($class);
-            $table = $this->_tableQuote($class);
-        } else {
-            $table = $this->_tableQuote($table[0]) . ($table[1] ? ' AS ' . $this->_columnQuote($table[1]) : '');
+            $table = [$class, ''];
         }
-        return $table;
+        $this->options['table'] = [];
+        $this->options['table_map'] = $table;
+        return $this->_tableQuote($table[0]) . ($table[1] ? ' AS ' . $this->_columnQuote($table[1]) : '');
     }
 
     protected function _getLock() {
@@ -966,8 +971,8 @@ class Model {
                     $alias = $tmp[0];
                     $table = $aliasData[$alias];
                 } else {
-                    $alias = $this->options['table'][1];
-                    $table = $aliasData[$this->options['table'][1] ?: $this->options['table'][0]];
+                    $alias = $this->options['table_map'][1];
+                    $table = $this->options['table_map'][0];
                 }
                 $tableFiels = $this->fetchColumnNames($table, $alias);
                 foreach ($tableFiels as $field) {
@@ -1096,11 +1101,9 @@ class Model {
 
             if (is_int($key) && $raw = $this->buildRaw($value, $map)) {
                 $stack[] = $raw;
-            }
-            else if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
+            } else if (is_int($key) && preg_match('/([a-zA-Z0-9_\.]+)\[(?<operator>\>\=?|\<\=?|\!?\=)\]([a-zA-Z0-9_\.]+)/i', $value, $match)) {
                 $stack[] = $this->_columnQuote($match[1]) . ' ' . $match['operator'] . ' ' . $this->_columnQuote($match[3]);
-            }
-            else {
+            } else {
                 preg_match('/([a-zA-Z0-9_\.]+)(\[(?<operator>\>\=?|\<\=?|\!|\<\>|\>\<|\!?~|REGEXP)\])?/i', $key, $match);
                 $column = $this->_columnQuote($match[1]);
                 if (isset($match['operator'])) {
@@ -1220,11 +1223,11 @@ class Model {
 
     private function fetchTableAlias() {
         $data = [];
-        foreach ($this->options['join'] as $vo) {
+        foreach ($this->options['join_map'] as $vo) {
             [$table, $alias, $relation, $way] = $vo;
             $data[$alias ?: $table] = $table;
         }
-        $data[$this->options['table'][1] ?: $this->options['table'][0]] = $this->options['table'][0];
+        $data[$this->options['table_map'][1] ?: $this->options['table_map'][0]] = $this->options['table_map'][0];
         return $data;
     }
 
