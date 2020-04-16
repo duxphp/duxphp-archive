@@ -805,6 +805,7 @@ class Model {
     protected function _getField() {
         $fields = $this->options['field'];
         $this->options['field'] = [];
+        $fields = $fields ? $fields : ['*'];
         $aliasData = $this->fetchTableAlias();
         $fields = $this->columnExpand($fields, $aliasData);
         $filedSql = $this->columnPush($fields, $this->options['map'], true);
@@ -981,6 +982,14 @@ class Model {
             }
         }
         return $data;
+    }
+
+    private function fetchColumnNames($table, $alias = '') {
+        $columns = $this->getObj()->getLink()->query('SHOW columns FROM ' . $this->_tableQuote($table))->fetchAll(PDO::FETCH_COLUMN);
+        $columns = array_map(function ($val) use ($alias) {
+            return $alias ? $alias . '.' . $val : $val;
+        }, $columns);
+        return $columns;
     }
 
     protected function isRaw($object) {
@@ -1207,14 +1216,6 @@ class Model {
             }
         }
         return implode($conjunctor . ' ', $stack);
-    }
-
-    private function fetchColumnNames($table, $alias = '') {
-        $columns = $this->getObj()->getLink()->query('SHOW columns FROM ' . $this->_tableQuote($table))->fetchAll(PDO::FETCH_COLUMN);
-        $columns = array_map(function ($val) use ($alias) {
-            return $alias ? $alias . '.' . $val : $val;
-        }, $columns);
-        return $columns;
     }
 
     private function fetchTableAlias() {
