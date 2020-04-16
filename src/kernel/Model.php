@@ -659,11 +659,14 @@ class Model {
         return implode(',', $stack);
     }
 
+    /**
+     * 字段类型
+     * @param $columns
+     * @param $stack
+     * @param $root
+     * @return mixed
+     */
     protected function columnMap($columns, &$stack, $root) {
-        if ($columns === '*') {
-            return $stack;
-        }
-
         foreach ($columns as $key => $value) {
             if (is_int($key)) {
                 preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $key_match);
@@ -699,6 +702,15 @@ class Model {
         return $stack;
     }
 
+    /**
+     * 数据类型
+     * @param $data
+     * @param $columns
+     * @param $column_map
+     * @param $stack
+     * @param $root
+     * @param $result
+     */
     protected function dataMap($data, $columns, $column_map, &$stack, $root, &$result) {
         if ($root) {
             $columns_key = array_keys($columns);
