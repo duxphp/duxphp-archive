@@ -150,17 +150,17 @@ class Model {
      * @param string $order
      * @return $this
      */
-    public function order(?string $order) {
+    public function order($order) {
         $this->options['append']['order'] = $order;
         return $this;
     }
 
     /**
      * 分组
-     * @param string $group
+     * @param $group
      * @return $this
      */
-    public function group(string $group) {
+    public function group($group) {
         $this->options['append']['group'] = $group;
         return $this;
     }
@@ -244,8 +244,10 @@ class Model {
      * @throws \Exception
      */
     public function count() {
+        $table = $this->_getTable();
+        $join = $this->_getJoin();
         $field = $this->_getField();
-        return (int)$this->getObj()->aggregate('COUNT', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
+        return (int)$this->getObj()->aggregate('COUNT', $table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -461,8 +463,10 @@ class Model {
      */
     public function sum(string $field = '') {
         $this->field($field);
+        $table = $this->_getTable();
+        $join = $this->_getJoin();
         $field = $this->_getField();
-        return $this->getObj()->aggregate('SUM', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
+        return $this->getObj()->aggregate('SUM', $table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -473,8 +477,10 @@ class Model {
      */
     public function avg(string $field = '') {
         $this->field($field);
+        $table = $this->_getTable();
+        $join = $this->_getJoin();
         $field = $this->_getField();
-        return $this->getObj()->aggregate('AVG', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
+        return $this->getObj()->aggregate('AVG', $table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -485,8 +491,10 @@ class Model {
      */
     public function max(string $field = '') {
         $this->field($field);
+        $table = $this->_getTable();
+        $join = $this->_getJoin();
         $field = $this->_getField();
-        return $this->getObj()->aggregate('MAX', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
+        return $this->getObj()->aggregate('MAX', $table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -497,8 +505,10 @@ class Model {
      */
     public function min(string $field = '') {
         $this->field($field);
+        $table = $this->_getTable();
+        $join = $this->_getJoin();
         $field = $this->_getField();
-        return $this->getObj()->aggregate('MIN', $this->_getTable() . $this->_getJoin(), $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
+        return $this->getObj()->aggregate('MIN', $table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
     }
 
     /**
@@ -617,17 +627,13 @@ class Model {
      * @return string
      */
     protected function _columnQuote(string $string) {
-        if (!preg_match('/^[a-zA-Z0-9_*]+(\.?[a-zA-Z0-9_*]+)?$/i', $string)) {
-            throw new InvalidArgumentException("Incorrect column name \"$string\"");
+        if (!preg_match('/^[a-zA-Z0-9_]+(\.?[a-zA-Z0-9_]+)?$/i', $string)) {
+            throw new \Exception("Incorrect column name \"$string\"");
         }
         if (strpos($string, '.') !== false) {
-            if (strpos($string, '*') !== false) {
-                return '`' . str_replace('.', '`.', $string);
-            } else {
-                return '`' . str_replace('.', '`.`', $string) . '`';
-            }
+            return '"' . $this->prefix . str_replace('.', '"."', $string) . '"';
         }
-        return '`' . $string . '`';
+        return '"' . $string . '"';
     }
 
     /**
@@ -927,13 +933,13 @@ class Model {
         $appendData = [];
         foreach ($append as $key => $vo) {
             if ($key == 'group' && $vo) {
-                $appendData[1] = ' GROUP BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
+                $appendData[1] = ' GROUP BY ' . $this->_getAppendImplode($vo);
             }
             if ($key == 'order' && $vo) {
-                $appendData[2] = ' ORDER BY ' . (is_array($vo) ? implode(',', $vo) : $vo);
+                $appendData[2] = ' ORDER BY ' . $this->_getAppendImplode($vo);
             }
             if ($key == 'having' && $vo) {
-                $appendData[0] = ' HAVING ' . $vo;
+                $appendData[0] = ' HAVING ' . $this->_getAppendImplode($vo);
             }
             if ($key == 'lock' && $vo == true) {
                 $appendData[4] = ' FOR UPDATE ';
@@ -947,12 +953,28 @@ class Model {
         return $appendData ? implode(' ', $appendData) : '';
     }
 
+    private function _getAppendImplode($data) {
+        if (!is_array($data)) {
+            $data = [$data];
+        }
+        $tmp = [];
+        foreach ($data as $vo) {
+            if ($raw = $this->buildRaw($vo, $this->options['map'])) {
+                $tmp[] = $raw;
+            } else {
+                $tmp[] = $vo;
+            }
+        }
+        return implode(', ', $tmp);
+    }
+
 
     /**
      * 自动键
      * @return string
      */
-    private function mapKey() {
+    private
+    function mapKey() {
         return ':MeDoO_' . $this->guid++ . '_mEdOo';
     }
 
@@ -962,7 +984,8 @@ class Model {
      * @param $aliasData
      * @return array
      */
-    private function columnExpand($fields, $aliasData) {
+    private
+    function columnExpand($fields, $aliasData) {
         $data = [];
         foreach ($fields as $key => $vo) {
             if (is_int($key) && !is_array($vo) && strpos($vo, '*') !== false) {
@@ -989,7 +1012,8 @@ class Model {
         return $data;
     }
 
-    private function fetchColumnNames($table, $alias = '') {
+    private
+    function fetchColumnNames($table, $alias = '') {
         $columns = $this->getObj()->getLink()->query('SHOW columns FROM ' . $this->_tableQuote($table))->fetchAll(PDO::FETCH_COLUMN);
         $columns = array_map(function ($val) use ($alias) {
             return $alias ? $alias . '.' . $val : $val;
@@ -997,7 +1021,8 @@ class Model {
         return $columns;
     }
 
-    protected function isRaw($object) {
+    protected
+    function isRaw($object) {
         return $object instanceof Raw;
     }
 
@@ -1007,7 +1032,8 @@ class Model {
      * @param $map
      * @return string|string[]|null
      */
-    protected function buildRaw($raw, &$map) {
+    protected
+    function buildRaw($raw, &$map) {
 
         if (!$this->isRaw($raw)) {
             return false;
@@ -1043,7 +1069,8 @@ class Model {
      * @param $type
      * @return array
      */
-    private function typeMap($value, $type) {
+    private
+    function typeMap($value, $type) {
         $map = [
             'NULL' => PDO::PARAM_NULL,
             'integer' => PDO::PARAM_INT,
@@ -1070,7 +1097,8 @@ class Model {
      * @param $outerConjunctor
      * @return string
      */
-    protected function _whereConjunct($data, $map, $conjunctor, $outerConjunctor) {
+    protected
+    function _whereConjunct($data, $map, $conjunctor, $outerConjunctor) {
         $stack = [];
         foreach ($data as $value) {
             $stack[] = '(' . $this->_whereParsing($value, $map, $conjunctor) . ')';
@@ -1085,7 +1113,8 @@ class Model {
      * @param $conjunctor
      * @return string
      */
-    private function _whereParsing($data, &$map, $conjunctor) {
+    private
+    function _whereParsing($data, &$map, $conjunctor) {
         $stack = [];
         foreach ($data as $key => $value) {
             $type = gettype($value);
@@ -1221,7 +1250,8 @@ class Model {
         return implode($conjunctor . ' ', $stack);
     }
 
-    private function fetchTableAlias() {
+    private
+    function fetchTableAlias() {
         $data = [];
         foreach ($this->options['join_map'] as $vo) {
             [$table, $alias, $relation, $way] = $vo;
@@ -1231,7 +1261,8 @@ class Model {
         return $data;
     }
 
-    public static function sql($string, $map = []) {
+    public
+    static function sql($string, $map = []) {
         $raw = new Raw();
         $raw->map = $map;
         $raw->value = $string;
