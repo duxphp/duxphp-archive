@@ -631,9 +631,9 @@ class Model {
             throw new \Exception("Incorrect column name \"$string\"");
         }
         if (strpos($string, '.') !== false) {
-            return '"' . $this->prefix . str_replace('.', '"."', $string) . '"';
+            return '`' . $this->prefix . str_replace('.', '`.`', $string) . '`';
         }
-        return '"' . $string . '"';
+        return '`' . $string . '`';
     }
 
     /**
@@ -857,9 +857,9 @@ class Model {
                     if ($raw = $this->isRaw($value)) {
                         $joins[] = $this->buildRaw($value, $this->options['map']);
                     } else {
-                        $joins[] = (strpos($key, '.') > 0 ? $this->_columnQuote($key) : '"' . $key . '"') .
+                        $joins[] = (strpos($key, '.') > 0 ? $this->_columnQuote($key) : '`' . $key . '`') .
                             ' = ' .
-                            (strpos($value, '.') > 0 ? $this->_columnQuote($value) : '"' . $value . '"');
+                            (strpos($value, '.') > 0 ? $this->_columnQuote($value) : '`' . $value . '`');
                     }
                 }
                 $relation = ' ON ' . implode(' AND ', $joins);
