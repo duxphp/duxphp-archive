@@ -229,10 +229,10 @@ class Model {
         $columns = $field['column'];
         $column_map = [];
         $result = [];
-        $this->columnMap($columns, $column_map, true);
+        $this->_columnMap($columns, $column_map, true);
         foreach ($data as $vo) {
             $current_stack = [];
-            $this->dataMap($vo, $columns, $column_map, $current_stack, true, $result);
+            $this->_dataMap($vo, $columns, $column_map, $current_stack, true, $result);
         }
         return $result;
     }
@@ -607,205 +607,6 @@ class Model {
         return \dux\Dux::di()->get($key);
     }
 
-
-    /**
-     * 拼接表名
-     * @param $table
-     * @param bool $prefix
-     * @return string
-     */
-    protected function _tableQuote($table, $prefix = true) {
-        if (!preg_match('/^[a-zA-Z0-9_]+$/i', $table)) {
-            throw new \Exception("Incorrect table name \"$table\"");
-        }
-        return '`' . ($prefix ? $this->prefix : '') . $table . '`';
-    }
-
-    /**
-     * 拼接字段
-     * @param string $string
-     * @return string
-     */
-    protected function _columnQuote(string $string) {
-        if (!preg_match('/^[a-zA-Z0-9_]+(\.?[a-zA-Z0-9_]+)?$/i', $string)) {
-            throw new \Exception("Incorrect column name \"$string\"");
-        }
-        if (strpos($string, '.') !== false) {
-            return '`' . $this->prefix . str_replace('.', '`.`', $string) . '`';
-        }
-        return '`' . $string . '`';
-    }
-
-    /**
-     * 查询字段
-     * @param $columns
-     * @param $map
-     * @return string
-     */
-    protected function columnPush(&$columns, &$map) {
-        $stack = [];
-        foreach ($columns as $key => $value) {
-            if (!is_int($key) && is_array($value)) {
-                $stack[] = $this->columnPush($value, $map, false);
-            } elseif ($raw = $this->buildRaw($value, $map)) {
-                preg_match('/(?<column>[a-zA-Z0-9_\.]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $match);
-                $stack[] = $raw . ' AS ' . $this->_columnQuote($match['column']);
-            } elseif (is_string($value)) {
-                preg_match('/(?<column>[a-zA-Z0-9_\.\*]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $match);
-                if (!empty($match['alias'])) {
-                    $stack[] = $this->_columnQuote($match['column']) . ' AS ' . $this->_columnQuote($match['alias']);
-                    $columns[$key] = $match['alias'];
-                    if (!empty($match['type'])) {
-                        $columns[$key] .= '[' . $match['type'] . ']';
-                    }
-                } else {
-
-                    $stack[] = $this->_columnQuote($match['column']);
-                }
-            }
-        }
-        return implode(',', $stack);
-    }
-
-    /**
-     * 字段类型
-     * @param $columns
-     * @param $stack
-     * @param $root
-     * @return mixed
-     */
-    protected function columnMap($columns, &$stack, $root) {
-        foreach ($columns as $key => $value) {
-            if (is_int($key)) {
-                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $key_match);
-
-                $column_key = !empty($key_match['alias']) ?
-                    $key_match['alias'] :
-                    $key_match['column'];
-
-                if (isset($key_match['type'])) {
-                    $stack[$value] = [$column_key, $key_match['type']];
-                } else {
-                    $stack[$value] = [$column_key, 'String'];
-                }
-            } elseif ($this->isRaw($value)) {
-                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $key_match);
-
-                $column_key = $key_match['column'];
-
-                if (isset($key_match['type'])) {
-                    $stack[$key] = [$column_key, $key_match['type']];
-                } else {
-                    $stack[$key] = [$column_key, 'String'];
-                }
-            } elseif (!is_int($key) && is_array($value)) {
-                if ($root && count(array_keys($columns)) === 1) {
-                    $stack[$key] = [$key, 'String'];
-                }
-
-                $this->columnMap($value, $stack, false);
-            }
-        }
-
-        return $stack;
-    }
-
-    /**
-     * 数据类型
-     * @param $data
-     * @param $columns
-     * @param $column_map
-     * @param $stack
-     * @param $root
-     * @param $result
-     */
-    protected function dataMap($data, $columns, $column_map, &$stack, $root, &$result) {
-        if ($root) {
-            $columns_key = array_keys($columns);
-
-            if (count($columns_key) === 1 && is_array($columns[$columns_key[0]])) {
-                $index_key = array_keys($columns)[0];
-                $data_key = preg_replace("/^[a-zA-Z0-9_]+\./i", "", $index_key);
-
-                $current_stack = [];
-
-                foreach ($data as $item) {
-                    $this->dataMap($data, $columns[$index_key], $column_map, $current_stack, false, $result);
-
-                    $index = $data[$data_key];
-
-                    $result[$index] = $current_stack;
-                }
-            } else {
-                $current_stack = [];
-
-                $this->dataMap($data, $columns, $column_map, $current_stack, false, $result);
-
-                $result[] = $current_stack;
-            }
-
-            return;
-        }
-
-        foreach ($columns as $key => $value) {
-            $isRaw = $this->isRaw($value);
-
-            if (is_int($key) || $isRaw) {
-                $map = $column_map[$isRaw ? $key : $value];
-
-                $column_key = $map[0];
-
-                $item = $data[$column_key];
-
-                if (isset($map[1])) {
-                    $map[1] = ucwords(strtolower($map[1]));
-                    if ($isRaw && in_array($map[1], ['Object', 'Json'])) {
-                        continue;
-                    }
-
-                    if (is_null($item)) {
-                        $stack[$column_key] = null;
-                        continue;
-                    }
-
-                    switch ($map[1]) {
-                        case 'Number':
-                            $stack[$column_key] = (double)$item;
-                            break;
-
-                        case 'Int':
-                            $stack[$column_key] = (int)$item;
-                            break;
-
-                        case 'Bool':
-                            $stack[$column_key] = (bool)$item;
-                            break;
-
-                        case 'Object':
-                            $stack[$column_key] = unserialize($item);
-                            break;
-
-                        case 'Json':
-                            $stack[$column_key] = json_decode($item, true);
-                            break;
-
-                        case 'String':
-                            $stack[$column_key] = $item;
-                            break;
-                    }
-                } else {
-                    $stack[$column_key] = $item;
-                }
-            } else {
-                $current_stack = [];
-
-                $this->dataMap($data, $value, $column_map, $current_stack, false, $result);
-
-                $stack[$key] = $current_stack;
-            }
-        }
-    }
-
     /**
      * 获取字段
      * @return array|string
@@ -818,7 +619,7 @@ class Model {
         $fields = $this->columnExpand($fields, $aliasData);
         $this->options['table_map'] = [];
         $this->options['join_map'] = [];
-        $filedSql = $this->columnPush($fields, $this->options['map'], true);
+        $filedSql = $this->_columnPush($fields, $this->options['map'], true);
         $filedSql = str_replace('{pre}', $this->config['prefix'], $filedSql);
         return ['sql' => $filedSql, 'column' => $fields];
     }
@@ -968,24 +769,11 @@ class Model {
         return implode(', ', $tmp);
     }
 
-
-    /**
-     * 自动键
-     * @return string
-     */
-    private
-    function mapKey() {
+    private function mapKey() {
         return ':MeDoO_' . $this->guid++ . '_mEdOo';
     }
 
-    /**
-     * 展开所有字段
-     * @param $fields
-     * @param $aliasData
-     * @return array
-     */
-    private
-    function columnExpand($fields, $aliasData) {
+    private function columnExpand($fields, $aliasData) {
         $data = [];
         foreach ($fields as $key => $vo) {
             if (is_int($key) && !is_array($vo) && strpos($vo, '*') !== false) {
@@ -1012,8 +800,7 @@ class Model {
         return $data;
     }
 
-    private
-    function fetchColumnNames($table, $alias = '') {
+    private function fetchColumnNames($table, $alias = '') {
         $columns = $this->getObj()->getLink()->query('SHOW columns FROM ' . $this->_tableQuote($table))->fetchAll(PDO::FETCH_COLUMN);
         $columns = array_map(function ($val) use ($alias) {
             return $alias ? $alias . '.' . $val : $val;
@@ -1021,19 +808,11 @@ class Model {
         return $columns;
     }
 
-    protected
-    function isRaw($object) {
+    protected function isRaw($object) {
         return $object instanceof Raw;
     }
 
-    /**
-     * 编译Sql
-     * @param $value
-     * @param $map
-     * @return string|string[]|null
-     */
-    protected
-    function buildRaw($raw, &$map) {
+    protected function buildRaw($raw, &$map) {
 
         if (!$this->isRaw($raw)) {
             return false;
@@ -1063,14 +842,7 @@ class Model {
         return $query;
     }
 
-    /**
-     * 数据类型
-     * @param $value
-     * @param $type
-     * @return array
-     */
-    private
-    function typeMap($value, $type) {
+    private function typeMap($value, $type) {
         $map = [
             'NULL' => PDO::PARAM_NULL,
             'integer' => PDO::PARAM_INT,
@@ -1089,16 +861,7 @@ class Model {
         return [$value, $map[$type]];
     }
 
-    /**
-     * 条件链接
-     * @param $data
-     * @param $map
-     * @param $conjunctor
-     * @param $outerConjunctor
-     * @return string
-     */
-    protected
-    function _whereConjunct($data, $map, $conjunctor, $outerConjunctor) {
+    protected function _whereConjunct($data, $map, $conjunctor, $outerConjunctor) {
         $stack = [];
         foreach ($data as $value) {
             $stack[] = '(' . $this->_whereParsing($value, $map, $conjunctor) . ')';
@@ -1106,15 +869,7 @@ class Model {
         return implode($outerConjunctor . ' ', $stack);
     }
 
-    /**
-     * 条件组合
-     * @param $data
-     * @param $map
-     * @param $conjunctor
-     * @return string
-     */
-    private
-    function _whereParsing($data, &$map, $conjunctor) {
+    private function _whereParsing($data, &$map, $conjunctor) {
         $stack = [];
         foreach ($data as $key => $value) {
             $type = gettype($value);
@@ -1250,8 +1005,7 @@ class Model {
         return implode($conjunctor . ' ', $stack);
     }
 
-    private
-    function fetchTableAlias() {
+    private function fetchTableAlias() {
         $data = [];
         foreach ($this->options['join_map'] as $vo) {
             [$table, $alias, $relation, $way] = $vo;
@@ -1261,12 +1015,176 @@ class Model {
         return $data;
     }
 
-    public
-    static function sql($string, $map = []) {
+    public static function sql($string, $map = []) {
         $raw = new Raw();
         $raw->map = $map;
         $raw->value = $string;
         return $raw;
+    }
+
+    protected function _tableQuote($table, $prefix = true) {
+        if (!preg_match('/^[a-zA-Z0-9_]+$/i', $table)) {
+            throw new \Exception("Incorrect table name \"$table\"");
+        }
+        return '`' . ($prefix ? $this->prefix : '') . $table . '`';
+    }
+
+    protected function _columnQuote(string $string) {
+        if (!preg_match('/^[a-zA-Z0-9_]+(\.?[a-zA-Z0-9_]+)?$/i', $string)) {
+            throw new \Exception("Incorrect column name \"$string\"");
+        }
+        if (strpos($string, '.') !== false) {
+            return '`' . str_replace('.', '`.`', $string) . '`';
+        }
+        return '`' . $string . '`';
+    }
+
+    protected function _columnPush(&$columns, &$map) {
+        $stack = [];
+        foreach ($columns as $key => $value) {
+            if (!is_int($key) && is_array($value)) {
+                $stack[] = $this->_columnPush($value, $map, false);
+            } elseif ($raw = $this->buildRaw($value, $map)) {
+                preg_match('/(?<column>[a-zA-Z0-9_\.]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $match);
+                $stack[] = $raw . ' AS ' . $this->_columnQuote($match['column']);
+            } elseif (is_string($value)) {
+                preg_match('/(?<column>[a-zA-Z0-9_\.\*]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $match);
+                if (!empty($match['alias'])) {
+                    $stack[] = $this->_columnQuote($match['column']) . ' AS ' . $this->_columnQuote($match['alias']);
+                    $columns[$key] = $match['alias'];
+                    if (!empty($match['type'])) {
+                        $columns[$key] .= '[' . $match['type'] . ']';
+                    }
+                } else {
+
+                    $stack[] = $this->_columnQuote($match['column']);
+                }
+            }
+        }
+        return implode(',', $stack);
+    }
+
+    protected function _columnMap($columns, &$stack, $root) {
+        foreach ($columns as $key => $value) {
+            if (is_int($key)) {
+                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(?:\s*\((?<alias>[a-zA-Z0-9_]+)\))?(?:\s*\[(?<type>(?:String|Bool|Int|Number|Object|JSON))\])?/i', $value, $key_match);
+
+                $column_key = !empty($key_match['alias']) ?
+                    $key_match['alias'] :
+                    $key_match['column'];
+
+                if (isset($key_match['type'])) {
+                    $stack[$value] = [$column_key, $key_match['type']];
+                } else {
+                    $stack[$value] = [$column_key, 'String'];
+                }
+            } elseif ($this->isRaw($value)) {
+                preg_match('/([a-zA-Z0-9_]+\.)?(?<column>[a-zA-Z0-9_]+)(\s*\[(?<type>(String|Bool|Int|Number))\])?/i', $key, $key_match);
+
+                $column_key = $key_match['column'];
+
+                if (isset($key_match['type'])) {
+                    $stack[$key] = [$column_key, $key_match['type']];
+                } else {
+                    $stack[$key] = [$column_key, 'String'];
+                }
+            } elseif (!is_int($key) && is_array($value)) {
+                if ($root && count(array_keys($columns)) === 1) {
+                    $stack[$key] = [$key, 'String'];
+                }
+
+                $this->_columnMap($value, $stack, false);
+            }
+        }
+
+        return $stack;
+    }
+
+    protected function _dataMap($data, $columns, $column_map, &$stack, $root, &$result) {
+        if ($root) {
+            $columns_key = array_keys($columns);
+
+            if (count($columns_key) === 1 && is_array($columns[$columns_key[0]])) {
+                $index_key = array_keys($columns)[0];
+                $data_key = preg_replace("/^[a-zA-Z0-9_]+\./i", "", $index_key);
+
+                $current_stack = [];
+
+                foreach ($data as $item) {
+                    $this->_dataMap($data, $columns[$index_key], $column_map, $current_stack, false, $result);
+
+                    $index = $data[$data_key];
+
+                    $result[$index] = $current_stack;
+                }
+            } else {
+                $current_stack = [];
+
+                $this->_dataMap($data, $columns, $column_map, $current_stack, false, $result);
+
+                $result[] = $current_stack;
+            }
+
+            return;
+        }
+
+        foreach ($columns as $key => $value) {
+            $isRaw = $this->isRaw($value);
+
+            if (is_int($key) || $isRaw) {
+                $map = $column_map[$isRaw ? $key : $value];
+
+                $column_key = $map[0];
+
+                $item = $data[$column_key];
+
+                if (isset($map[1])) {
+                    $map[1] = ucwords(strtolower($map[1]));
+                    if ($isRaw && in_array($map[1], ['Object', 'Json'])) {
+                        continue;
+                    }
+
+                    if (is_null($item)) {
+                        $stack[$column_key] = null;
+                        continue;
+                    }
+
+                    switch ($map[1]) {
+                        case 'Number':
+                            $stack[$column_key] = (double)$item;
+                            break;
+
+                        case 'Int':
+                            $stack[$column_key] = (int)$item;
+                            break;
+
+                        case 'Bool':
+                            $stack[$column_key] = (bool)$item;
+                            break;
+
+                        case 'Object':
+                            $stack[$column_key] = unserialize($item);
+                            break;
+
+                        case 'Json':
+                            $stack[$column_key] = json_decode($item, true);
+                            break;
+
+                        case 'String':
+                            $stack[$column_key] = $item;
+                            break;
+                    }
+                } else {
+                    $stack[$column_key] = $item;
+                }
+            } else {
+                $current_stack = [];
+
+                $this->_dataMap($data, $value, $column_map, $current_stack, false, $result);
+
+                $stack[$key] = $current_stack;
+            }
+        }
     }
 
 }
