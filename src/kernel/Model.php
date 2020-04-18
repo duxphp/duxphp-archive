@@ -225,14 +225,15 @@ class Model {
         $field = $this->_getField();
         $data = $this->getObj()->select($table . $join, $this->_getWhere(), $this->_getBindParams(), $field['sql'], $this->_getAppend(), $this->_getFetchSql());
         $data = empty($data) ? [] : $data;
-
-        $columns = $field['column'];
-        $column_map = [];
-        $result = [];
-        $this->_columnMap($columns, $column_map, true);
-        foreach ($data as $vo) {
-            $current_stack = [];
-            $this->_dataMap($vo, $columns, $column_map, $current_stack, true, $result);
+        if (is_array($data)) {
+            $columns = $field['column'];
+            $column_map = [];
+            $result = [];
+            $this->_columnMap($columns, $column_map, true);
+            foreach ($data as $vo) {
+                $current_stack = [];
+                $this->_dataMap($vo, $columns, $column_map, $current_stack, true, $result);
+            }
         }
         return $result;
     }
