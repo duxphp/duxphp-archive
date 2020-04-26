@@ -337,16 +337,18 @@ class Image {
                 });
             }
             if ($vo['type'] == 'image') {
-                $image = $this->getObj()->make($vo['file']);
+                if (is_string($vo['file'])) {
+                    $image = $this->getObj()->make($vo['file']);
+                }else {
+                    $image = $vo['file'];
+                }
                 if ($vo['round']) {
                     //设置圆角
                     $mask = $this->circleMask($image->width(), $image->height());
                     $image->mask($mask);
                 }
                 //缩放图标
-                $image->resize($vo['width'], $vo['height'], function ($constraint) {
-                    $constraint->upsize();
-                });
+                $image->resize($vo['width'], $vo['height']);
                 $this->imgObj->insert($image, 'top-left', $vo['x'], $vo['y']);
             }
         }
