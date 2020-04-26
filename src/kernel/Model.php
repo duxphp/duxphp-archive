@@ -383,8 +383,7 @@ class Model {
                         $map[$map_key] = [
                             strpos($key, '[ARRAY]') === strlen($key) - 7 ?
                                 serialize($value) :
-                                json_encode($value)
-                            ,
+                                json_encode($value),
                             PDO::PARAM_STR
                         ];
                         break;
@@ -401,7 +400,6 @@ class Model {
                 }
             }
         }
-
         $status = $this->getObj()->update($table, $where, $fields, $map, $this->_getFetchSql());
         if ($this->_getRaw()) {
             return $status;
@@ -464,7 +462,7 @@ class Model {
      * @throws \Exception
      */
     public function sum(string $field = '') {
-        $this->field($field);
+        $this->field([$field]);
         $table = $this->_getTable();
         $join = $this->_getJoin();
         $field = $this->_getField();
@@ -478,7 +476,7 @@ class Model {
      * @throws \Exception
      */
     public function avg(string $field = '') {
-        $this->field($field);
+        $this->field([$field]);
         $table = $this->_getTable();
         $join = $this->_getJoin();
         $field = $this->_getField();
@@ -492,7 +490,7 @@ class Model {
      * @throws \Exception
      */
     public function max(string $field = '') {
-        $this->field($field);
+        $this->field([$field]);
         $table = $this->_getTable();
         $join = $this->_getJoin();
         $field = $this->_getField();
@@ -506,7 +504,7 @@ class Model {
      * @throws \Exception
      */
     public function min(string $field = '') {
-        $this->field($field);
+        $this->field([$field]);
         $table = $this->_getTable();
         $join = $this->_getJoin();
         $field = $this->_getField();
