@@ -311,6 +311,12 @@ class Image {
         ];*/
         foreach ($data as $vo) {
             if ($vo['type'] == 'text') {
+                if($vo['align'] <> 'left' || $vo['align'] <> 'center' || $vo['align'] <> 'right') {
+                    $vo['align'] = 'left';
+                }
+                if($vo['valign'] <> 'top' || $vo['valign'] <> 'center' || $vo['valign'] <> 'bottom') {
+                    $vo['valign'] = 'top';
+                }
                 if ($vo['align'] == 'left') {
                     $x = $vo['x'];
                 }
