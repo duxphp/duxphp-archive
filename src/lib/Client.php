@@ -19,20 +19,26 @@ class Client {
      * @return string
      */
     public static function getIp() {
-        if (getenv('HTTP_CLIENT_IP')) {
-            $ip = getenv('HTTP_CLIENT_IP');
-        }
-        if (getenv('HTTP_X_REAL_IP')) {
-            $ip = getenv('HTTP_X_REAL_IP');
-        } elseif (getenv('HTTP_X_FORWARDED_FOR')) {
-            $ip = getenv('HTTP_X_FORWARDED_FOR');
-            $ips = explode(',', $ip);
-            $ip = $ips[0];
-        } elseif (getenv('REMOTE_ADDR')) {
-            $ip = getenv('REMOTE_ADDR');
+        if ($_SERVER["HTTP_CLIENT_IP"] && strcasecmp($_SERVER["HTTP_CLIENT_IP"], "unknown")) {
+            $ip = $_SERVER["HTTP_CLIENT_IP"];
         } else {
-            $ip = '0.0.0.0';
+            if ($_SERVER["HTTP_X_FORWARDED_FOR"] && strcasecmp($_SERVER["HTTP_X_FORWARDED_FOR"], "unknown")) {
+                $ip = $_SERVER["HTTP_X_FORWARDED_FOR"];
+            } else {
+                if ($_SERVER["REMOTE_ADDR"] && strcasecmp($_SERVER["REMOTE_ADDR"], "unknown")) {
+                    $ip = $_SERVER["REMOTE_ADDR"];
+                } else {
+                    if (isset ($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] && strcasecmp($_SERVER['REMOTE_ADDR'],
+                            "unknown")
+                    ) {
+                        $ip = $_SERVER['REMOTE_ADDR'];
+                    } else {
+                        $ip = "unknown";
+                    }
+                }
+            }
         }
+        return ($ip);
     }
 
     /**
