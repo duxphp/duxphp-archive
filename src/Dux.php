@@ -152,16 +152,17 @@ class Dux {
             }
             if (is_string($vo)) {
                 $vo = trim($vo);
-                if ($vo == 'null' || $vo == 'undefined') {
-                    $vo = null;
+                switch ($vo) {
+                    case 'null':
+                    case 'undefined':
+                        $vo = null;
+                    case 'true':
+                        $vo = true;
+                    case 'false':
+                        $vo = false;
+                    default:
+                        $vo = html_in((string)$vo);
                 }
-                if ($vo == 'true') {
-                    $vo = true;
-                }
-                if ($vo == 'false') {
-                    $vo = false;
-                }
-                $vo = html_in((string)$vo);
             }
         }
         if ($key) {
