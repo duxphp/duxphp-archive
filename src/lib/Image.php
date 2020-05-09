@@ -124,7 +124,7 @@ class Image {
     private function circleMask(int $width, int $height) {
         $bigWidth = $width * 2;
         $bigHeight = $height * 2;
-        $circle = $this->getObj()->canvas($bigWidth, $bigHeight, '#000000');
+        $circle = $this->getObj()->canvas($bigWidth, $bigHeight);
         $circle = $circle->circle($bigWidth - 1, $bigWidth / 2, $bigHeight / 2, function ($draw) {
             $draw->background('#ffffff');
         });
