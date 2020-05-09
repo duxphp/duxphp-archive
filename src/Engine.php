@@ -68,6 +68,7 @@ class Engine {
         if ($errno & error_reporting()) {
             $handle = new \dux\exception\Handle($errstr, $errno, $errfile, $errline, [], \dux\Config::get('dux.debug'), \dux\Config::get('dux.debug_error'), \dux\Config::get('dux.debug_log'));
             $handle->render();
+            exit;
         }
     }
 
