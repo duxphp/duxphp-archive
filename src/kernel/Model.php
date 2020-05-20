@@ -311,7 +311,7 @@ class Model {
                             $map[$mapKey] = [
                                 strpos($key, '[ARRAY]') === strlen($key) - 7 ?
                                     serialize($value) :
-                                    json_encode($value)
+                                    json_encode($value, JSON_UNESCAPED_UNICODE)
                                 ,
                                 PDO::PARAM_STR
                             ];
@@ -383,7 +383,7 @@ class Model {
                         $map[$map_key] = [
                             strpos($key, '[ARRAY]') === strlen($key) - 7 ?
                                 serialize($value) :
-                                json_encode($value),
+                                json_encode($value, JSON_UNESCAPED_UNICODE),
                             PDO::PARAM_STR
                         ];
                         break;
