@@ -273,6 +273,7 @@ class Model {
             return false;
         }
 
+
         $table = $this->_getTable();
         $datas = $this->_getData();
         $stack = [];
@@ -291,9 +292,13 @@ class Model {
         }
 
         $columns = array_unique($columns);
+        $allFields = $this->fetchColumnNames(substr(trim($table, '`'), strlen($this->prefix)));
+        $columns = array_intersect($allFields, $columns);
+
         foreach ($datas as $data) {
             $values = [];
             foreach ($columns as $key) {
+
                 if ($raw = $this->buildRaw($data[$key], $map)) {
                     $values[] = $raw;
                     continue;
@@ -311,7 +316,7 @@ class Model {
                             $map[$mapKey] = [
                                 strpos($key, '[ARRAY]') === strlen($key) - 7 ?
                                     serialize($value) :
-                                    json_encode($value, JSON_UNESCAPED_UNICODE)
+                                    json_encode($value,JSON_UNESCAPED_UNICODE)
                                 ,
                                 PDO::PARAM_STR
                             ];
@@ -362,9 +367,18 @@ class Model {
         if (empty($data) || !is_array($data)) {
             return false;
         }
+
+        $allFields = $this->fetchColumnNames(substr(trim($table, '`'), strlen($this->prefix)));
+
         $fields = [];
         foreach ($data as $key => $value) {
-            $column = $this->_columnQuote(preg_replace("/(\s*\[(ARRAY|SQL|\+|\-|\*|\/)\]$)/i", '', $key));
+            $keyTmp = preg_replace("/(\s*\[(ARRAY|SQL|\+|\-|\*|\/)\]$)/i", '', $key);
+            $column = $this->_columnQuote($keyTmp);
+
+            if(!in_array($keyTmp, $allFields)) {
+                continue;
+            }
+
             if ($raw = $this->buildRaw($value, $map)) {
                 $fields[] = $column . ' = ' . $raw;
                 continue;
@@ -1115,6 +1129,7 @@ class Model {
 
                     $index = $data[$data_key];
 
+
                     $result[$index] = $current_stack;
                 }
             } else {
@@ -1133,11 +1148,8 @@ class Model {
 
             if (is_int($key) || $isRaw) {
                 $map = $column_map[$isRaw ? $key : $value];
-
                 $column_key = $map[0];
-
                 $item = $data[$column_key];
-
                 if (isset($map[1])) {
                     $map[1] = ucwords(strtolower($map[1]));
                     if ($isRaw && in_array($map[1], ['Object', 'Json'])) {
