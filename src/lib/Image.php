@@ -311,12 +311,13 @@ class Image {
         ];*/
         foreach ($data as $vo) {
             if ($vo['type'] == 'text') {
-                if($vo['align'] <> 'left' || $vo['align'] <> 'center' || $vo['align'] <> 'right') {
+                if($vo['align'] <> 'left' && $vo['align'] <> 'center' && $vo['align'] <> 'right') {
                     $vo['align'] = 'left';
                 }
-                if($vo['valign'] <> 'top' || $vo['valign'] <> 'center' || $vo['valign'] <> 'bottom') {
+                if($vo['valign'] <> 'top' && $vo['valign'] <> 'center' && $vo['valign'] <> 'middle' && $vo['valign'] <> 'bottom') {
                     $vo['valign'] = 'top';
                 }
+
                 if ($vo['align'] == 'left') {
                     $x = $vo['x'];
                 }
@@ -329,7 +330,7 @@ class Image {
                 if ($vo['valign'] == 'top') {
                     $y = $vo['y'];
                 }
-                if ($vo['valign'] == 'center') {
+                if ($vo['valign'] == 'center' || $vo['valign'] == 'middle') {
                     $y = round($vo['height'] / 2) + $vo['y'];
                 }
                 if ($vo['valign'] == 'bottom') {
@@ -340,6 +341,7 @@ class Image {
                     $font->size($vo['size']);
                     $font->color($vo['color']);
                     $font->align($vo['align']);
+                    $font->valign($vo['valign']);
                 });
             }
             if ($vo['type'] == 'image') {
