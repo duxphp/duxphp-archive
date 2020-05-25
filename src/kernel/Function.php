@@ -679,6 +679,18 @@ function array_to_single($list, $key = '', $value = '') {
 }
 
 /**
+ * 保留指定数组内容
+ * @param $list
+ * @param array $key
+ * @return array
+ */
+function array_filter_key($list, $key = []) {
+    return array_filter($list, function ($k) use ($key) {
+        return in_array($k, $key);
+    }, ARRAY_FILTER_USE_KEY);
+}
+
+/**
  * MD转Html
  * @param string $text
  * @param bool $line
