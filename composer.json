@@ -24,7 +24,8 @@
         "alchemy/zippy": "^0.4",
         "fukuball/jieba-php": "^0.33",
         "firebase/php-jwt": "^5.0",
-        "nelexa/zip": "^3.0"
+        "nelexa/zip": "^3.0",
+        "sschiau/particle": "^2.2"
     },
     "autoload": {
         "psr-4": {

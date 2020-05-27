@@ -640,7 +640,7 @@ function price_calculate($n1, string $symbol, $n2, int $scale = 2) {
  * @return string
  */
 function log_no(string $pre = '') {
-    return $pre . date('Ymd').substr(time(), -5) . substr(microtime(), 2, 5) . sprintf('%02d', rand(1000, 9999));
+    return $pre . \Schiau\Utilities\Particle::generateParticle();
 }
 
 /**
