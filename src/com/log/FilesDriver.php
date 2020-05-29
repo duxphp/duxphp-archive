@@ -62,8 +62,9 @@ class FilesDriver implements LogInterface {
             return false;
         }
         $file = $dir . '/' . $name . '.log';
-        $msg = $type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . "\r\n";
-        if (!error_log($msg, 3, $file)) {
+        $msg = $type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . PHP_EOL;
+
+        if (!file_put_contents($file, $msg, FILE_APPEND)) {
             return false;
         }
         return true;
