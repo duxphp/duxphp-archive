@@ -95,9 +95,9 @@ echo "time: date ' %Y-%m-%d %H:%M:%S'"
 cd ${dir}
 git fetch --all
 git reset --hard origin/${branch}
-git submodule foreach 'git checkout -f'
 git submodule update --init --recursive
-git submodule foreach git pull origin master
+git submodule foreach 'git fetch --all'
+git submodule foreach 'git reset --hard origin/master'
 echo "update complete"
 chmod -R 777 ${dir}
 echo "=========================="
