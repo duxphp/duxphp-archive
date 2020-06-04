@@ -3,52 +3,49 @@
 function menu ()
 {
  cat << EOF
-Please enter the digital operation
-`echo "[1]to obtain the public key"`
-`echo "[2]git sync(Please set up the public key)"`
+Please enter the digital operation, Please set automatically save the password: "git config --local credential.helper store" "git config --global credential.helper store"
+`echo "[1]git sync"`
+`echo "[2]exit"`
 EOF
 read -p "Please enter the operation: " num1
 case $num1 in
  1)
-  echo "to obtain the public key"
-  menuRsa
-  ;;
- 2)
   echo "git sync"
   menuGit
   ;;
- 3)
-  clear
-  menu
-  ;;
- 4)
+ 2)
   exit 0
 esac
 }
 
-#生成公钥
-function menuRsa() {
-  ssh-keygen -t rsa -C "" -f ~/.ssh/id_rsa
-  while read line
-  do
-    echo '=================pub start=================='
-    echo $line
-    echo '=================pub end=================='
-  done < ~/.ssh/id_rsa.pub
-}
-
 url=""
+username=""
+password=""
 branch="master"
 dir=""
 delete=1
 
 function getUrl() {
-  read -p "Git SSH url: " str
+  read -p "Git http/Https url: " str
   url=$str
   if [ "$url" = "" ]; then
     echo 'Input error'
     getUrl
   fi
+
+#  read -p "Git username: " str
+#  username=$str
+#  if [ "$username" = "" ]; then
+#    echo 'Input error'
+#    getUrl
+#  fi
+#
+#  read -p "Git password: " str
+#  password=$str
+#  if [ "$password" = "" ]; then
+#    echo 'Input error'
+#    getUrl
+#  fi
 
   read -p "Branch name: " str
   branch=$str
@@ -86,8 +83,10 @@ function menuGit() {
   getUrl
   getDir
   getDelete
-  echo "git clone -b ${branch} ${getUrl} ${getDir}"
-  git clone -b ${branch} ${getUrl} ${getDir}
+  echo "git clone -b ${branch} ${url} ${dir}"
+  git clone -b ${branch} ${url} ${dir}
+  cd ${dir}
+  git submodule update --init --recursive
   echo "The following code into the webhook"
 cat << EOF
 echo "=========================="
@@ -96,6 +95,9 @@ echo "time: date ' %Y-%m-%d %H:%M:%S'"
 cd ${dir}
 git fetch --all
 git reset --hard origin/${branch}
+git submodule foreach 'git checkout -f'
+git submodule update --init --recursive
+git submodule foreach git pull origin master
 echo "update complete"
 chmod -R 777 ${dir}
 echo "=========================="
