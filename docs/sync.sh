@@ -95,7 +95,6 @@ echo "time: `date ' %Y-%m-%d %H:%M:%S'`"
 cd ${dir}
 git checkout .
 git pull origin ${branch}
-git submodule update --init --recursive
 git submodule foreach git checkout .
 git submodule foreach git pull origin master
 echo "update complete"
