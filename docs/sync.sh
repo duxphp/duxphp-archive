@@ -93,10 +93,10 @@ echo "=========================="
 echo "start update git"
 echo "time: `date ' %Y-%m-%d %H:%M:%S'`"
 cd ${dir}
-git checkout .
-git pull origin ${branch}
-git submodule foreach git checkout .
-git submodule foreach git pull origin master
+sudo git reset --hard origin/${branch}
+sudo git pull origin ${branch}
+sudo git submodule foreach sudo git reset --hard origin/master
+sudo git submodule foreach git pull origin master
 echo "update complete"
 chmod -R 777 ${dir}
 echo "=========================="
