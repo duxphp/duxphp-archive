@@ -91,7 +91,7 @@ function menuGit() {
 cat << EOF
 echo "=========================="
 echo "start update git"
-echo "time: date ' %Y-%m-%d %H:%M:%S'"
+echo "time: `date ' %Y-%m-%d %H:%M:%S'`"
 cd ${dir}
 git fetch --all
 git reset --hard origin/${branch}
