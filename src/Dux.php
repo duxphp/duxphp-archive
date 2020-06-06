@@ -219,10 +219,6 @@ class Dux {
                 break;
         }
         $app = strtolower($app);
-        $appList = \dux\Config::get('dux.app');
-        if(!in_array($app, $appList)) {
-            return false;
-        }
         $module = ucfirst($module);
         $class = "\\app\\{$app}\\{$layer}\\{$module}" . ucfirst($layer);
         if (!class_exists($class)) {
