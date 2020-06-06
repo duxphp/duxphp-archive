@@ -94,13 +94,14 @@ function hook(string $layer, string $name, string $method, array $vars = []) {
     $method = 'get' . ucfirst($method) . ucfirst($name);
 
     $data = [];
+    $appList = \dux\Config::get('dux.app');
     foreach ($apiList as $value) {
         $path = substr($value, $appPathStr, -4);
         $path = str_replace('\\', '/', $path);
         $appName = explode('/', $path);
         $appName = $appName[0];
         $config = load_config('app/' . $appName . '/config/config', false);
-        if (!$config['system'] && (!$config['state'] || !$config['install'])) {
+        if (!$config['system'] && !in_array($appName, $appList)) {
             continue;
         }
         $class = '\\app\\' . $appName . '\\' . $layer . '\\' . ucfirst($name) . ucfirst($layer);
@@ -135,13 +136,14 @@ function run(string $layer, string $name, string $method, array $vars = []) {
     }
     $appPathStr = strlen(APP_PATH);
     $data = [];
+    $appList = \dux\Config::get('dux.app');
     foreach ($apiList as $value) {
         $path = substr($value, $appPathStr, -4);
         $path = str_replace('\\', '/', $path);
         $appName = explode('/', $path);
         $appName = $appName[0];
         $config = load_config('app/' . $appName . '/config/config', false);
-        if (!$config['system'] && (!$config['state'] || !$config['install'])) {
+        if (!$config['system'] && !in_array($appName, $appList)) {
             continue;
         }
         $class = '\\app\\' . $appName . '\\' . $layer . '\\' . ucfirst($name) . ucwords($layer);
@@ -228,7 +230,7 @@ function service(string $class) {
  * @param $map
  * @return \dux\kernel\Raw
  */
-function model_sql($str, $map) {
+function model_sql($str, $map = []) {
     return \dux\kernel\Model::sql($str, $map);
 }
 
@@ -405,7 +407,7 @@ function del_dir(string $dir) {
     }
     if (readdir($handle) == false) {
         closedir($handle);
-        @rmdir($dir);
+        rmdir($dir);
     }
 }
 
@@ -640,7 +642,8 @@ function price_calculate($n1, string $symbol, $n2, int $scale = 2) {
  * @return string
  */
 function log_no(string $pre = '') {
-    return $pre . \Schiau\Utilities\Particle::generateParticle();
+    return $pre.date('YmdHis').rand(1000000,9999999);
+//    return $pre . \Schiau\Utilities\Particle::generateParticle();
 }
 
 /**

@@ -120,7 +120,7 @@ class Task {
                 }
             },
             'rejected' => function ($reason, $index) {
-                dux_log('Task:Request failed');
+//                dux_log('Task:Request failed');
             },
         ]);
 

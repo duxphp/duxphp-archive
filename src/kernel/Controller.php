@@ -98,7 +98,7 @@ class Controller {
      * @param $msg 提示消息
      * @param string $url 跳转URL
      */
-    public function success($msg, string $url = null) {
+    public function success($msg = 'ok', string $url = null) {
         if (isAjax() || is_array($msg)) {
             $data = [
                 'code' => 200,
@@ -107,7 +107,7 @@ class Controller {
             ];
             $this->json($data);
         } else {
-            $this->alert($msg, $url);
+            $this->alert(is_array($msg) ? json_encode($msg, JSON_UNESCAPED_UNICODE) : $msg, $url);
         }
     }
 

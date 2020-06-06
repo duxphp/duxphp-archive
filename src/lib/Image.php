@@ -309,6 +309,7 @@ class Image {
                 'y' => 0
             ]
         ];*/
+
         foreach ($data as $vo) {
             if ($vo['type'] == 'text') {
                 if($vo['align'] <> 'left' && $vo['align'] <> 'center' && $vo['align'] <> 'right') {
@@ -343,6 +344,7 @@ class Image {
                     $font->align($vo['align']);
                     $font->valign($vo['valign']);
                 });
+
             }
             if ($vo['type'] == 'image') {
                 if (is_string($vo['file'])) {
@@ -358,6 +360,7 @@ class Image {
                 //缩放图标
                 $image->resize($vo['width'], $vo['height']);
                 $this->imgObj->insert($image, 'top-left', $vo['x'], $vo['y']);
+
             }
         }
         return $this;
@@ -376,13 +379,15 @@ class Image {
         for ($i = 0; $i < mb_strlen($text); $i++) {
             $letter[] = mb_substr($text, $i, 1);
         }
-        foreach ($letter as $l) {
-            $teststr = $str . " " . $l;
-            $testbox = imagettfbbox($fontsize, 0, $this->config['font'], $teststr);
-            if (($testbox[2] > $width) && ($str !== "")) {
-                $str .= "\n";
+        if(!empty($letter)){
+            foreach ($letter as $l) {
+                $teststr = $str . " " . $l;
+                $testbox = imagettfbbox($fontsize, 0, $this->config['font'], $teststr);
+                if (($testbox[2] > $width) && ($str !== "")) {
+                    $str .= "\n";
+                }
+                $str .= $l;
             }
-            $str .= $l;
         }
         return $str;
     }

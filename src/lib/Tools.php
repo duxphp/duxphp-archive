@@ -52,7 +52,7 @@ class Tools {
         }
         $current = $currentPage ? $currentPage : 1;
         if ($current > $totalPage) {
-            $current = $totalPage;
+            $current = $totalPage + 1;
         }
         $tagOffset = ($current - 1) * $perPage;
         $tagOffset = ($tagOffset >= 0) ? $tagOffset : 0;

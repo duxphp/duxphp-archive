@@ -78,12 +78,13 @@ interface DbInterface {
 
     /**
      * 查询统计
+     * @param $type
      * @param $table
      * @param $condition
      * @param array $params
      * @return mixed
      */
-    public function aggregate($table, $condition, $params = []);
+    public function aggregate($type, $table, $condition, $params = []);
 
     /**
      * 获取表字段
