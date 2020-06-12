@@ -95,7 +95,6 @@ echo "start update git"
 echo "time: `date ' %Y-%m-%d %H:%M:%S'`"
 cd ${dir}
 git reset --hard HEAD
-git clean -f -d
 git checkout ${branch}
 git fetch origin ${branch}
 git reset --hard origin/${branch}
