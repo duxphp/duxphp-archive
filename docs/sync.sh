@@ -87,6 +87,7 @@ function menuGit() {
   git clone -b ${branch} ${url} ${dir}
   cd ${dir}
   git submodule update --init --recursive
+  chmod -R 777 ${dir}
   echo "The following code into the webhook"
 cat << EOF
 echo "=========================="
