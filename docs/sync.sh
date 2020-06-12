@@ -94,8 +94,18 @@ echo "=========================="
 echo "start update git"
 echo "time: `date ' %Y-%m-%d %H:%M:%S'`"
 cd ${dir}
-sudo git fetch --all && git reset --hard origin/${branch} && git pull
-sudo git submodule foreach git fetch --all && git reset --hard origin/master && git pull
+git reset --hard HEAD
+git clean -f -d
+git checkout ${branch}
+git fetch origin ${branch}
+git reset --hard origin/${branch}
+git pull
+git submodule update
+git submodule update --init --recursive
+git submodule foreach git reset --hard HEAD
+git submodule foreach git submodule update --init --recursive
+git submodule foreach git fetch
+git submodule foreach git pull
 echo "update complete"
 chmod -R 777 ${dir}
 echo "=========================="
