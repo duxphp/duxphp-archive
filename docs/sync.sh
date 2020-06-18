@@ -102,9 +102,8 @@ git pull
 git submodule update
 git submodule update --init --recursive
 git submodule foreach git reset --hard HEAD
-git submodule foreach git submodule update --init --recursive
 git submodule foreach git fetch
-git submodule foreach git pull
+git submodule foreach git pull origin master
 echo "update complete"
 chmod -R 777 ${dir}
 echo "=========================="
