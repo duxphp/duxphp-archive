@@ -381,7 +381,7 @@ class ModelNo {
                 throw new \Exception('The database class must interface class inheritance', 500);
             }
             $funArr = [
-                'setPrimary' => $this->getPrimary(),
+                'setPrimary' => $this->primary,
                 'setFields' => array_keys($this->params),
                 'setParams' => $this->params
             ];

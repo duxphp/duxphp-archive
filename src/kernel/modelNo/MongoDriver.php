@@ -293,7 +293,7 @@ class MongoDriver implements \dux\kernel\modelNo\ModelNoInterface {
     protected function _connect() {
         $mongo = "mongodb://";
         if ($this->config['username'] || $this->config['password']) {
-            $mongo = $this->config['username'] . ':' . $this->config['password'] . '@';
+            $mongo .= $this->config['username'] . ':' . $this->config['password'] . '@';
         }
         $mongo .= $this->config['host'] . ':' . $this->config['port'] . '/' . $this->config['dbname'];
         return new \MongoDB\Driver\Manager($mongo, (array)$this->config['options']);

@@ -24,13 +24,13 @@ class MongoDriver implements LogInterface {
         $tmp = $this->getObj()->table('log')->where(['group' => $group])->distinct('name');
         $data = [];
         foreach ($tmp as $vo) {
-            $data[] = $vo['name'];
+            $data[]['name'] = $vo;
         }
         return $data;
     }
 
     public function get($name, $group = '') {
-        $tmp = $this->getObj()->table('log')->where(['group' => $group, 'name' => $name])->select();
+        $tmp = $this->getObj()->table('log')->where(['group' => $group, 'name' => $name])->order('time desc')->select();
         $data = [];
         foreach ($tmp as $vo) {
             $data[] = [
@@ -73,7 +73,7 @@ class MongoDriver implements LogInterface {
     }
 
     public function getObj() {
-        return (new \dux\kernel\modelNo(\dux\kernel\modelNo\MongoDriver::class, $this->config))->setParams([
+        return (new \dux\kernel\ModelNo(\dux\kernel\modelNo\MongoDriver::class, $this->config))->setParams([
             'time' => [
                 'type' => 'string',
             ],
