@@ -88,14 +88,15 @@ class Task {
      * @param string $url 队列Url
      * @param int $concurrent 进程数量
      * @param int $timeout 队列超时，秒
+     * @param int $retry
      * @return int
      */
-    public function thread($url, int $concurrent = 10, int $timeout = 30) {
+    public function thread($url, int $concurrent = 10, int $timeout = 30, $retry = 3) {
         if ($this->hasLock()) {
             return -1;
         }
         $this->lock($timeout);
-        $taskList = \dux\Dux::model()->table($this->table)->where(['time[<=]' => time()])->limit($concurrent)->order('time asc')->select();
+        $taskList = \dux\Dux::model()->table($this->table)->where(['time[<=]' => time(),'num[<]' => $retry])->limit($concurrent)->order('time asc')->select();
         if (empty($taskList)) {
             $this->unLock();
             return 0;
