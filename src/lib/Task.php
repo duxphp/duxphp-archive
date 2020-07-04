@@ -96,7 +96,13 @@ class Task {
             return -1;
         }
         $this->lock($timeout);
-        $taskList = \dux\Dux::model()->table($this->table)->where(['time[<=]' => time(),'num[<]' => $retry])->limit($concurrent)->order('time asc')->select();
+        $taskList = \dux\Dux::model()->table($this->table)->where(['time[<=]' => time(), 'OR' => [
+            'AND #1' => [
+                'mode' => 0,
+                'num[<]' => $retry
+            ],
+            'mode' => 1
+        ]])->limit($concurrent)->order('time asc')->select();
         if (empty($taskList)) {
             $this->unLock();
             return 0;
