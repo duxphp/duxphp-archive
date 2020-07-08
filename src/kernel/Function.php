@@ -760,3 +760,12 @@ function load_js(string $name = 'jquery') {
     }
     return join("", $returnData);
 }
+
+/**
+ * redis类
+ * @param int|null $database
+ * @return Redis|null
+ */
+function redis(?int $database = null) : ?\Redis{
+    return \dux\Dux::redis([],$database);
+}

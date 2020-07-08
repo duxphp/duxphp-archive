@@ -15,7 +15,7 @@ class Redis {
     protected $config = [
         'host' => 'localhost',
         'port' => 6379,
-        'dbname' => 0,
+        'database' => 0,
         'password' => ''
     ];
 
@@ -24,18 +24,6 @@ class Redis {
      * @var null
      */
     protected $object = null;
-
-    /**
-     * 重连次数
-     * @var int
-     */
-    private $linkNum = 3;
-
-    /**
-     * 重连数
-     * @var int
-     */
-    private $linkCurrentNum = 0;
 
     /**
      * Redis constructor.
@@ -75,8 +63,8 @@ class Redis {
         if ($this->config['password']) {
             $this->object->auth($this->config['password']);
         }
-        $this->object->select($this->config['dbname']);
+        $this->object->select($this->config['database']);
         return $this->object;
     }
-    
+
 }

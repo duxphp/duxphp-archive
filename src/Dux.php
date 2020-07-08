@@ -495,4 +495,26 @@ class Dux {
         return (array)\Firebase\JWT\JWT::decode($jwt, $key, ['HS256']);
     }
 
+    /**
+     * redis类
+     * @param array $config
+     * @param int|null $database
+     * @return \Redis|null
+     */
+    public static function redis(array $config = [],?int $database = null) : ?\Redis {
+        $config = $config ?: \dux\Config::get('dux.redis');
+        if(!is_null($database)){
+            $config['database'] = $database;
+        }else if(empty($config['database'])){
+            $config['database'] = 0;
+        }
+        $key = 'dux.redis.' . 'dbIndex_'. $config['database'] .'_.' . http_build_query($config);
+        if (!self::di()->has($key)) {
+            self::di()->set($key, function () use ($config) {
+                return (new \dux\lib\Redis($config))->link();
+            });
+        }
+        return self::di()->get($key);
+    }
+
 }
