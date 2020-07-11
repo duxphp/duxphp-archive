@@ -120,8 +120,32 @@ class Cache {
             return $this->object;
         }
         $driver = '\\Phpfastcache\\Drivers\\' . ucfirst($this->type) . '\\Config';
-		if ($this->config['path']) {
-            $this->config['path'] = ROOT_ABSOLUTE_PATH . $this->config['path'];
+        if($this->type == 'files') {
+            if ($this->config['path']) {
+                $this->config['path'] = ROOT_ABSOLUTE_PATH . $this->config['path'];
+            }else {
+                $this->config['path'] = ROOT_ABSOLUTE_PATH . 'cache/tmp/';
+            }
+            if($this->config['securityKey']) {
+                $this->config['securityKey'] = 'data';
+            }
+            if($this->config['cacheFileExtension']) {
+                $this->config['cacheFileExtension'] = 'cache';
+            }
+        }
+        if($this->type == 'redis') {
+            if($this->config['host']) {
+                $this->config['host'] = '127.0.0.1';
+            }
+            if($this->config['port']) {
+                $this->config['port'] = 6379;
+            }
+            if($this->config['password']) {
+                $this->config['password'] = '';
+            }
+            if($this->config['database']) {
+                $this->config['database'] = 0;
+            }
         }
         $this->object = \Phpfastcache\CacheManager::getInstance($this->type, new $driver($this->config));
         return $this->object;

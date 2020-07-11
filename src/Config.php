@@ -38,15 +38,9 @@ class Config {
             ],
             'cache' => [
                 'type' => 'files',
-                'path' => DATA_PATH . 'cache/tmp/',
-                'securityKey' => 'data',
-                'cacheFileExtension' => 'cache'
             ],
             'session' => [
                 'type' => 'files',
-                'path' => DATA_PATH . 'cache/session/',
-                'securityKey' => 'data',
-                'cacheFileExtension' => 'cache'
             ],
         ]
     ];
