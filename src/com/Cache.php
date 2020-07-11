@@ -126,24 +126,24 @@ class Cache {
             }else {
                 $this->config['path'] = ROOT_ABSOLUTE_PATH . 'cache/tmp/';
             }
-            if($this->config['securityKey']) {
+            if(!$this->config['securityKey']) {
                 $this->config['securityKey'] = 'data';
             }
-            if($this->config['cacheFileExtension']) {
+            if(!$this->config['cacheFileExtension']) {
                 $this->config['cacheFileExtension'] = 'cache';
             }
         }
         if($this->type == 'redis') {
-            if($this->config['host']) {
+            if(!$this->config['host']) {
                 $this->config['host'] = '127.0.0.1';
             }
-            if($this->config['port']) {
+            if(!$this->config['port']) {
                 $this->config['port'] = 6379;
             }
-            if($this->config['password']) {
+            if(!$this->config['password']) {
                 $this->config['password'] = '';
             }
-            if($this->config['database']) {
+            if(!$this->config['database']) {
                 $this->config['database'] = 0;
             }
         }
