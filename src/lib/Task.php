@@ -199,7 +199,7 @@ class Task {
      * 卸载锁
      * @return int
      */
-    private function unLock() {
+    public function unLock() {
         return \dux\Dux::cache()->del($this->locKey);
     }
 }
