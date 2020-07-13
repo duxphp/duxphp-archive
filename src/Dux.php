@@ -458,7 +458,7 @@ class Dux {
      * @param int $expire
      */
     public static function delCookie($key) {
-        setcookie($key, null);
+        setcookie(\dux\Config::get('dux.use.pre') . $key, null);
     }
 
     /**
