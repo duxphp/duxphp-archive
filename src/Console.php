@@ -13,7 +13,8 @@ class Console {
      */
     public static $module = [
         'help' => \dux\console\HelpDriver::class,
-        'ide' => \dux\console\IdeDriver::class
+        'ide' => \dux\console\IdeDriver::class,
+        'generate' => \dux\console\GenerateDriver::class,
     ];
 
     /**
