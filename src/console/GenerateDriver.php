@@ -61,7 +61,7 @@ return [
     'color' => '#000000'
 ];
 EOF;
-        if (!mkdir($appDir, 0777, true)) {
+        if (!mkdir($appDir, 0777, true) && !is_dir($appDir)) {
             return $this->error('应用目录创建失败');
         }
         mkdir($appDir . 'admin', 0777, true);
