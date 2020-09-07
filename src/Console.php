@@ -12,9 +12,10 @@ class Console {
      * @var array
      */
     public static $module = [
-        'help' => \dux\console\HelpDriver::class,
-        'ide' => \dux\console\IdeDriver::class,
-        'generate' => \dux\console\GenerateDriver::class,
+        'help'       => \dux\console\HelpDriver::class,
+        'ide'        => \dux\console\IdeDriver::class,
+        'generate'   => \dux\console\GenerateDriver::class,
+        'gitmodules' => \dux\console\GitModulesDriver::class
     ];
 
     /**
