@@ -39,7 +39,7 @@ class Delegate {
     /**
      * 添加委托事件
      * @param array $delegateList
-     * @param $name
+     * @param $container
      * @param array $params
      */
     private function addDelegate(array &$delegateList,$container,array $params = []){
