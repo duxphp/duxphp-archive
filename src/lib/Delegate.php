@@ -27,9 +27,6 @@ class Delegate {
     private function execute(array &$delegateList){
         while ($delegate = array_shift($delegateList)){
             list($container,$params) = $delegate;
-            if(is_string($container)){
-                $container = new $container();
-            }
             //执行调用
             call_user_func_array($container,$params);
         }
