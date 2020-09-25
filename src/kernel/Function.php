@@ -769,3 +769,12 @@ function load_js(string $name = 'jquery') {
 function redis(?int $database = null) : ?\Redis{
     return \dux\Dux::redis([],$database);
 }
+
+/**
+ * 委托
+ * @param string $key
+ * @return \dux\lib\Delegate|null
+ */
+function delegate(string $key) : ?\dux\lib\Delegate{
+    return \dux\Dux::delegate($key);
+}

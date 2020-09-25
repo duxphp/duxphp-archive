@@ -517,4 +517,18 @@ class Dux {
         return self::di()->get($key);
     }
 
+    /**
+     * 委托
+     * @param string $key
+     * @return lib\Delegate|null
+     */
+    public static function delegate(string $key): ?\dux\lib\Delegate {
+        $keyName = 'dux.delegate.' . $key;
+        if (!self::di()->has($keyName)) {
+            self::di()->set($keyName, function (){
+                return new \dux\lib\Delegate();
+            });
+        }
+        return self::di()->get($keyName);
+    }
 }
