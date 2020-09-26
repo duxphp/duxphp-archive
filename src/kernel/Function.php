@@ -775,6 +775,6 @@ function redis(?int $database = null) : ?\Redis{
  * @param string $key
  * @return \dux\lib\Delegate|null
  */
-function delegate(string $key) : ?\dux\lib\Delegate{
+function dux_delegate(string $key) : ?\dux\lib\Delegate{
     return \dux\Dux::delegate($key);
 }
