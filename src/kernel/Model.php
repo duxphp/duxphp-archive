@@ -931,7 +931,7 @@ class Model {
                                     $placeholders[] = $stack_key;
                                     $map[$stack_key] = $this->typeMap($item, gettype($item));
                                 }
-                                $stack[] = $column . ' NOT IN (' . implode(', ', $placeholders) . ')';
+                                $stack[] = $column . $placeholders ? (' NOT IN (' . implode(', ', $placeholders) . ')') : NULL;
                                 break;
                             case 'object':
                                 if ($raw = $this->buildRaw($value, $map)) {
@@ -998,7 +998,7 @@ class Model {
                                 $placeholders[] = $stack_key;
                                 $map[$stack_key] = $this->typeMap($item, gettype($item));
                             }
-                            $stack[] = $column . ' IN (' . implode(', ', $placeholders) . ')';
+                            $stack[] = $column . $placeholders ? (' IN (' . implode(', ', $placeholders) . ')') : NULL;
                             break;
                         case 'object':
                             if ($raw = $this->buildRaw($value, $map)) {
