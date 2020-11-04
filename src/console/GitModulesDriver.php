@@ -67,7 +67,7 @@ class GitModulesDriver implements ConsoleInterface {
             return 'add参数错误';
         }
 
-        $shell = shell_exec("git submodule add {$paramArray[0]}} {$paramArray[1]}");
+        $shell = shell_exec("git submodule add {$paramArray[0]} {$paramArray[1]}");
         if($shell) {
             return $shell;
         }
