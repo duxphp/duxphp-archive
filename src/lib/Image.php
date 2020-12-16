@@ -56,23 +56,29 @@ class Image {
      * @return $this
      */
     public function thumb(int $width, int $height, $type = 0) {
+        if($type == 1) {
+            $type = 'center';
+        }
+        if($type == 2) {
+            $type = 'fixed';
+        }
+        if($type == 0) {
+            $type = 'scale';
+        }
         switch ($type) {
             // 居中裁剪缩放
-            case 1:
             case 'center':
                 $this->imgObj->fit($width, $height, function ($constraint) {
                     $constraint->upsize();
                 }, 'center');
                 break;
             // 固定尺寸
-            case 2:
             case 'fixed':
                 $this->imgObj->resize(300, 200, function ($constraint) {
                     $constraint->upsize();
                 });
                 break;
             // 等比例缩放
-            case 0:
             case 'scale':
             default:
                 if ($width > $height) {
