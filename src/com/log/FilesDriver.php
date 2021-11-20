@@ -6,19 +6,24 @@
 
 namespace dux\com\log;
 
-class FilesDriver implements LogInterface {
+use Exception;
+
+class FilesDriver implements LogInterface
+{
 
     protected $config = [
         'path' => ''
     ];
 
-    public function __construct(array $config = []) {
-        if($config) {
+    public function __construct(array $config = [])
+    {
+        if ($config) {
             $this->config = $config;
         }
     }
 
-    public function items($group = '') {
+    public function items($group = '')
+    {
         $dir = $this->getDir($group);
         if (!$dir) {
             return [];
@@ -34,7 +39,8 @@ class FilesDriver implements LogInterface {
         return array_reverse($data);
     }
 
-    public function get($name, $group = '') {
+    public function get($name, $group = '')
+    {
         $dir = $this->getDir($group);
         if (!$dir) {
             return [];
@@ -56,7 +62,8 @@ class FilesDriver implements LogInterface {
         return $data;
     }
 
-    public function set($msg, $type = 'INFO', $name = '', $group = '') {
+    public function set($msg, $type = 'INFO', $name = '', $group = '')
+    {
         $dir = $this->getDir($group);
         if (!$dir) {
             return false;
@@ -64,13 +71,18 @@ class FilesDriver implements LogInterface {
         $file = $dir . '/' . $name . '.log';
         $msg = $type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . PHP_EOL;
 
-        if (!file_put_contents($file, $msg, FILE_APPEND)) {
-            return false;
+        try {
+            if (!file_put_contents($file, $msg, FILE_APPEND)) {
+                return false;
+            }
+        } catch (Exception $exception) {
+
         }
         return true;
     }
 
-    public function del($name = '', $group = '') {
+    public function del($name = '', $group = '')
+    {
         $dir = $this->getDir($group);
         if (!$dir) {
             return false;
@@ -79,7 +91,8 @@ class FilesDriver implements LogInterface {
         return unlink($file);
     }
 
-    public function clear($group = '') {
+    public function clear($group = '')
+    {
         $dir = $this->getDir($group);
         if (!$dir) {
             return false;
@@ -91,7 +104,8 @@ class FilesDriver implements LogInterface {
         return true;
     }
 
-    private function getDir($group = '') {
+    private function getDir($group = '')
+    {
         $dir = $this->config['path'];
         $dir = str_replace('\\', '/', $dir);
         if (substr($dir, -1) <> '/') {
