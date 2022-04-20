@@ -17,6 +17,8 @@ class Rotue {
     private $config = [];
     protected $object = null;
 
+    protected $expire = 1800;
+
 
     /**
      * 添加规则
@@ -69,7 +71,7 @@ class Rotue {
             $this->uris[$method][] = [$tmpKey, $url, $regex, $module];
             $cacheData[] = ['method' => $method, 'params' => $tmpKey, 'url' => $url, 'regex' => $regex, 'module' => $module];
         }
-        $this->cache()->set($cacheKey, $cacheData);
+        $this->cache()->set($cacheKey, $cacheData,$this->expire);
         return true;
     }
 
@@ -152,7 +154,7 @@ class Rotue {
             $urlData['role'] = 'x';
             $urlData['layer'] = 'cli';
         }
-        $this->cache()->set($cacheKey, $urlData);
+        $this->cache()->set($cacheKey, $urlData,$this->expire);
         return $urlData;
     }
 
