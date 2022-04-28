@@ -13,7 +13,7 @@ class Di {
     /**
      * 设置依赖
      * @param string $name
-     * @param string|closure $class
+     * @param string|\Closure $class
      */
     public function set(string $name, $class) {
         $this->del($name);
