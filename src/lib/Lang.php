@@ -8,7 +8,7 @@ namespace dux\lib;
 class Lang {
 
     private $_translation = null;
-    private $_lang = 'en_US';
+    private $_lang = 'en_us';
     private $_data = [];
 
     public function __construct(?string $lang = null)
@@ -51,7 +51,7 @@ class Lang {
 
     /**
      * 加载配置
-     * @param $config
+     * @param $path
      * @param bool $string
      * @return mixed
      * @throws \Exception
@@ -59,7 +59,7 @@ class Lang {
     private function load($path,$string = false) {
         if (!$string) {
             if (!is_file($path)) {
-                throw new \Exception("lang file '{$config}' not found");
+                throw new \Exception("lang file '{$path}' not found");
             }
             $path = file_get_contents($path);
         }

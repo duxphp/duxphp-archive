@@ -38,7 +38,7 @@ class Translation {
      * @return false|mixed
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function translation(string $q,string $tl = 'en_US')
+    public function translation(string $q,string $tl = 'en_us')
     {
         $url = $this->url($q,$tl);
         if($url === false){

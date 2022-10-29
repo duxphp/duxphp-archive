@@ -538,7 +538,7 @@ class Dux {
      * @param string $lang
      * @return string
      */
-    public static function lang(string $str,string $lang = 'en_US'): string {
+    public static function lang(string $str,string $lang = 'en_us'): string {
         $keyName = 'dux.lang';
         if (!self::di()->has($keyName)) {
             self::di()->set($keyName, function () use($lang){
