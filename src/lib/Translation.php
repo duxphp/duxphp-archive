@@ -15,6 +15,10 @@ class Translation {
 
     private $_url = 'https://fanyi-api.baidu.com/api/trans/vip/translate';
 
+    /**
+     * 转换类型
+     * @var array|string[]
+     */
     private $_kind = [
         'zh-cn'     => 'zh',
         'en_us'     => 'en',
@@ -23,6 +27,9 @@ class Translation {
     public function __construct($config = [])
     {
         $this->_config = array_merge($this->_config,$config);
+        if(isset($this->_config['kind'])){
+            $this->_kind = array_merge($this->_kind,$this->_config['kind']);
+        }
     }
 
     /**
