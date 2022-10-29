@@ -539,10 +539,11 @@ class Dux {
      * @return string
      */
     public static function lang(string $str,string $lang = 'en_us'): string {
-        $keyName = 'dux.lang';
+        $config = $config ?: \dux\Config::get('dux.translation');
+        $keyName = 'dux.lang' . http_build_query($config);;
         if (!self::di()->has($keyName)) {
-            self::di()->set($keyName, function () use($lang){
-                return new \dux\lib\Lang($lang);
+            self::di()->set($keyName, function () use($lang,$config){
+                return new \dux\lib\Lang($lang,$config);
             });
         }
         $obj = self::di()->get($keyName);

@@ -10,19 +10,21 @@ class Lang {
     private $_translation = null;
     private $_lang = 'en_us';
     private $_data = [];
+    private $_config = [];
 
-    public function __construct(?string $lang = null)
+    public function __construct(?string $lang = null,$config = [])
     {
         if(!is_null($lang)){
             $this->_lang = $lang;
         }
+        $this->_config = array_merge($this->_config,$config);
         $this->init();
     }
 
     protected function getObj()
     {
         if(is_null($this->_translation)){
-            $this->_translation = new \dux\lib\Translation();
+            $this->_translation = new \dux\lib\Translation($this->_config);
         }
         return $this->_translation;
     }
@@ -127,7 +129,6 @@ class Lang {
                 if($value === false){
                     return $str;
                 }
-                $value = implode('',$value);
                 $this->_data[$str] = $value;
                 $this->save($this->path(),$this->_data);
             }catch (\Exception $e){
