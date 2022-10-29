@@ -62,8 +62,7 @@ class FilesDriver implements LogInterface
         return $data;
     }
 
-    public function set($msg, $type = 'INFO', $name = '', $group = '')
-    {
+    public function set($msg, $type = 'INFO', $name = '', $group = '') {
         $dir = $this->getDir($group);
         if (!$dir) {
             return false;
@@ -71,12 +70,15 @@ class FilesDriver implements LogInterface
         $file = $dir . '/' . $name . '.log';
         $msg = $type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . PHP_EOL;
 
-        try {
-            if (!file_put_contents($file, $msg, FILE_APPEND)) {
-                return false;
-            }
-        } catch (Exception $exception) {
-
+        $isChmod = false;
+        if(!file_exists($file)){
+            $isChmod = true;
+        }
+        if (!error_log($msg, 3, $file)) {
+            error_log("File '{$file}' Write failure");
+        }
+        if($isChmod){
+            chmod($file,0777);
         }
         return true;
     }

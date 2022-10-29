@@ -531,4 +531,36 @@ class Dux {
         }
         return self::di()->get($keyName);
     }
+
+    /**
+     * 语言翻译
+     * @param string $str
+     * @param string $lang
+     * @return string
+     */
+    public static function lang(string $str,string $lang = 'en_US'): string {
+        $keyName = 'dux.lang';
+        if (!self::di()->has($keyName)) {
+            self::di()->set($keyName, function () use($lang){
+                return new \dux\lib\Lang($lang);
+            });
+        }
+        $obj = self::di()->get($keyName);
+        return $obj->lang($str,$lang);
+    }
+
+    /**
+     * 设置语言
+     * @param $lang
+     * @return void
+     */
+    public static function setLang($lang)
+    {
+        $expire = 99 * 365 * 24 * 3600;
+        if(empty($lang)){
+            $expire = -1;
+        }
+        \dux\Dux::setCookie(LAYER_NAME . '_lang',$lang, $expire);
+    }
+
 }

@@ -778,3 +778,20 @@ function redis(?int $database = null) : ?\Redis{
 function dux_delegate(string $key) : ?\dux\lib\Delegate{
     return \dux\Dux::delegate($key);
 }
+
+/**
+ * 语言转换
+ * @param $str
+ * @param $lang
+ * @return mixed|string
+ */
+function __($str,$lang = null)
+{
+    if(is_null($lang)){
+        $lang = \dux\Dux::getCookie(LAYER_NAME . '_lang');
+    }
+    if(empty($lang)){
+        return $str;
+    }
+    return \dux\Dux::lang($str,$lang);
+}
