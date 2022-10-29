@@ -26,7 +26,7 @@ class Lang {
         }
         return $this->_translation;
     }
-    
+
     /**
      * 路径
      * @return string
@@ -118,6 +118,9 @@ class Lang {
      */
     public function lang(string $str)
     {
+        if(is_null($str) || $str === ''){
+            return $str;
+        }
         if(!isset($this->_data[$str])){
             try {
                 $value = $this->getObj()->translation($str,$this->_lang);
