@@ -111,7 +111,7 @@ class Lang {
         if(is_null($str) || $str === ''){
             return $str;
         }
-        if(!isset($this->_data[$str]) && (!isset($this->_config['type']) || $this->_config['type'] != 'file')){
+        if(!isset($this->_data[$str]) && !empty($this->_config)){
             try {
                 $value = $this->getObj()->translation($str,$this->_lang);
                 if($value === false){

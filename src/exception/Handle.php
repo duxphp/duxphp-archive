@@ -40,7 +40,7 @@ class Handle {
     }
 
     public function render() {
-        $title = "{$this->message}";
+        $title = __($this->message);
         $desc = "line {$this->line} in file {$this->parserFile($this->file)}";
         $code = $this->code ?: 500;
         $trace = [];

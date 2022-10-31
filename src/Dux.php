@@ -538,9 +538,9 @@ class Dux {
      * @param string $lang
      * @return string
      */
-    public static function lang(string $str,string $lang = 'en_us'): string {
-        $config = $config ?: \dux\Config::get('dux.translation');
-        $keyName = 'dux.lang' . http_build_query($config);;
+    public static function lang(string $str,string $lang = 'en_us',$config = []): string {
+        $config = $config ?: \dux\Config::get('dux.translation',[]);
+        $keyName = 'dux.lang' . http_build_query($config);
         if (!self::di()->has($keyName)) {
             self::di()->set($keyName, function () use($lang,$config){
                 return new \dux\lib\Lang($lang,$config);
