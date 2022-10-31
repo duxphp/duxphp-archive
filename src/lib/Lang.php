@@ -54,26 +54,14 @@ class Lang {
     /**
      * 加载配置
      * @param $path
-     * @param bool $string
      * @return mixed
      * @throws \Exception
      */
-    private function load($path,$string = false) {
-        if (!$string) {
-            if (!is_file($path)) {
-                throw new \Exception("lang file '{$path}' not found");
-            }
-            $path = file_get_contents($path);
+    private function load($path) {
+        if (!is_file($path)) {
+            throw new \Exception("lang file '{$path}' not found");
         }
-        $path = trim($path);
-        if (substr($path, 0, 2) === '<?') {
-            $path = '?>' . $path;
-        }
-        try {
-            $data = eval($path);
-        } catch (\Exception $e) {
-            throw new \Exception("PHP string threw an exception");
-        }
+        $data = require_once $path;
         if (is_callable($data)) {
             $data = call_user_func($data);
         }
@@ -123,7 +111,7 @@ class Lang {
         if(is_null($str) || $str === ''){
             return $str;
         }
-        if(!isset($this->_data[$str])){
+        if(!isset($this->_data[$str]) && (!isset($this->_config['type']) || $this->_config['type'] != 'file')){
             try {
                 $value = $this->getObj()->translation($str,$this->_lang);
                 if($value === false){
@@ -136,7 +124,7 @@ class Lang {
                 return $str;
             }
         }
-        return $this->_data[$str];
+        return $this->_data[$str] ?? $str;
     }
 
 }
