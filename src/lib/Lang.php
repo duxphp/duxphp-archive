@@ -10,6 +10,8 @@ class Lang {
     private $_translation = null;
     private $_lang = 'en_us';
     private $_data = [];
+    private $_commonData = [];
+    private $_totalData = [];
     private $_config = [];
 
     public function __construct(?string $lang = null,$config = [])
@@ -49,6 +51,32 @@ class Lang {
         if(file_exists($path)){
             $this->_data = $this->load($path);
         }
+
+        $commonPath = sprintf('%slang/%s/%s',ROOT_PATH , $this->_lang, '/common.php');
+        if(file_exists($commonPath)){
+            $this->_commonData = $this->load($commonPath);
+        }
+
+        $this->mergeData();
+    }
+
+    /**
+     * 合并data数据
+     * @return array
+     */
+    private function mergeData()
+    {
+        $this->_totalData = array_merge($this->_commonData,$this->_data);
+        return $this->_totalData;
+    }
+
+    /**
+     * 获取data数据
+     * @return array
+     */
+    public function data($name = 'totalData')
+    {
+        return $this->{'_' . $name} ?? [];
     }
 
     /**
@@ -111,20 +139,21 @@ class Lang {
         if(is_null($str) || $str === ''){
             return $str;
         }
-        if(!isset($this->_data[$str]) && !empty($this->_config)){
+        if(!isset($this->_totalData[$str]) && !empty($this->_config)){
             try {
                 $value = $this->getObj()->translation($str,$this->_lang);
                 if($value === false){
                     return $str;
                 }
                 $this->_data[$str] = $value;
+                $this->mergeData();
                 $this->save($this->path(),$this->_data);
             }catch (\Exception $e){
                 dux_log($e->getMessage(),'error');
                 return $str;
             }
         }
-        return $this->_data[$str] ?? $str;
+        return $this->_totalData[$str] ?? $str;
     }
 
 }

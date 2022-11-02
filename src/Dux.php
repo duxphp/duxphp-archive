@@ -533,12 +533,12 @@ class Dux {
     }
 
     /**
-     * 语言翻译
-     * @param string $str
+     * 语言翻译对象
      * @param string $lang
-     * @return string
+     * @param $config
+     * @return lib\Lang
      */
-    public static function lang(string $str,string $lang = 'en_us',$config = []): string {
+    public static function lang(string $lang = 'en_us',$config = []): \dux\lib\Lang {
         $config = $config ?: \dux\Config::get('dux.translation',[]);
         $keyName = 'dux.lang' . http_build_query($config);
         if (!self::di()->has($keyName)) {
@@ -546,8 +546,17 @@ class Dux {
                 return new \dux\lib\Lang($lang,$config);
             });
         }
-        $obj = self::di()->get($keyName);
-        return $obj->lang($str,$lang);
+        return self::di()->get($keyName);
+    }
+
+    /**
+     * 语言翻译
+     * @param string $str
+     * @param string $lang
+     * @return string
+     */
+    public static function __(string $str,string $lang = 'en_us',$config = []): string {
+        return self::lang($lang,$config)->lang($str);
     }
 
     /**

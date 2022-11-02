@@ -793,5 +793,5 @@ function __($str,$lang = null)
     if(empty($lang)){
         return $str;
     }
-    return \dux\Dux::lang($str,$lang);
+    return \dux\Dux::__($str,$lang);
 }
