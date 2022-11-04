@@ -66,7 +66,7 @@ class Lang {
      */
     private function mergeData()
     {
-        $this->_totalData = array_merge($this->_commonData,$this->_data);
+        $this->_totalData = $this->_data + $this->_commonData;
         return $this->_totalData;
     }
 
