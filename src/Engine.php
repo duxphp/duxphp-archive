@@ -78,7 +78,7 @@ class Engine {
      */
     public function handleException($e) {
         if ($e instanceof \dux\exception\Message) {
-            $handle = new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), false, true, false);
+            $handle = new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), false, true, false, true);
         } else {
             $handle = new \dux\exception\Handle($e->getMessage(), $e->getCode(), $e->getFile(), $e->getLine(), $e->getTrace(), \dux\Config::get('dux.debug'), \dux\Config::get('dux.debug_error'), \dux\Config::get('dux.debug_log'));
         }

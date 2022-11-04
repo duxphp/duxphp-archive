@@ -15,6 +15,7 @@ class Handle {
     protected $file;
     protected $line;
     protected $trace;
+    protected $lang;
 
     /**
      * Handle constructor.
@@ -26,8 +27,9 @@ class Handle {
      * @param bool $debug
      * @param bool $error
      * @param bool $log
+     * @param bool $lang
      */
-    public function __construct($message = '', $code = 0, $file = '', $line = '', $trace = [], $debug = true, $error = true, $log = true) {
+    public function __construct($message = '', $code = 0, $file = '', $line = '', $trace = [], $debug = true, $error = true, $log = true,$lang = false) {
         $this->message = $message;
         $this->code = $code;
         $this->file = $file;
@@ -36,11 +38,12 @@ class Handle {
         $this->debug = $debug;
         $this->error = $error;
         $this->log = $log;
+        $this->lang = $lang;
         //return $this->render();
     }
 
     public function render() {
-        $title = __($this->message);
+        $title = $this->lang ? __($this->message) : $this->message;
         $desc = "line {$this->line} in file {$this->parserFile($this->file)}";
         $code = $this->code ?: 500;
         $trace = [];
