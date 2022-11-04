@@ -156,12 +156,16 @@ class Dux {
                     case 'null':
                     case 'undefined':
                         $vo = null;
+                        break;
                     case 'true':
                         $vo = true;
+                        break;
                     case 'false':
                         $vo = false;
+                        break;
                     default:
                         $vo = html_in((string)$vo);
+                        break;
                 }
             }
         }
