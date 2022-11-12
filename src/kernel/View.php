@@ -181,7 +181,7 @@ class View {
      * @return string
      */
     public function getTemplate(string $file) {
-        if ((substr($file, -5) != '.html')) {
+        if(strripos($file,'.') === false){
             $file .= '.html';
         }
         return $file;
