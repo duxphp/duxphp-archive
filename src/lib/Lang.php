@@ -37,7 +37,7 @@ class Lang {
      */
     protected function path()
     {
-        return sprintf('%slang/%s/%s',ROOT_PATH , $this->_lang,'/' . LAYER_NAME . '/' . APP_NAME . '.php');
+        return sprintf('%slang/%s/%s',ROOT_PATH , $this->_lang, LAYER_NAME . '/' . APP_NAME . '.php');
     }
 
     /**
@@ -48,6 +48,7 @@ class Lang {
     protected function init()
     {
         $path = $this->path();
+        dux_log($path,'debug');
         if(file_exists($path)){
             $this->_data = $this->load($path);
         }
