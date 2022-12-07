@@ -790,7 +790,7 @@ function __($str,$lang = null)
     if(is_null($lang)){
         $lang = \dux\Dux::getCookie(LAYER_NAME . '_lang');
     }
-    if(empty($lang)){
+    if(empty($lang) || $lang == \dux\Config::get('dux.lang','zh_cn')){
         return $str;
     }
     return \dux\Dux::__($str,$lang);
