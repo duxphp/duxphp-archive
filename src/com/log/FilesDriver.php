@@ -8,18 +8,23 @@ namespace dux\com\log;
 
 use Exception;
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
 class FilesDriver implements LogInterface
 {
 
     protected $config = [
         'path' => ''
     ];
+    private $log;
 
     public function __construct(array $config = [])
     {
         if ($config) {
             $this->config = $config;
         }
+        $this->log = new Logger('dux');
     }
 
     public function items($group = '')
@@ -68,18 +73,9 @@ class FilesDriver implements LogInterface
             return false;
         }
         $file = $dir . '/' . $name . '.log';
+        $this->log->pushHandler(new StreamHandler($file, Logger::WARNING));
         $msg = $type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . PHP_EOL;
-
-        $isChmod = false;
-        if(!file_exists($file)){
-            $isChmod = true;
-        }
-        if (!error_log($msg, 3, $file)) {
-            error_log("File '{$file}' Write failure");
-        }
-        if($isChmod){
-            chmod($file,0777);
-        }
+        $this->log->log($type, $msg);
         return true;
     }
 

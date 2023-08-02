@@ -179,7 +179,8 @@ function request(string $method = '', string $key = '', $default = null, $functi
  * @param bool $ssl
  * @return string
  */
-function url(string $str = '', array $params = [], bool $domain = false, bool $ssl = true) {
+function url(string $str = '', $params = [], bool $domain = false, bool $ssl = true) {
+    $params = $params?:[];
     return \dux\Dux::url($str, $params, $domain, $ssl);
 }
 

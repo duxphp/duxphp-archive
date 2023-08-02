@@ -16,8 +16,10 @@ class ModelExtend extends Model {
     protected $validateRule = [];
     protected $formatRule = [];
 
-    public function __construct() {
-        $config = \dux\Config::get('dux.database');
+    public function __construct($config=[]) {
+        if( empty($config) ){
+            $config = \dux\Config::get('dux.database');
+        }
         $this->driver = $config['type'];
         $this->prefix = $config['prefix'];
         $this->config = $config;

@@ -8,7 +8,7 @@
         }
     ],
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.4",
         "intervention/image": "^2.0",
         "ralouphie/mimey": "^2.0",
         "endroid/qr-code": "^3.0",
@@ -25,7 +25,8 @@
         "fukuball/jieba-php": "^0.33",
         "firebase/php-jwt": "^5.0",
         "nelexa/zip": "^3.0",
-        "sschiau/particle": "^2.2"
+        "sschiau/particle": "^2.2",
+        "monolog/monolog": "^2.9"
     },
     "autoload": {
         "psr-4": {

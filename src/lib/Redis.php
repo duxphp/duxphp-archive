@@ -64,6 +64,7 @@ class Redis {
             $this->object->auth($this->config['password']);
         }
         $this->object->select($this->config['database']);
+        $redis->setOption(Redis::OPT_PREFIX, $this->config['prefix']);
         return $this->object;
     }
 

@@ -188,7 +188,32 @@ class MysqlPdoDriver implements \dux\kernel\model\DbInterface {
 
     protected function _connect() {
         $pdo = null;
-        $dsn = "mysql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['dbname']};charset={$this->config['charset']}";
+
+
+        $params = $this->config;
+
+        $dsn = 'mysql:';
+
+        if ($params['socket']) {
+            $dsn .= 'unix_socket=' . $params['socket'] . ';';
+        }
+        if ($params['host']) {
+            $dsn .= 'host=' . $params['host'] . ';';
+        }
+
+        if ($params['port']) {
+            $dsn .= 'port=' . $params['port'] . ';';
+        }
+
+        if ($params['dbname']) {
+            $dsn .= 'dbname=' . $params['dbname'] . ';';
+        }
+
+        if ($params['charset']) {
+            $dsn .= 'charset=' . $params['charset'] . ';';
+        }
+
+
         try {
             $pdo = new \PDO($dsn, $this->config['username'], $this->config['password']);
             $pdo->exec("SET NAMES {$this->config['charset']}");
