@@ -23,7 +23,7 @@
         "overtrue/pinyin": "^4.0",
         "alchemy/zippy": "^0.4",
         "fukuball/jieba-php": "^0.33",
-        "firebase/php-jwt": "^5.0",
+        "firebase/php-jwt": "^6.0",
         "nelexa/zip": "^3.0",
         "sschiau/particle": "^2.2",
         "monolog/monolog": "^2.9"
