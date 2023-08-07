@@ -73,7 +73,7 @@ class FilesDriver implements LogInterface
             return false;
         }
         $file = $dir . '/' . $name . '.log';
-        $this->log->pushHandler(new StreamHandler($file, Logger::WARNING));
+        $this->log->pushHandler(new StreamHandler($file, Logger::DEBUG));
         $msg = $type . ' ' . date('Y-m-d H:i:s') . ' ' . $msg . PHP_EOL;
         $this->log->log($type, $msg);
         return true;
